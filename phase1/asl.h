@@ -4,23 +4,26 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 
-//array di SEMD con dimensione massima di MAXPROC
-semd_PTR semd_table[MAXPROC];
 
-
-//Lista dei SEMD liberi o inutilizzati
+/* Lista dei SEMD liberi o inutilizzati */
 typedef struct semdFree_t {
-
+    semd_t val;
+    semdFree_t *next;
+    semdFree_t *prev;
+    struct list_head sentry;
 } semdFree_t, *semdFree_PTR;
 
 
-//Lista dei semafori attivi ASL
+/* Lista dei semafori attivi ASL */
 typedef struct asl_t {
-
+    semd_t val;
+    asl_t *next;
+    asl_t *prev;
+    struct list_head sentry;
 } asl_t, *asl_PTR;
 
 
-//funzioni di gestione dell'ASL
+/* funzioni di gestione dell'ASL */
 
 /*
     Viene inserito il PCB puntato da p nella coda dei 
