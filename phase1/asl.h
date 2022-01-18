@@ -3,7 +3,7 @@
 
 #include "pandos_const.h"
 #include "pandos_types.h"
-
+#include "listx.h"
 
 /* Lista dei SEMD liberi o inutilizzati */
 typedef struct semdFree_t {
