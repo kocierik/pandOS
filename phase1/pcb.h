@@ -7,13 +7,14 @@
 
 
 //lista dei PCB che sono liberi o inutilizzati
-typedef struct PcbFree_h {
+/*
+typedef struct PcbFree_h { 
     pcb_t val;
     PcbFree_h *next;
     struct list_head list;
     PcbFree_h *prev;
 } PcbFree_h, *PTRPcbFree_h;
-
+*
 
 
 //funzioni per lista pcbFree
