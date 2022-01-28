@@ -9,34 +9,34 @@ asl_PTR ASL;
 
 
 int insertBlocked(int *semAdd, pcb_t *p) {
-  int found = 0;     //sem found flag
-  asl_PTR tmp = ASL; //semaforo a cui aggiungere il pcb
+    int found = 0;     //sem found flag
+    asl_PTR tmp = ASL; //semaforo a cui aggiungere il pcb
 
-  //cerco il semaforo
-  do{
-    if((*tmp).val.s_key == semAdd) found = 1;
-    else tmp = tmp->next;
-  } while (!found && tmp != ASL);
+    //cerco il semaforo
+    do{
+        if((*tmp).elem.s_key == semAdd) found = 1;
+        else tmp = (*tmp).ptr_list.next;
+    } while (!found && tmp != ASL);
 
-  //se trovato
-  if(found) list_add_tail(p,&(*tmp).val.s_procq); //aggiungo alla coda dei processi bloccati p
-  //se non trovato
-  else {
-    // se non ci sono semafori liberi
-    if(list_empty(semdFree_h.next))
-        return 1; //return TRUE
+    //se trovato
+    if(found) list_add_tail(p,&(*tmp).elem.s_procq); //aggiungo alla coda dei processi bloccati p
+    //se non trovato
+    else {
+        // se non ci sono semafori liberi
+        if(list_empty(semdFree_h.ptr_list.next))
+            return 1; //return TRUE
 
-    semd_t* smd = &semdFree_h.val; //prendo il primo semaforo libero
-    list_del(&semdFree_h);         //tolgo il primo semaforo da quelli liberi
-    //setto le variabili
-    smd->s_key = semAdd;
-    INIT_LIST_HEAD(&smd->s_procq);
-    INIT_LIST_HEAD(&smd->s_link);
+        semd_t* smd = &semdFree_h.elem; //prendo il primo semaforo libero
+        list_del(&semdFree_h);          //tolgo il primo semaforo da quelli liberi
+        //setto le variabili
+        smd->s_key = semAdd;
+        INIT_LIST_HEAD(&smd->s_procq);
+        INIT_LIST_HEAD(&smd->s_link);
 
-    list_add_tail(smd, ASL);  //aggiungo il semafoto alla lista di quelli attivi
-    insertBlocked(semAdd, p); //inserisco il processo bloccato
-  }
-  return 0; //FALSE
+        list_add_tail(smd, ASL);  //aggiungo il semafoto alla lista di quelli attivi
+        insertBlocked(semAdd, p); //inserisco il processo bloccato
+    }
+    return 0; //FALSE
 }
 
 
@@ -85,8 +85,8 @@ pcb_t* headBlocked(int *semAdd) {
 
 //copiata dal pcb, obv cambiando le cose giuste
 void initASL() {
-  for(int i = 0; i < MAXPROC; i++) {
-    semd_t* smd = &semd_table[i];
-    list_add_tail(&(smd->s_procq.next),&(semdFree_h));
-  }
+    for(int i = 0; i < MAXPROC; i++) {
+        semd_t* smd = &semd_table[i];
+        list_add_tail(&(smd->s_procq.next),&(semdFree_h));
+    }
 }

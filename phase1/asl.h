@@ -7,19 +7,15 @@
 
 /* Lista dei SEMD liberi o inutilizzati */
 typedef struct semdFree_t {
-    semd_t val;
-    semdFree_t *next;
-    semdFree_t *prev;
-    struct list_head sentry;
+    semd_t elem;
+    struct list_head ptr_list;
 } semdFree_t, *semdFree_PTR;
 
 
 /* Lista dei semafori attivi ASL */
 typedef struct asl_t {
-    semd_t val;
-    asl_t *next;
-    asl_t *prev;
-    struct list_head sentry;
+    semd_t elem;
+    struct list_head ptr_list;
 } asl_t, *asl_PTR;
 
 
