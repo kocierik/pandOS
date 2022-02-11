@@ -81,9 +81,10 @@ pcb_t* headProcQ(struct list_head* head){
     all’elemento rimosso dalla lista.
 */
 pcb_t* removeProcQ(struct list_head* head){
+    if(list_empty(&head)) return NULL;
     pcb_t* removedElement = head->next;
     head->next = head->next->next;
-    return list_empty(&head) ? NULL : removedElement;
+    return removedElement;
 }
 
 /*
@@ -107,17 +108,16 @@ void insertChild(pcb_t *prnt, pcb_t *p){
     list_add(&p,&prnt->p_child);
 }
 
-/* //?
+/*
     Rimuove il primo figlio del PCB puntato 
     da p. Se p non ha figli, restituisce NULL.
     Altrimenti ritorna il puntatore all'elemento rimosso
 */
 pcb_t* removeChild(pcb_t *p){
-    if(list_empty(p->p_child)) return NULL;
-    pcb_t* removedElement = p->p_child->next;
-    list_del(p->p_child->next);
+    if(list_empty(&p->p_child)) return NULL;
+    pcb_t* removedElement = p->p_child.next;
+    list_del(&(p->p_child.next));
     return removedElement;
-    
 }
 
 /*
