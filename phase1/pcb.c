@@ -26,7 +26,6 @@ void *my_memset(void *s, int c,  unsigned int len){
     return s;
 }
 
-
 void *my_memset(void *s, int c,  unsigned int len)
 {
     unsigned char* p=s;
@@ -74,12 +73,6 @@ pcb_t* headProcQ(struct list_head* head){
 	return list_empty(&head) ? NULL : head->next;
 }
 
-/* // ? ordine giusto
-    Rimuove il primo elemento dalla coda dei 
-    processi puntata da head. Ritorna NULL se la 
-    coda è vuota. Altrimenti ritorna il puntatore 
-    all’elemento rimosso dalla lista.
-*/
 pcb_t* removeProcQ(struct list_head* head){
     if(list_empty(&head)) return NULL;
     pcb_t* removedElement = head->next;
@@ -87,16 +80,16 @@ pcb_t* removeProcQ(struct list_head* head){
     return removedElement;
 }
 
-/*
-    Rimuove il PCB puntato da p dalla coda dei 
-    processi puntata da head. Se p non è presente 
-    nella coda, restituisce NULL. (NOTA: p può 
-    trovarsi in una posizione arbitraria della coda).
-*/
 pcb_t* outProcQ(struct list_head* head, pcb_t* p){
-
+    struct list_head* iter;
+    list_for_each(iter,head) {
+        if(strcmp(&iter,&p)==0){
+            list_del(&p);
+            return p;
+        }
+    }
+    return NULL;
 }
-
 
 //funzioni per alberi pcb
 
@@ -108,11 +101,6 @@ void insertChild(pcb_t *prnt, pcb_t *p){
     list_add(&p,&prnt->p_child);
 }
 
-/*
-    Rimuove il primo figlio del PCB puntato 
-    da p. Se p non ha figli, restituisce NULL.
-    Altrimenti ritorna il puntatore all'elemento rimosso
-*/
 pcb_t* removeChild(pcb_t *p){
     if(list_empty(&p->p_child)) return NULL;
     pcb_t* removedElement = p->p_child.next;
@@ -120,15 +108,8 @@ pcb_t* removeChild(pcb_t *p){
     return removedElement;
 }
 
-/*
-    Rimuove il PCB puntato da p dalla lista 
-    dei figli del padre. Se il PCB puntato da 
-    p non ha un padre, restituisce NULL, 
-    altrimenti restituisce l’elemento 
-    rimosso (cioè p). A differenza della 
-    removeChild, p può trovarsi in una 
-    posizione arbitraria (ossia non è 
-    necessariamente il primo figlio del 
-    padre).
-*/
-pcb_t* outChild(pcb_t *p);
+pcb_t* outChild(pcb_t *p){
+    if(list_empty(&p->p_parent)) return NULL;
+    list_del(&p);
+    return p;
+}
