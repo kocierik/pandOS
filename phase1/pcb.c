@@ -22,12 +22,17 @@ pcb_t *allocPcb(){
 	else {
 		pcb_t savedElement = &pcbFree_h->next;
 		pcbFree_h->next = pcbFree_h->next->next;
-		savedElement.p_child = NULL;
-		savedElement.p_list = NULL;
-		savedElement.p_parent = NULL;
-		savedElement.p_semAdd = NULL;
-		savedElement.p_sib = NULL;
+
+		savedElement.p_list = savedElement.p_list;
+
+		savedElement.p_parent = savedElement.p_parent;
+		savedElement.p_child = savedElement.p_child;
+		savedElement.p_sib = savedElement.p_sib;
+		
+		savedElement.p_s = 0;
 		savedElement.p_time = 0;
+
+		savedElement.p_semAdd = NULL;
 		return savedElement;
 	}
 }
