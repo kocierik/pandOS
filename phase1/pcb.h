@@ -42,7 +42,7 @@ int emptyProcQ(struct list_head *head);
 
 
 // Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
-void intertProcQ(struct list_head* head, pcb_t* p);
+void insertProcQ(struct list_head* head, pcb_t* p);
 
 
 /*
@@ -51,7 +51,7 @@ void intertProcQ(struct list_head* head, pcb_t* p);
     RIMUOVERLO. Ritorna NULL se la coda 
     non ha elementi.
 */
-pcb_t headProcQ(struct list_head* head);
+pcb_t *headProcQ(struct list_head* head);
 
 
 /*
@@ -92,6 +92,7 @@ void insertChild(pcb_t *prnt, pcb_t *p);
 /*
     Rimuove il primo figlio del PCB puntato 
     da p. Se p non ha figli, restituisce NULL.
+    Altrimenti ritorna il puntatore all'elemento rimosso
 */
 pcb_t* removeChild(pcb_t *p);
 
@@ -108,6 +109,5 @@ pcb_t* removeChild(pcb_t *p);
     padre).
 */
 pcb_t* outChild(pcb_t *p);
-
 
 #endif
