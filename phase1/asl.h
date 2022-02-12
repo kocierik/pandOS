@@ -21,6 +21,8 @@ typedef struct asl_t {
 
 /* funzioni di gestione dell'ASL */
 
+asl_PTR findASL(int *semAdd);
+
 /*
     Viene inserito il PCB puntato da p nella coda dei 
     processi bloccati associata al SEMD con chiave 

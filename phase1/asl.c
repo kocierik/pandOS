@@ -8,7 +8,7 @@ semdFree_t semdFree_h;
 asl_PTR ASL;
 
 
-int insertBlocked(int *semAdd, pcb_t *p) {
+asl_PTR findASL(int *semAdd) {
     int found = 0;     //sem found flag
     asl_PTR tmp = ASL; //semaforo a cui aggiungere il pcb
 
@@ -17,13 +17,22 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         if((*tmp).elem.s_key == semAdd) found = 1;
         else tmp = (*tmp).ptr_list.next;
     } while (!found && tmp != ASL);
+    if(found)
+        return tmp;
+    else
+        return NULL;
+}
+
+
+int insertBlocked(int *semAdd, pcb_t *p) {
+    asl_PTR tmp = findASL(semAdd);
 
     //se trovato
-    if(found) list_add_tail(p,&(*tmp).elem.s_procq); //aggiungo alla coda dei processi bloccati p
+    if(tmp != NULL) list_add_tail(p,&(*tmp).elem.s_procq); //aggiungo alla coda dei processi bloccati p
     //se non trovato
     else {
         // se non ci sono semafori liberi
-        if(list_empty(semdFree_h.ptr_list.next))
+        if(list_empty(&semdFree_h.ptr_list))
             return 1; //return TRUE
 
         semd_t* smd = &semdFree_h.elem; //prendo il primo semaforo libero
@@ -31,10 +40,14 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         //setto le variabili
         smd->s_key = semAdd;
         INIT_LIST_HEAD(&smd->s_procq);
+        list_add_tail(p, &smd->s_procq);   //inserisco il processo bloccato
         INIT_LIST_HEAD(&smd->s_link);
 
-        list_add_tail(smd, ASL);  //aggiungo il semafoto alla lista di quelli attivi
-        insertBlocked(semAdd, p); //inserisco il processo bloccato
+        asl_PTR newasl = malloc(sizeof(asl_PTR));
+        newasl->elem = (*smd);
+        INIT_LIST_HEAD(&newasl->ptr_list);
+        
+        list_add_tail(newasl, &(*ASL).ptr_list);  //aggiungo il semafoto alla lista di quelli attivi
     }
     return 0; //FALSE
 }
@@ -52,7 +65,17 @@ int insertBlocked(int *semAdd, pcb_t *p) {
     coda dei descrittori liberi (semdFree_h).
 */
 pcb_t* removeBlocked(int *semAdd) {
+    asl_PTR tmp = findASL(semAdd); //trovo il semaforo giusto
 
+    if (tmp != NULL) {
+        pcb_t *val = (*tmp).elem.s_procq.next;  //prendo il primo pcb
+        list_del((*tmp).elem.s_procq.next);
+        if(list_empty(&(*tmp).elem.s_procq)) {  //se la lista dei pcb è vuota libero il semaforo
+
+        }
+        return val;
+    }
+    else return NULL;
 }
 
 
