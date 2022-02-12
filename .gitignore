@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+#machine name
+pandOS
+
 # Object files
 *.o
 *.ko
