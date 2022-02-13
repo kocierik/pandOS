@@ -5,23 +5,10 @@
 #include "pandos_types.h"
 #include "listx.h"
 
-/* Lista dei SEMD liberi o inutilizzati */
-typedef struct semdFree_t {
-    semd_t elem;
-    struct list_head ptr_list;
-} semdFree_t, *semdFree_PTR;
-
-
-/* Lista dei semafori attivi ASL */
-typedef struct asl_t {
-    semd_t elem;
-    struct list_head ptr_list;
-} asl_t, *asl_PTR;
-
 
 /* funzioni di gestione dell'ASL */
 
-asl_PTR findASL(int *semAdd);
+semd_PTR findASL(int *semAdd);
 
 /*
     Viene inserito il PCB puntato da p nella coda dei 
