@@ -17,15 +17,6 @@ void freePcb(pcb_t * p){
 	list_add(&p, &pcbFree_h);
 }
 
-void *my_memset(void *s, int c,  unsigned int len){
-    unsigned char* p=s;
-    while(len--)
-    {
-        *p++ = (unsigned char)c;
-    }
-    return s;
-}
-
 void *my_memset(void *s, int c,  unsigned int len)
 {
     unsigned char* p=s;
