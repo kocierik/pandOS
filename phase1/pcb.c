@@ -6,7 +6,7 @@ pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h;
 
 void initPcbs(void){
-  pcbFree_h = LIST_HEAD_INIT(pcbFree_h);
+  //pcbFree_h = LIST_HEAD_INIT(pcbFree_h);
   for(int i=0; i < MAXPROC; i++){
 		pcb_t* pcb = &pcbFree_table[i];
 		list_add_tail(&pcb->p_list, &pcbFree_h);
@@ -17,8 +17,7 @@ void freePcb(pcb_t * p){
 	list_add(&p, &pcbFree_h);
 }
 
-void *my_memset(void *s, int c,  unsigned int len)
-{
+void *my_memset(void *s, int c,  unsigned int len) {
     unsigned char* p=s;
     while(len--)
     {
@@ -26,6 +25,7 @@ void *my_memset(void *s, int c,  unsigned int len)
     }
     return s;
 }
+
 
 pcb_t *allocPcb(){
 	if(list_empty(&pcbFree_h)) return NULL;
@@ -49,7 +49,7 @@ pcb_t *allocPcb(){
 }
 
 void mkEmptyProcQ(struct list_head *head){
-	head = LIST_HEAD_INIT(head);
+	//head = LIST_HEAD_INIT(head);
 }
 
 int emptyProcQ(struct list_head *head){

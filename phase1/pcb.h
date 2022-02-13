@@ -7,6 +7,9 @@
 
 //funzioni per lista pcbFree
 
+void *my_memset(void *s, int c,  unsigned int len);
+
+
 /*
     Inizializza la lista pcbFree in modo da 
     contenere tutti gli elementi della 
