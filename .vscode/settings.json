@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "types.h": "c",
-        "pandos_const.h": "c",
-        "const.h": "c"
-    }
-}
