@@ -7,14 +7,14 @@ pcb_t pcbFree_table[MAXPROC];
 LIST_HEAD(pcbFree_h);
 
 void initPcbs(void){
-    for(int i=0; i < MAXPROC; i++){
+  for(int i=0; i < MAXPROC; i++){
 		pcb_t* pcb = &pcbFree_table[i];
 		list_add_tail(&pcb->p_list, &pcbFree_h);
 	}
 }
 
 void freePcb(pcb_t *p){
-	list_add(&p->p_list, &pcbFree_h);
+	list_add_tail(&p->p_list, &pcbFree_h);
 }
 
 pcb_t *allocPcb(){
@@ -76,27 +76,36 @@ int emptyChild(pcb_t *p){
     return list_empty(&p->p_child) ? 1 : 0;
 }
 
+//??
 void insertChild(pcb_t *prnt, pcb_t *p){
-    list_add(&p->p_list,&prnt->p_child);
+    list_add_tail(&p->p_list,&prnt->p_child);
+    p->p_parent = prnt;
+    struct list_head *pos;
+    list_for_each(pos,&prnt->p_child){
+        if(list_is_last(pos->next,&prnt->p_child)){
+            pcb_t *last_sib = container_of(&prnt->p_child,pcb_t,p_child);
+            list_add_tail(&p->p_sib,&last_sib->p_sib);
+        }
+    }
 }
-//forse buono
+
 pcb_t* removeChild(pcb_t *p){
     if(list_empty(&p->p_child)) return NULL;
     struct list_head *removedElement = p->p_child.next;
-    list_del(p->p_child.next);
+    //list_del(p->p_child.next);
+    p->p_child.next = p->p_child.next->next;
     return container_of(removedElement,pcb_t,p_child);
 }
 
 pcb_t* outChild(pcb_t *p){
     if(p->p_parent != NULL) {
-        struct list_head* iter;
-        list_for_each(iter,&p->p_parent->p_child) {
-            if(container_of(iter,pcb_t,p_list) == p){
-                //list_del(&p->p_list);
-                list_del(iter);
-                return p;
-            }
-        }
+        //verifichiamo se il figlio è il primo
+        if(p->p_sib.prev == &p->p_sib)
+            removeChild(p->p_parent);
+        //caso in cui in cui il figlio non sia il primo
+        else
+            p->p_sib.prev->next = p->p_sib.next;
+        return p;
     }
     return NULL;
 }
