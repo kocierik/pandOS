@@ -1,7 +1,7 @@
 #include "asl.h"
 
 /* array di SEMD con dimensione massima di MAXPROC */
-semd_PTR semd_table[MAXPROC];
+semd_t semd_table[MAXPROC];
 /* Lista dei SEMD liberi */
 struct list_head semdFree_h;
 /* Active Semaphore List */
@@ -9,26 +9,19 @@ struct list_head ASL_h;
 
 
 semd_PTR findASL(int *semAdd) {
-
     if(list_empty(&ASL_h))
         return NULL;     // se ASL è vuota -> errore
 
-    int found = 0;                          //sem found flag
-    struct list_head *tmp = ASL_h.next;    //assumo che l'head non appartenga a nessun sem
+    struct list_head *tmp;
     semd_PTR sem;
 
     //cerco il semaforo
-    while (!found && tmp != &ASL_h) {
-        sem = container_of(tmp, struct semd_t, s_link);
-
-        if(sem->s_key == semAdd)
-            found = 1;
-        tmp = tmp->next;
+    list_for_each(tmp, &ASL_h) {
+        if(container_of(tmp, semd_t, s_link)->s_key == semAdd)
+            sem = container_of(tmp, semd_t, s_link);
     }
 
-    if(found)
-        return sem;
-    return NULL;
+    return sem;
 }
 
 
@@ -42,7 +35,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         if(list_empty(&semdFree_h))
             return 1; //TRUE
 
-        sem = container_of(semdFree_h.next, struct semd_t, s_link);     // prendo il primo semaforo libero
+        sem = container_of(semdFree_h.next, semd_t, s_link);     // prendo il primo semaforo libero
         list_del(semdFree_h.next);                                      // tolgo il primo semaforo da quelli liberi
         
         // inizializzo le variabili
@@ -123,14 +116,12 @@ pcb_t* headBlocked(int *semAdd) {
 }
 
 
-//copiata dal pcb, obv cambiando le cose giuste
+
 void initASL() {
-    LIST_HEAD(ASL_h);
     LIST_HEAD(semdFree_h);
-    INIT_LIST_HEAD(&ASL_h);
-    INIT_LIST_HEAD(&semdFree_h);
+    LIST_HEAD(ASL_h);
     for(int i=0; i < MAXPROC; i++){
-		semd_t * semd = semd_table[i];
+		semd_t* semd = &semd_table[i];
 		list_add_tail(&semd->s_link, &semdFree_h);
 	}
 }

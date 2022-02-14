@@ -39,7 +39,7 @@ kernel : phase1/asl.o phase1/pcb.o crtso.o libumps.o phase1/p1test.o #
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :
-	-rm -f  *.o ./phase1/*.o kernel kernel.*.umps
+	-rm -f  *.o ./phase1/*.o kernel kernel.*.umps *.umps
 
 # Pattern rule for assembly modules
 %.o : %.S
