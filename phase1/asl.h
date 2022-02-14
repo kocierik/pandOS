@@ -8,7 +8,7 @@
 
 /* funzioni di gestione dell'ASL */
 
-semd_PTR findASL(int semAdd);
+semd_PTR findASL(int * semAdd);
 
 /*
     Viene inserito il PCB puntato da p nella coda dei 

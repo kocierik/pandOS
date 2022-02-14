@@ -35,11 +35,11 @@ all : kernel.core.umps
 kernel.core.umps : kernel
 	umps3-elf2umps -k $<
 
-kernel : phase1/asl.o phase1/pcb.o phase1/p1test.o
+kernel : phase1/asl.o #phase1/pcb.o phase1/p1test.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :
-	-rm -f *.o kernel kernel.*.umps
+	-rm -f ./phase1/*.o kernel kernel.*.umps
 
 # Pattern rule for assembly modules
 %.o : %.S
