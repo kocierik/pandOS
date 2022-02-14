@@ -20,7 +20,7 @@ UMPS3_INCLUDE_DIR = $(UMPS3_DIR_PREFIX)/include
 # Compiler options
 CFLAGS_LANG = -ffreestanding -ansi
 CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -EL -G 0 -mno-abicalls -fno-pic -mfp32
-CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS3_INCLUDE_DIR) -std=c99 -Wall -O0
+CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS3_INCLUDE_DIR) -std=gnu99 -Wall -O0
 
 # Linker options
 LDFLAGS = -G 0 -nostdlib -T $(UMPS3_DATA_DIR)/umpscore.ldscript -m elf32ltsmip
@@ -35,7 +35,7 @@ all : kernel.core.umps
 kernel.core.umps : kernel
 	umps3-elf2umps -k $<
 
-kernel : phase1/asl.o #phase1/pcb.o phase1/p1test.o
+kernel : phase1/asl.o phase1/p1test.o phase1/pcb.o 
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :

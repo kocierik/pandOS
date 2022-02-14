@@ -42,8 +42,8 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         if(list_empty(&semdFree_h))
             return 1; //TRUE
 
-        sem = container_of(semdFree_h.next, struct semd_t, s_link);    // prendo il primo semaforo libero
-        list_del(semdFree_h.next);                              // tolgo il primo semaforo da quelli liberi
+        sem = container_of(semdFree_h.next, struct semd_t, s_link);     // prendo il primo semaforo libero
+        list_del(semdFree_h.next);                                      // tolgo il primo semaforo da quelli liberi
         
         // inizializzo le variabili
         sem->s_key = semAdd;
