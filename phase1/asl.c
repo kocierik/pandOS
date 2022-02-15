@@ -49,7 +49,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         // inizializzo le variabili
         sem->s_key = semAdd;
         p->p_semAdd = semAdd;
-        INIT_LIST_HEAD(&sem->s_procq);
+        INIT_LIST_HEAD(&sem->s_procq);                 //le ho inizializzate tutte e correttamente???? Uso insertProcQ????
         list_add_tail(&p->p_list, &sem->s_procq);               // inserisco il processo bloccato
         list_add_tail(&sem->s_link, &ASL_h);                    // aggiungo il semaforo alla lista di quelli attivi
     }
@@ -62,6 +62,7 @@ pcb_t* removeBlocked(int *semAdd) {
     semd_PTR sem = findASL(semAdd);
     pcb_PTR ret;
 
+    // potrei usare removeProcQ di pcb?????
     if (sem != NULL) {
         ret = container_of(sem->s_procq.next, pcb_t, p_list);   // prendo il primo pcb
         list_del(sem->s_procq.next);
@@ -92,6 +93,7 @@ pcb_t* outBlocked(pcb_t *p) {
     }
     return NULL;
 }
+
 
 
 pcb_t* headBlocked(int *semAdd) {
