@@ -246,13 +246,10 @@ int main(void) {
 
     addokbuf("insertChild, removeChild and emptyChild ok   \n");
     addokbuf("process tree module ok      \n");
-    
-    addokbuf("free pcb      \n");
 
     for (i = 0; i < 10; i++)
         freePcb(procp[i]);
 
-    addokbuf("pcb freed      \n");
     /* check ASL */
     addokbuf("check ASL      \n");
     initASL();
@@ -262,10 +259,8 @@ int main(void) {
     addokbuf("insertBlocked test #1 started  \n");
     for (i = 10; i < MAXPROC; i++) {
         procp[i] = allocPcb();
-        addokbuf("pcb alloc   \n");
         if (insertBlocked(&sem[i], procp[i]))
             adderrbuf("insertBlocked(1): unexpected TRUE   ");
-        addokbuf("inserito correttamente   \n");
     }
     addokbuf("insertBlocked test #2 started  \n");
     for (i = 0; i < 10; i++) {
