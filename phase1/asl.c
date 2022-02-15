@@ -1,5 +1,11 @@
 #include "asl.h"
 
+/* array di SEMD con dimensione massima di MAXPROC */
+semd_t semd_table[MAXPROC];
+/* Lista dei SEMD liberi */
+LIST_HEAD(semdFree_h);
+/* Active Semaphore List */
+LIST_HEAD(ASL_h);
 
 
 semd_PTR findASL(int *semAdd) {
