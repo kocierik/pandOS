@@ -6,9 +6,29 @@
 #include "listx.h"
 
 
+/* array di SEMD con dimensione massima di MAXPROC */
+semd_t semd_table[MAXPROC];
+/* Lista dei SEMD liberi */
+LIST_HEAD(semdFree_h);
+/* Active Semaphore List */
+LIST_HEAD(ASL_h);
+
+
 /* funzioni di gestione dell'ASL */
 
+/*
+    Dato una chiave semAdd ritorna il puntatore del semaforo
+    se è presente nella ASL, altrimenti ritorna NULL.
+*/
 semd_PTR findASL(int * semAdd);
+
+
+/*
+    Se il semaforo non ha piu' pcb bloccati in lista lo elimina
+    dalla lista ASL e lo inserisce in quelli nella lista semdFree.
+*/
+void freeSem(semd_PTR sem);
+
 
 /*
     Viene inserito il PCB puntato da p nella coda dei 

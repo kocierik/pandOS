@@ -1,11 +1,5 @@
 #include "asl.h"
 
-/* array di SEMD con dimensione massima di MAXPROC */
-semd_t semd_table[MAXPROC];
-/* Lista dei SEMD liberi */
-LIST_HEAD(semdFree_h);
-/* Active Semaphore List */
-LIST_HEAD(ASL_h);
 
 
 semd_PTR findASL(int *semAdd) {
@@ -25,6 +19,17 @@ semd_PTR findASL(int *semAdd) {
         return sem;
     return NULL;
 }
+
+
+
+void freeSem(semd_PTR sem) {
+    // se la lista dei pcb è vuota libero il semaforo
+    if(list_empty(&sem->s_procq)) {
+        list_del(&sem->s_link);
+        list_add_tail(&sem->s_link, &semdFree_h);
+    }
+}
+
 
 
 int insertBlocked(int *semAdd, pcb_t *p) {
@@ -59,10 +64,7 @@ pcb_t* removeBlocked(int *semAdd) {
     if (sem != NULL) {
         ret = container_of(sem->s_procq.next, pcb_t, p_list);   // prendo il primo pcb
         list_del(sem->s_procq.next);
-        if(list_empty(&sem->s_procq)) {                         // se la lista dei pcb è vuota libero il semaforo
-            list_del(&sem->s_link);
-            list_add_tail(&sem->s_link, &semdFree_h);
-        }
+        freeSem(sem);
         return ret;
     }
     return NULL;
@@ -78,6 +80,7 @@ pcb_t* outBlocked(pcb_t *p) {
         pcb_PTR pList = NULL;
         struct list_head * ptmp = sem->s_procq.next;
 
+        // cerco il pcb
         while(!found && ptmp != &sem->s_procq) {
             pList = container_of(ptmp, pcb_t, p_list);
             if(p == pList)
@@ -88,10 +91,7 @@ pcb_t* outBlocked(pcb_t *p) {
 
         if(found) {
             list_del(ptmp);
-            if(list_empty(&sem->s_procq)) {                     // se la lista dei pcb è vuota libero il semaforo
-                list_del(&sem->s_link);
-                list_add_tail(&sem->s_link, &semdFree_h);
-            }
+            freeSem(sem);
             return p;
         }
     }
