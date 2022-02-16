@@ -19,8 +19,9 @@ semd_PTR findASL(int * semAdd);
 /*
     Se il semaforo non ha piu' pcb bloccati in lista lo elimina
     dalla lista ASL e lo inserisce in quelli nella lista semdFree.
+    Ritorna TRUE va a buon fine, altrimenti FALSE.
 */
-void freeSem(semd_PTR sem);
+int isSemdFree(semd_PTR sem);
 
 
 /*

@@ -53,6 +53,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
 .vscode
 kernel
 kernel.core.umps
