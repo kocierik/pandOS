@@ -54,3 +54,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 .vscode
+kernel
+kernel.core.umps
+kernel.stab.umps
