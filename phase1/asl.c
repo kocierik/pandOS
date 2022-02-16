@@ -9,7 +9,7 @@ LIST_HEAD(ASL_h);
 
 
 semd_PTR findASL(int *semAdd) {
-    semd_PTR sem = NULL;
+    semd_PTR sem;
     struct list_head *pos;
 
     //cerco il semaforo
@@ -27,6 +27,7 @@ void freeSem(semd_PTR sem) {
     // se la lista dei pcb e' vuota libero il semaforo
     if(list_empty(&sem->s_procq)) {
         list_del(&sem->s_link);
+        sem->s_key = NULL;
         list_add_tail(&sem->s_link, &semdFree_h);
     }
 }
@@ -34,11 +35,11 @@ void freeSem(semd_PTR sem) {
 
 
 int insertBlocked(int *semAdd, pcb_t *p) {
-    semd_PTR sem, tmp = findASL(semAdd);
+    semd_PTR sem = findASL(semAdd);
 
     //se trovato aggiungo alla coda dei processi bloccati p
-    if(tmp != NULL)
-        list_add_tail(&p->p_list, &tmp->s_procq);
+    if(sem != NULL)
+        insertProcQ(&sem->s_procq, p);
     else {
         if(list_empty(&semdFree_h))
             return 1;                                           // se non ci sono semafori liberi ritorna TRUE
@@ -47,10 +48,10 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         list_del(&sem->s_link);                                 // tolgo il primo semaforo da quelli liberi
         
         // inizializzo le variabili
-        sem->s_key = semAdd;
+        sem->s_key  = semAdd;
         p->p_semAdd = semAdd;
-        INIT_LIST_HEAD(&sem->s_procq);                 //le ho inizializzate tutte e correttamente???? Uso insertProcQ????
-        list_add_tail(&p->p_list, &sem->s_procq);               // inserisco il processo bloccato
+        INIT_LIST_HEAD(&sem->s_procq);
+        insertProcQ(&sem->s_procq, p);                          // inserisco il processo bloccato
         list_add_tail(&sem->s_link, &ASL_h);                    // aggiungo il semaforo alla lista di quelli attivi
     }
     return 0; //FALSE
@@ -62,18 +63,22 @@ pcb_t* removeBlocked(int *semAdd) {
     semd_PTR sem = findASL(semAdd);
     pcb_PTR ret;
 
-    // potrei usare removeProcQ di pcb?????
     if (sem != NULL) {
+        if(list_empty(&sem->s_procq)){
+            freeSem(sem);
+            return NULL;
+        }
         ret = container_of(sem->s_procq.next, pcb_t, p_list);   // prendo il primo pcb
         list_del(sem->s_procq.next);
         freeSem(sem);
+        ret->p_semAdd = NULL;
         return ret;
     }
     return NULL;
 }
 
 
-
+/*
 pcb_t* outBlocked(pcb_t *p) {
     semd_PTR sem = findASL(p->p_semAdd);
     
@@ -81,6 +86,7 @@ pcb_t* outBlocked(pcb_t *p) {
         pcb_PTR pList;
         struct list_head *pos;
 
+        p->p_semAdd = NULL;
         // cerco il pcb
         list_for_each(pos, &sem->s_procq){
             pList = container_of(pos, pcb_t, p_list);
@@ -93,15 +99,44 @@ pcb_t* outBlocked(pcb_t *p) {
     }
     return NULL;
 }
+*/
+pcb_t* outBlocked(pcb_t *p) {
+    if(p->p_semAdd != NULL){
+        semd_PTR sem = findASL(p->p_semAdd);
+        
+        if(sem != NULL){
+            if(sem->s_procq.next == &p->p_list)
+                return removeBlocked(p->p_semAdd);
+            
+            pcb_PTR pList;
+            struct list_head *pos;
+
+            p->p_semAdd = NULL;
+
+            list_for_each(pos, &sem->s_procq){
+                pList = container_of(pos, pcb_t, p_list);
+                if(p == pList){
+                    list_del(&p->p_list);
+                    freeSem(sem);
+                    return p;
+                }
+            }
+        }
+    }
+    return NULL;
+}
 
 
 
 pcb_t* headBlocked(int *semAdd) {
     semd_PTR sem = findASL(semAdd);
     
-    if(sem != NULL && !list_empty(&sem->s_procq))
-        return container_of(sem->s_procq.next, pcb_t, p_list);
-
+    if(sem != NULL){
+        if(!list_empty(&sem->s_procq))
+            return container_of(sem->s_procq.next, pcb_t, p_list);
+        else
+            freeSem(sem);
+    }
     return NULL;
 }
 
