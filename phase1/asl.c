@@ -1,8 +1,8 @@
 #include "asl.h"
 
-semd_t semd_table[MAXPROC];     /* SEMD array with maximum size 'MAXPROC' */
-LIST_HEAD(semdFree_h);          /* List of free SEMD */
-LIST_HEAD(ASL_h);               /* Active Semaphore List */
+static semd_t semd_table[MAXPROC];     /* SEMD array with maximum size 'MAXPROC' */
+static LIST_HEAD(semdFree_h);          /* List of free SEMD */
+static LIST_HEAD(ASL_h);               /* Active Semaphore List */
 
 
 semd_PTR findASL(int *semAdd) {
