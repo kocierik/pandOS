@@ -58,3 +58,5 @@ dkms.conf
 kernel
 kernel.core.umps
 kernel.stab.umps
+term0.umps
+TESTumps

@@ -24,9 +24,9 @@ int isSemdFree(semd_PTR sem) {
     if(list_empty(&sem->s_procq)) {
         list_del(&sem->s_link);
         list_add_tail(&sem->s_link, &semdFree_h);
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 
@@ -39,7 +39,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         insertProcQ(&sem->s_procq, p);
     } else {
         if(list_empty(&semdFree_h))
-            return 1;                                           // If there are no free Semaphore return TRUE
+            return TRUE;                                           // If there are no free Semaphore return TRUE
 
         sem = container_of(semdFree_h.next, semd_t, s_link);    // Take the first free Semaphore
         list_del(&sem->s_link);                                 // Remove the first Semaphore from the free ones
@@ -51,7 +51,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         insertProcQ(&sem->s_procq, p);                          // Insert blocked process
         list_add_tail(&sem->s_link, &ASL_h);                    // Add Semaphore to the active ones list
     }
-    return 0; //FALSE
+    return FALSE;
 }
 
 

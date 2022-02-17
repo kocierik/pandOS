@@ -39,7 +39,7 @@ void mkEmptyProcQ(struct list_head *head){
 }
 
 int emptyProcQ(struct list_head *head){
-	return list_empty(head) ? 1 : 0;
+	return list_empty(head) ? TRUE : FALSE;
 }
 
 void insertProcQ(struct list_head* head, pcb_t* p){
@@ -71,7 +71,7 @@ pcb_t* outProcQ(struct list_head* head, pcb_t* p){
 // PCB's trees function
 
 int emptyChild(pcb_t *p){
-    return list_empty(&p->p_child) ? 1 : 0;
+    return list_empty(&p->p_child) ? TRUE : FALSE;
 }
 
 void insertChild(pcb_t *prnt, pcb_t *p){
