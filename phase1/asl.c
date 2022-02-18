@@ -28,8 +28,9 @@ static semd_PTR findASL(int *semAdd) {
     Return TRUE if the Semaphore is freed, else FALSE.
 */
 static int isSemdFree(semd_PTR sem) {
-    if(list_empty(&sem->s_procq)) {     /* Free the Semaphore if pcb's list is empty */
+    if(list_empty(&sem->s_procq)) {
         list_del(&sem->s_link);
+        sem->s_key = NULL;
         list_add_tail(&sem->s_link, &semdFree_h);
         return TRUE;
     }
@@ -40,7 +41,7 @@ static int isSemdFree(semd_PTR sem) {
 int insertBlocked(int *semAdd, pcb_t *p) {
     semd_PTR sem = findASL(semAdd);
 
-    if(sem != NULL){                                          /*If p found add p to blocked process queue   */
+    if(sem != NULL) {                                         /*If p found add p to blocked process queue   */
         p->p_semAdd = semAdd;
         insertProcQ(&sem->s_procq, p);
     } else {
@@ -53,6 +54,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         /* Initialize variables */
         p->p_semAdd = semAdd;
         sem->s_key  = semAdd;
+        *sem->s_key = 0;
         INIT_LIST_HEAD(&sem->s_procq);
         insertProcQ(&sem->s_procq, p);                         /* Insert blocked process                    */
         list_add_tail(&sem->s_link, &ASL_h);                   /* Add Semaphore to the active ones list     */
@@ -81,12 +83,11 @@ pcb_t* outBlocked(pcb_t *p) {
     pcb_PTR pList;
     struct list_head *pos;
 
-    if(p->p_semAdd != NULL && (sem = findASL(p->p_semAdd)) != NULL){
-        p->p_semAdd = NULL;
-
-        list_for_each(pos, &sem->s_procq){              /* Looking for a blocked pcb */
+    if(p->p_semAdd != NULL && (sem = findASL(p->p_semAdd)) != NULL) {
+        list_for_each(pos, &sem->s_procq) {                           /* Looking for a blocked pcb */
             pList = container_of(pos, pcb_t, p_list);
-            if(p == pList){
+            if(p == pList) {
+                p->p_semAdd = NULL;
                 list_del(&p->p_list);
                 isSemdFree(sem);
                 return p;
@@ -108,7 +109,7 @@ pcb_t* headBlocked(int *semAdd) {
 
 
 void initASL() {
-    for(int i=0; i < MAXPROC; i++){
+    for(int i=0; i < MAXPROC; i++) {
 		semd_t* semd = &semd_table[i];
 		list_add_tail(&semd->s_link, &semdFree_h);
 	}
