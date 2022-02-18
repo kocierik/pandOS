@@ -1,16 +1,19 @@
 #include "asl.h"
 
 static semd_t semd_table[MAXPROC];     /* SEMD array with maximum size 'MAXPROC' */
-static LIST_HEAD(semdFree_h);          /* List of free SEMD */
-static LIST_HEAD(ASL_h);               /* Active Semaphore List */
+static LIST_HEAD(semdFree_h);          /* List of free SEMD                      */
+static LIST_HEAD(ASL_h);               /* Active Semaphore List                  */
 
 
-semd_PTR findASL(int *semAdd) {
+/*
+    Given a semAdd key, return the pointer to the Semaphore
+    with that key if present in ASL, else return NULL
+*/
+static semd_PTR findASL(int *semAdd) {
     semd_PTR sem;
     struct list_head *pos;
 
-    // Looking for Semaphore
-    list_for_each(pos,&ASL_h){
+    list_for_each(pos,&ASL_h) {                     /* Looking for Semaphore */
         sem = container_of(pos, semd_t, s_link);
         if(sem->s_key == semAdd)
             return sem;
@@ -19,9 +22,13 @@ semd_PTR findASL(int *semAdd) {
 }
 
 
-int isSemdFree(semd_PTR sem) {
-    // Free the Semaphore if pcb's list is empty
-    if(list_empty(&sem->s_procq)) {
+/*
+    Delete the Semaphore from ASL if it has no pcb blocked anymore
+    and insert the Semaphore in semdFree list.
+    Return TRUE if the Semaphore is freed, else FALSE.
+*/
+static int isSemdFree(semd_PTR sem) {
+    if(list_empty(&sem->s_procq)) {     /* Free the Semaphore if pcb's list is empty */
         list_del(&sem->s_link);
         list_add_tail(&sem->s_link, &semdFree_h);
         return TRUE;
@@ -33,23 +40,22 @@ int isSemdFree(semd_PTR sem) {
 int insertBlocked(int *semAdd, pcb_t *p) {
     semd_PTR sem = findASL(semAdd);
 
-    // If p found add p to blocked process queue
-    if(sem != NULL){
+    if(sem != NULL){                                          /*If p found add p to blocked process queue   */
         p->p_semAdd = semAdd;
         insertProcQ(&sem->s_procq, p);
     } else {
         if(list_empty(&semdFree_h))
-            return TRUE;                                           // If there are no free Semaphore return TRUE
+            return TRUE;                                      /* If there are no free Semaphore return TRUE */
 
-        sem = container_of(semdFree_h.next, semd_t, s_link);    // Take the first free Semaphore
-        list_del(&sem->s_link);                                 // Remove the first Semaphore from the free ones
+        sem = container_of(semdFree_h.next, semd_t, s_link);  /* Get the first free Semaphore               */
+        list_del(&sem->s_link);                               /* Remove the first Semaphore from semdFree   */
         
-        // initialize variables
+        /* Initialize variables */
         p->p_semAdd = semAdd;
         sem->s_key  = semAdd;
         INIT_LIST_HEAD(&sem->s_procq);
-        insertProcQ(&sem->s_procq, p);                          // Insert blocked process
-        list_add_tail(&sem->s_link, &ASL_h);                    // Add Semaphore to the active ones list
+        insertProcQ(&sem->s_procq, p);                         /* Insert blocked process                    */
+        list_add_tail(&sem->s_link, &ASL_h);                   /* Add Semaphore to the active ones list     */
     }
     return FALSE;
 }
@@ -60,7 +66,7 @@ pcb_t* removeBlocked(int *semAdd) {
     pcb_PTR ret;
 
     if (sem != NULL && !isSemdFree(sem)) {
-        ret = container_of(sem->s_procq.next, pcb_t, p_list);   // Take the first PCB
+        ret = container_of(sem->s_procq.next, pcb_t, p_list);  /* Get the first PCB */
         list_del(sem->s_procq.next);
         ret->p_semAdd = NULL;
         isSemdFree(sem);
@@ -78,7 +84,7 @@ pcb_t* outBlocked(pcb_t *p) {
     if(p->p_semAdd != NULL && (sem = findASL(p->p_semAdd)) != NULL){
         p->p_semAdd = NULL;
 
-        list_for_each(pos, &sem->s_procq){
+        list_for_each(pos, &sem->s_procq){              /* Looking for a blocked pcb */
             pList = container_of(pos, pcb_t, p_list);
             if(p == pList){
                 list_del(&p->p_list);

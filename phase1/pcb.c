@@ -13,7 +13,6 @@ void initPcbs() {
 
 
 void freePcb(pcb_t *p) {
-    list_del(&p->p_list);
 	list_add_tail(&p->p_list, &pcbFree_h);
 }
 
@@ -22,28 +21,28 @@ pcb_t *allocPcb() {
 	if(list_empty(&pcbFree_h))
         return NULL;
 	else {
-		pcb_t *removedElement = container_of(pcbFree_h.next, pcb_t, p_list);
-        list_del(pcbFree_h.next);
+		pcb_t* newElem = container_of(pcbFree_h.next, pcb_t, p_list);   /* Getting first element of pcbFree  */
+        list_del(pcbFree_h.next);                                       /* Delete first element from pcbFree */
+        
+		INIT_LIST_HEAD(&newElem->p_list);                               /* Initialize variables              */
+		newElem->p_parent = NULL;
+		INIT_LIST_HEAD(&newElem->p_child);
+		INIT_LIST_HEAD(&newElem->p_sib);
+		newElem->p_time = 0;
+		newElem->p_semAdd = NULL;
 
-		INIT_LIST_HEAD(&removedElement->p_list);
-		removedElement->p_parent = NULL;
-		INIT_LIST_HEAD(&removedElement->p_child);
-		INIT_LIST_HEAD(&removedElement->p_sib);
-
-		removedElement->p_time = 0;
-		removedElement->p_semAdd = NULL;
-
-		return removedElement;
+		return newElem;
 	}
 }
 
 
 void mkEmptyProcQ(struct list_head *head) {
-	INIT_LIST_HEAD(head);
+    INIT_LIST_HEAD(head);
 }
 
-int emptyProcQ(struct list_head *head){
-	return list_empty(head) ? TRUE : FALSE;
+
+int emptyProcQ(struct list_head *head) {
+	return list_empty(head);
 }
 
 
@@ -78,37 +77,25 @@ pcb_t* outProcQ(struct list_head* head, pcb_t* p) {
 }
 
 
-int emptyChild(pcb_t *p){
-    return list_empty(&p->p_child) ? TRUE : FALSE;
+int emptyChild(pcb_t *p) {
+    return list_empty(&p->p_child);
 }
 
 
 void insertChild(pcb_t *prnt, pcb_t *p) {
-    // Add p to prnt children list
-    list_add_tail(&p->p_list, &prnt->p_child);
-
-    // prnt is the parent of p
-    p->p_parent = prnt;
-
-    // Add p to p_sib list that starts from prnt's first child
-    pcb_t *firstChild = container_of(prnt->p_child.next, pcb_t, p_child);
-    
-    list_add_tail(&p->p_sib, &firstChild->p_sib);
+    list_add_tail(&p->p_sib, &prnt->p_child);   /* Add p to prnt children list and sib list */
+    p->p_parent = prnt;                         /* prnt is the parent of p                  */
 }
 
 
 pcb_t* removeChild(pcb_t *p) {
     if(list_empty(&p->p_child))
         return NULL;
-    struct pcb_t *firstChild = container_of(p->p_child.next, pcb_t, p_child);
-    // Remove firstChild from p_sib list
-    list_del(&firstChild->p_sib);
+    pcb_t *firstChild = container_of(p->p_child.next, pcb_t, p_sib);
 
-    // Remove p's first child from p_child list
-    list_del(p->p_child.next);
-
-    // FirstChild as no parent anymore
-    firstChild->p_parent = NULL;
+    list_del(p->p_child.next);          /* Remove p's first child from p_child list and p_sib list */
+    INIT_LIST_HEAD(&firstChild->p_sib); /* Initialize firstChild p_sib list as a empty list        */
+    firstChild->p_parent = NULL;        /* FirstChild as no parent anymore                         */
 
     return firstChild;
 }
@@ -117,18 +104,11 @@ pcb_t* removeChild(pcb_t *p) {
 pcb_t* outChild(pcb_t *p) {
     pcb_t* prnt = p->p_parent;
     if(prnt != NULL) {
-        // Case if p prnt's first child
-        if(p->p_sib.prev == &p->p_sib)
-            return removeChild(prnt);
-
-        // Remove p from p_child list
-        list_del(&p->p_list);
-
-        // Remove p from p_sib list
-        list_del(&p->p_sib);
-
-        // p as no parent anymore
-        p->p_parent = NULL;
+        
+        list_del(&p->p_sib);       /* Remove p from p_child list and initialize */
+        INIT_LIST_HEAD(&p->p_sib); /* firstChild p_sib list as a empty list     */
+        
+        p->p_parent = NULL;        /* p as no parent anymore                    */
 
         return p;
     }

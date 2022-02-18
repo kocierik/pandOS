@@ -7,9 +7,6 @@
 
 //funzioni per lista pcbFree
 
-void *my_memset(void *s, int c,  unsigned int len);
-
-
 /*
     Inizializza la lista pcbFree in modo da 
     contenere tutti gli elementi della 
@@ -76,7 +73,6 @@ pcb_t* outProcQ(struct list_head* head, pcb_t* p);
 
 
 //funzioni per alberi pcb
-
 
 /*
     Restituisce TRUE se il PCB puntato da p 
