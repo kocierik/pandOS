@@ -5,7 +5,9 @@
 #include "pandos_types.h"
 #include "listx.h"
 
-//funzioni per lista pcbFree
+
+/* pcbFree list's functions */
+
 
 /*
     Inizializza la lista pcbFree in modo da 
@@ -33,15 +35,15 @@ void freePcb(pcb_t *p);
 pcb_t *allocPcb();
 
 
-//Crea una lista di PCB, inizializzandola come lista vuota
+/* Crea una lista di PCB, inizializzandola come lista vuota */
 void mkEmptyProcQ(struct list_head *head);
 
 
-// Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti.
+/* Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti. */
 int emptyProcQ(struct list_head *head);
 
 
-// Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
+/* Inserisce l’elemento puntato da p nella coda dei processi puntata da head. */
 void insertProcQ(struct list_head* head, pcb_t* p);
 
 
@@ -72,7 +74,8 @@ pcb_t* removeProcQ(struct list_head* head);
 pcb_t* outProcQ(struct list_head* head, pcb_t* p);
 
 
-//funzioni per alberi pcb
+/* Pcb tree's functions */
+
 
 /*
     Restituisce TRUE se il PCB puntato da p 
@@ -108,5 +111,6 @@ pcb_t* removeChild(pcb_t *p);
     padre).
 */
 pcb_t* outChild(pcb_t *p);
+
 
 #endif

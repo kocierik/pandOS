@@ -7,7 +7,7 @@
 #include "pcb.h"
 
 
-/* funzioni di gestione della ASL */
+/* ASL's functions */
 
 
 /*

@@ -30,7 +30,6 @@ static semd_PTR findASL(int *semAdd) {
 static int isSemdFree(semd_PTR sem) {
     if(list_empty(&sem->s_procq)) {
         list_del(&sem->s_link);
-        sem->s_key = NULL;
         list_add_tail(&sem->s_link, &semdFree_h);
         return TRUE;
     }
@@ -54,7 +53,6 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         /* Initialize variables */
         p->p_semAdd = semAdd;
         sem->s_key  = semAdd;
-        *sem->s_key = 0;
         INIT_LIST_HEAD(&sem->s_procq);
         insertProcQ(&sem->s_procq, p);                         /* Insert blocked process                    */
         list_add_tail(&sem->s_link, &ASL_h);                   /* Add Semaphore to the active ones list     */
