@@ -1,4 +1,4 @@
-#include "pcb.h"
+#include "headers/pcb.h"
 
 static pcb_t pcbFree_table[MAXPROC];    /* PCB array with maximum size 'MAXPROC' */
 static LIST_HEAD(pcbFree_h);            /* List of free PCBs                     */
