@@ -3,7 +3,8 @@
 
 #machine name
 pandOS
-
+nuovoPanda
+panda
 # Object files
 *.o
 *.ko
