@@ -12,8 +12,8 @@
  *      Modified by Michael Goldweber on May 15, 2004
  */
 
-#include "headers/pandos_const.h"
-#include "headers/pandos_types.h"
+#include "../generic_headers/pandos_const.h"
+#include "../generic_headers/pandos_types.h"
 
 #include <umps/libumps.h>
 #include "headers/pcb.h"
