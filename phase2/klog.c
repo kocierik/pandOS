@@ -48,7 +48,7 @@ void klog_print_hex(unsigned int num) {
 
 
 // Move onto the next character (and into the next line if the current one overflows)
-static void     next_char(void) {
+static void next_char(void) {
     if (++klog_char_index >= KLOG_LINE_SIZE) {
         klog_char_index = 0;
         next_line();

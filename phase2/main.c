@@ -52,5 +52,9 @@ int main(int argc, int* argv[]){
     vector->exception_stackPtr = KERNELSTACK;
     klog_print("pass up vector inizializzato...");
 
+    //TODO
+    //Scheduling dei processi
+    //Gestione delle eccezioni
+
     return 0;
 }
