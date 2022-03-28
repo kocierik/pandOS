@@ -31,10 +31,11 @@ pcb_t *allocPcb() {
 		newElem->p_time = 0;
 		newElem->p_semAdd = NULL;
 
+        newElem->p_supportStruct = NULL;
+
 		return newElem;
 	}
 }
-
 
 void mkEmptyProcQ(struct list_head *head) {
     INIT_LIST_HEAD(head);
