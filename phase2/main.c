@@ -8,16 +8,17 @@
 #include "klog.c"
 
 /* Variabili Globali */
-int active_proc;                        //Processi iniziati e non ancora terminati: attivi
-int blocked_proc;                       //Processi 'blocked': in attesa di I/O oppure timer.
-static LIST_HEAD(ready_proc);           //Coda dei processi ready
-pcb_t *curr_active_proc;                //Puntatore processo in stato "running" (attivo)
-short semDev[MAXSEM];             //NON SO DI QUANTO FARLO LUNGO HELP
+int active_proc;                //Processi iniziati e non ancora terminati: attivi
+int blocked_proc;               //Processi 'blocked': in attesa di I/O oppure timer.
+struct list_head *ready_proc;   //Coda dei processi ready
+pcb_t *curr_active_proc;        //Puntatore processo in stato "running" (attivo)
+short semDev[MAXSEM];           //Semafori associati ai device
 
 
 void initGlobalVar() {
     active_proc  = 0;
     blocked_proc = 0;
+    mkEmptyProcQ(ready_proc);
     curr_active_proc = NULL;
     for (int i = 0; i < MAXSEM; ++i) {
         semDev[i] = 0;
@@ -26,7 +27,6 @@ void initGlobalVar() {
 
 
 void initPassUpVector(passupvector_t *vector) {
-    vector = (passupvector_t *) PASSUPVECTOR;  
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
     vector->exception_handler = (memaddr) (PASSUPVECTOR + KUPBITON); //Basato su Table pag 89 pops but non sicuro
@@ -45,7 +45,7 @@ int main(int argc, int* argv[]){
 
     
     /* Pass Up Vector */
-    passupvector_t *vector;
+    passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
     LDIT(100); //imposto l'inteval timer a 100 ms
@@ -60,7 +60,7 @@ int main(int argc, int* argv[]){
 
     //alloc low priority process
     pcb_PTR firstProc = allocPcb();
-    insertProcQ(&ready_proc, firstProc);
+    insertProcQ(ready_proc, firstProc);
     ++active_proc;
 
 
@@ -69,8 +69,6 @@ int main(int argc, int* argv[]){
     the processor Local Timer enabled, kernel-mode on, the
     SP set to RAMTOP (i.e. use the last RAM frame for its stack), and
     its PC set to the address of test
-
-    firstProc->p_s.
     */
 
     //scheduler();
