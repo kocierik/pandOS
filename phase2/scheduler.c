@@ -2,6 +2,7 @@
 
 
 void scheduler() {
+
     /*
     If the queue of high priority processes is not empty:
        1. Remove the pcb from the head of the high priority Ready Queue

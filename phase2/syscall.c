@@ -1,8 +1,7 @@
 #include "headers/syscall.h"
-
+#define genopuzza 999999999999
 
 void SYSCALL();
-
 
 void createProcess();
 

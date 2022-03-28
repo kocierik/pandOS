@@ -3,27 +3,20 @@
 #include "../phase1/headers/listx.h"
 #include "../generic_headers/pandos_const.h"
 #include "../generic_headers/pandos_types.h"
-#include "headers/scheduler.h"
-#include "p2test.c"
-#include "klog.c"
 
-// Dichiarazione della funzione di test contenuta in p2test.c
+// Dichiarazione delle funzioni esterne
 extern void test();
+extern void exceptionHandling();
+extern void scheduler();
+extern void uTLB_RefillHandler();
+
 /* Variabili Globali */
-int active_proc;                        //Processi iniziati e non ancora terminati: attivi || Process Count
-int blocked_proc;                       //Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
-struct list_head *ready_queue;          //Coda dei processi ready || Ready-Queue
-pcb_t *curr_active_proc;                //Puntatore processo in stato "running" (attivo) || Current Process
-short semDev[5];                        //Direi di farlo lungo 5 dato che nella guida c'è scritto: || Device Semaphores
-/*
-The Nucleus maintains one integer semaphore
-for each external (sub)device in µMPS3, plus one additional semaphore
-to support the Pseudo-clock.
-Since terminal devices are actually two independent sub-devices,
-the Nucleus maintains two semaphores for each terminal device.
-Dunque sono 2 semafori per ogni terminal device (2) quindi 4 più il semaforo degli pseudo-clock = 5.
-Fatemi sapere se vi quadra
-*/
+int active_proc;                    //Processi iniziati e non ancora terminati: attivi || Process Count
+int blocked_proc;                   //Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
+struct list_head *ready_queue;      //Coda dei processi ready || Ready-Queue
+pcb_t *curr_active_proc;            //Puntatore processo in stato "running" (attivo) || Current Process
+short semDev[5];                    //Direi di farlo lungo 5 dato che nella guida c'è scritto: || Device Semaphores
+
 
 void initGlobalVar() {
     active_proc  = 0;
@@ -39,62 +32,45 @@ void initGlobalVar() {
 void initPassUpVector(passupvector_t *vector) {
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
-    //TODO la seguente assegnazione è sbagliata. Va assegnato alla funzione di gestione delle eccezzioni(da creare)
-    vector->exception_handler = (memaddr) (PASSUPVECTOR + KUPBITON);
+    vector->exception_handler = (memaddr) (exceptionHandling);
     vector->exception_stackPtr = KERNELSTACK;
 }
 
 
 int main(int argc, int* argv[]){
 
-    //Inizializzazione fase 1
-    initPcbs();
-    initASL();
-
     //Inizializzare le variabili dichiarate precedentemente
     initGlobalVar();
 
+    //Inizializzazione fase 1
+    initPcbs();
+    initASL();
     
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
-    LDIT(100); //imposto l'inteval timer a 100 ms
+    LDIT(100000); //imposto l'interval timer a 100 ms
 
 
     //Alloc low priority process
     pcb_PTR firstProc = allocPcb();
+
     insertProcQ(ready_queue, firstProc);
-    firstProc->p_prio = 0; // Setto priorità bassa
-
-    firstProc->p_s.cause = 0;
-
-    // Inizializzazione processo
-    firstProc->p_parent = NULL;
-    firstProc->p_child.next = NULL; //Settare direttamente p_child a NULL generava errori
-    firstProc->p_child.prev = NULL; 
-    firstProc->p_sib.next = NULL; //Stesso discorso di sopra
-    firstProc->p_sib.prev = NULL;
-    
-    firstProc->p_time = 0;
-    firstProc->p_semAdd = NULL;
-    firstProc->p_supportStruct = NULL;
-
     ++active_proc; 
 
-    //TODO
-    /*
-    Nella fase di inizializzazione manca da fare ciò che è scritto qua.
-    Purtroppo non ho ancora capito come metterci mano.
-    Comunque sappiate che firstProc->p_s.Parametri_di_Ps funziona correttamente
-    anche se visual studio non ve lo suggerisce (o almeno a me.)
+    // Inizializzazione processo
+    firstProc->p_prio = PROCESS_PRIO_LOW; // Setto priorità bassa
 
-    */
-
-
-
-
-
+    //Status Interrupt Mask, Local Timer, Kernel Mode
+    firstProc->p_s.status = ALLOFF | IEPON | TEBITON | IMON;
+    RAMTOP(firstProc->p_s.reg_sp);
+    firstProc->p_s.reg_t9 = (memaddr) test;
+    firstProc->p_s.pc_epc = (memaddr) test;
+    
+    STST(&firstProc->p_s);  
+    
+    scheduler();
 
     return 0;
 }
