@@ -15,7 +15,7 @@ else
 endif
 
 UMPS3_DATA_DIR = $(UMPS3_DIR_PREFIX)/share/umps3
-UMPS3_INCLUDE_DIR = $(UMPS3_DIR_PREFIX)/include/
+UMPS3_INCLUDE_DIR = $(UMPS3_DIR_PREFIX)/include/umps3
 
 # Compiler options
 CFLAGS_LANG = -ffreestanding -ansi
@@ -39,7 +39,7 @@ kernel : phase1/asl.o phase1/pcb.o crtso.o libumps.o phase2/main.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :
-	-rm -f  *.o ./phase1/*.o kernel kernel.*.umps *.umps
+	-rm -f  *.o ./phase1/*.o ./phase2/*.o kernel kernel.*.umps *.umps
 
 # Pattern rule for assembly modules
 %.o : %.S

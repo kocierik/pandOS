@@ -17,7 +17,7 @@
 
 #include "../generic_headers/pandos_const.h"
 #include "../generic_headers/pandos_types.h"
-#include <umps3/umps/libumps.h>
+#include <umps/libumps.h>
 
 typedef unsigned int devregtr;
 

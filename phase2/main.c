@@ -6,7 +6,7 @@
 #include "p2test.c"
 #include "klog.c"
 
-
+/* Variabili Globali */
 int active_proc;                        //Processi iniziati e non ancora terminati: attivi
 int blocked_proc;                       //Processi 'blocked': in attesa di I/O oppure timer.
 static LIST_HEAD(ready_proc);           //Coda dei processi ready
