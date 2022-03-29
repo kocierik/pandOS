@@ -1,5 +1,7 @@
 #include "headers/scheduler.h"
-
+#include "main.c"
+#include "pcb.h"
+#include "libumps.h"
 
 void scheduler() {
      
