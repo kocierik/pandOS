@@ -1,33 +1,51 @@
 #include "headers/syscall.h"
-#define genopuzza 999999999999
-
-void SYSCALL();
-
-void createProcess();
 
 
-void terminateProcess();
+void createProcess() {
+
+}
 
 
-void passeren();
+void terminateProcess() {
+
+}
 
 
-void verhogen();
+void passeren() {
+
+}
 
 
-void doIOdevice();
+void verhogen() {
+
+}
 
 
-void getCpuTime();
+void doIOdevice() {
+
+}
 
 
-void waitForClock();
+void getCpuTime() {
+
+}
 
 
-void getSupportData();
+void waitForClock() {
+
+}
 
 
-void getIDprocess();
+void getSupportData() {
+
+}
 
 
-void yeild();
+void getIDprocess() {
+
+}
+
+
+void yeild() {
+    
+}
