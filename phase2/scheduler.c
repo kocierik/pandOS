@@ -1,21 +1,52 @@
 #include "headers/scheduler.h"
-#include "main.c"
-#include "pcb.h"
-#include "libumps.h"
+
+#define SEMDEVLEN 49
+
+extern int activeProc;
+extern int blockedProc;
+extern struct list_head queueLowProc;
+extern struct list_head queueHighProc;
+extern pcb_t *currentActiveProc;
+extern short semDevice[SEMDEVLEN];
+
 
 void scheduler() {
-     
-    /*
-    If the queue of high priority processes is not empty:
-       1. Remove the pcb from the head of the high priority Ready Queue
-            and store the pointer to the pcb in the Current Process field.
-       2. Perform a Load Processor State (LDST) on the processor state
-            stored in pcb of the Current Process (p s).
-    otherwise
-       1. Remove the pcb from the head of the low priority Ready Queue
-            and store the pointer to the pcb in the Current Process field.
-       2. Load 5 milliseconds on the PLT. [Section 4.1.4-pops]
-       3. Perform a Load Processor State (LDST) on the processor state
-            stored in pcb of the Current Process (p s).
-    */
+    pcb_PTR p;
+
+    // Scheduling dei processi ad alta priorita'
+    if((p = removeProcQ(&queueHighProc)) != NULL) {
+        currentActiveProc = p;
+        LDST(&p->p_s);
+    } else {
+
+        // Scheduling dei processi a bassa priorita'
+        if ((p = removeProcQ(&queueLowProc)) != NULL) {
+            currentActiveProc = p;
+            //Load 5 milliseconds on the PLT.
+            LDST(&p->p_s);
+        } else {
+            // Se le code dei processi ready sono vuote, esegui i seguenti controlli
+            
+            if(activeProc == 0)
+                HALT(); //Il processore non deve fare niente quindi si ferma
+                
+            if(activeProc > 0 && blockedProc > 0) {
+                /* TODO
+                IMPORTANT POINT
+                - set the Status register to enable interrupts
+                - disable the PLT (also through the Status register), or load it with a very large value
+                
+                The first interrupt that occurs after entering a Wait State should not be for the PLT.
+                */
+                //(memaddr) LOCALTIMERINT = 0xFFFFFFFF;
+                WAIT(); //twiddling its thumbs
+            }
+
+            if(activeProc > 0 && blockedProc == 0) {
+                /* Take an appropriate deadlock detected action;   -> che minchia vuol dire questa cosa
+                   invoke the PANIC BIOS service/instruction.  */
+                PANIC();        //DEADLOCK
+            }
+        }
+    }
 }

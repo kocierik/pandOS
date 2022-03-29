@@ -37,9 +37,7 @@ pcb_t *allocPcb() {
 }
 
 void mkEmptyProcQ(struct list_head *head) {
-    if(head != NULL){
-        INIT_LIST_HEAD(head);
-    }
+    INIT_LIST_HEAD(head);
 }
 
 
