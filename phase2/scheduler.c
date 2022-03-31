@@ -39,22 +39,13 @@ void scheduler() {
             HALT(); //Il processore non deve fare niente quindi si ferma
             
         if(activeProc > 0 && blockedProc > 0) {
-            /* TODO
-            IMPORTANT POINT
-            - set the Status register to enable interrupts
-            - disable the PLT (also through the Status register), or load it with a very large value
-            
-            The first interrupt that occurs after entering a Wait State should not be for the PLT.
-            */
-            //(memaddr) LOCALTIMERINT = 0xFFFFFFFF;
+            //Enabling interrupts and disable PLT.
+            unsigned int status = ALLOFF | IEPON | IMON;
+            STST(status);
             WAIT(); //twiddling its thumbs
         }
 
-        if(activeProc > 0 && blockedProc == 0) {
-            /* Take an appropriate deadlock detected action;   -> che minchia vuol dire questa cosa
-                invoke the PANIC BIOS service/instruction.  */
+        if(activeProc > 0 && blockedProc == 0)
             PANIC();        //DEADLOCK
-        }
-        
     }
 }
