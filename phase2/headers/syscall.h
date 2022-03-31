@@ -2,6 +2,7 @@
 #define SYSCALL_H_INCLUDED
 
 #include "../../phase1/headers/pcb.h"
+#include "../../phase1/headers/listx.h"
 
 
 void createProcess();
@@ -13,7 +14,7 @@ void getCpuTime();
 void waitForClock();
 void getSupportData();
 void getIDprocess();
-void yeild();
+void yield();
 
 
 #endif
