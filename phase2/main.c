@@ -22,7 +22,7 @@ short semDevice[SEMDEVLEN];     //Semplice intero per i semafori dei device|| De
 
 
 void initGlobalVar() {
-    processId = 0;
+    processId = -1;
     activeProc  = 0;
     blockedProc = 0;
     currentActiveProc = NULL;
@@ -48,7 +48,7 @@ void insertReadyQueue(int prio, pcb_PTR p) {
 }
 
 void assegnaPID(pcb_PTR p) {
-    p->p_pid = processId++;
+    p->p_pid = ++processId;
 }
 
 

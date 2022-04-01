@@ -22,7 +22,6 @@ void createProcess() {
     else {
         currentActiveProc->p_s.reg_v0 = p->p_pid;
         assegnaPID(p);
-        p->p_pid = processId++;
 
         insertChild(currentActiveProc,p);        
         
@@ -37,15 +36,43 @@ void createProcess() {
 
 
 void terminateProcess(int pid) {
+
+    int found = 0; //flag found per efficienza
+    pcb_PTR p;
+
     if (pid == 0) {
-        
+        terminateDescendance(currentActiveProc);
+        freePcb(currentActiveProc);
     } else {
-        
+        struct list_head *pos;
+        list_for_each(pos, queueLowProc) {
+            if((p = container_of(pos, pcb_t, p_list))->p_pid == pid) {
+                terminateDescendance(p);
+                freePcb(pos);
+                found = 1;
+            }
+        }
+        if(!found) {
+            list_for_each(pos, queueHighProc) {
+                if((p = container_of(pos, pcb_t, p_list))->p_pid == pid) {
+                    terminateDescendance(p);
+                    freePcb(pos);
+                }
+            }
+        }
     }
 }
 
-void terminateDescendance(pcb_PTR rootPtr) {
-    
+/* funzione ricorsiva di aiuto per terminare tutti i processi figli di un processo */
+static void terminateDescendance(pcb_PTR rootPtr) {
+    pcb_PTR p;
+    while (!emptyChild(rootPtr)) {
+        //termino il primo processo figlio
+        //questa chiamata termina ricorsivamente anche i processi figlio del figlio
+        terminateProcess(container_of(rootPtr->p_child->next, pbc_t, p_sib)->p_pid);
+        //rimuovendo il primo figlio vado avanti con la lista dei figli
+        removeChild(rootPtr);
+    }
 }
 
 void passeren() {
