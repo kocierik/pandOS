@@ -19,6 +19,7 @@ LIST_HEAD(queueHighProc);       //Coda dei processi a alta priorità
 pcb_t *currentActiveProc;       //Puntatore processo in stato "running" (attivo) || Current Process
 short semDevice[SEMDEVLEN];     //Semplice intero per i semafori dei device|| Device Semaphores
 
+
 void initGlobalVar() {
     activeProc  = 0;
     blockedProc = 0;
@@ -31,7 +32,7 @@ void initGlobalVar() {
 void initPassUpVector(passupvector_t *vector) {
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
-    vector->exception_handler = (memaddr) (exceptionHandler); //TODO: FUNZIONE DA FARE/CONTROLLIAMO CHE SIA CORRETTO
+    vector->exception_handler = (memaddr) (exceptionHandler);
     vector->exception_stackPtr = KERNELSTACK;
 }
 

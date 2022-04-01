@@ -14,23 +14,22 @@ void scheduler() {
     
     pcb_PTR p; //Puntatore al processo che sto per prendere in carico. 
 
-    // Scheduling dei processi ad alta priorita'
     /*
-    * Verifico che la coda dei processi ad alta priorità non sia vuota. Se non lo è estraggo il processo che è li ad attendere;
+    * Verifico che la coda dei processi ad alta priorità non sia vuota.
+    * Se non lo è estraggo il processo che è li ad attendere;
     * e lo assegno ad una variabile indicante il processo correntemente attivo. 
     */
     if((p = removeProcQ(&queueHighProc)) != NULL) { 
         currentActiveProc = p;
         LDST(&p->p_s);
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        // Scheduling dei processi a bassa priorita'
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT.
-        setTIMER(5);
+        setTIMER(5);  //TODO: DA CONTROLLARE
         LDST(&p->p_s);
     } else {
         /*
-        * A questo punto se vi era un processo in una delle code (Alta o Bassa priorità) questo sarà stato passato
+        * A questo punto se c'era un processo in una delle due code questo sarà stato passato
         * dallo stato di "ready" allo stato "running".
         * Altrimenti, se le code dei processi "ready" sono vuote, eseguo i seguenti controlli.       
         */
@@ -40,7 +39,7 @@ void scheduler() {
             
         if(activeProc > 0 && blockedProc > 0) {
             //Enabling interrupts and disable PLT.
-            unsigned int status = ALLOFF | IEPON | IMON;
+            STATE_PTR status = (STATE_PTR)(ALLOFF | IEPON | IMON);
             STST(status);
             WAIT(); //twiddling its thumbs
         }

@@ -1,8 +1,4 @@
 #include "headers/exceptionHandler.h"
-#include <umps/libumps.h>
-#include <umps/arch.h>
-#include "p2test.c"
-#include "klog.c"
 
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
@@ -11,7 +7,7 @@
 * //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
 */
 int interruptHandler(){
-        int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
+    int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
         // pandos_kprintf(">> INTERRUPT: IL_IPI"); 
         return interrupt_ipi();
@@ -29,20 +25,55 @@ int interruptHandler(){
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
         return interrupt_terminal();
     }
+    return -1;
 }
 
 void passOrDie(int pageFault){
-    klog_print("passOrDie chiamato, è il momento di implementarlo");
+    //klog_print("passOrDie chiamato, è il momento di implementarlo");
 }
 
 int TLBHandler(){
     passOrDie(PGFAULTEXCEPT);
+    return -1;
 }
 
 void trapHandler(){
     passOrDie(GENERALEXCEPT);
 }
 
-void syscall_handler(){
-    klog_print("syscall_handler");
+void syscall_handler(int SYS){
+    switch(SYS) {
+        case CREATEPROCESS:
+            createProcess();
+            break;
+        case TERMPROCESS:
+            terminateProcess();
+            break;
+        case PASSEREN:
+            passeren();
+            break;
+        case VERHOGEN:
+            verhogen();
+            break;
+        case DOIO:
+            doIOdevice();
+            break;
+        case GETTIME:
+            getCpuTime();
+            break;
+        case CLOCKWAIT:
+            waitForClock();
+            break;
+        case GETSUPPORTPTR:
+            getSupportData();
+            break;
+        case GETPROCESSID:
+            createProcess();
+            break;
+        case YIELD:
+            getIDprocess();
+            break;
+        default:
+            break;
+    }
 }

@@ -3,8 +3,8 @@
 
 #include <umps/libumps.h>
 #include <umps/arch.h>
-#include "../p2test.c"
-#include "../klog.c"
+#include "syscall.h"
+//#include "../klog.c"
 
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
@@ -17,6 +17,6 @@ int interruptHandler();
 void passOrDie();
 int TLBHandler();
 void trapHandler();
-void syscall_handler();
+void syscall_handler(int SYS);
 
 #endif

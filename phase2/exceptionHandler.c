@@ -1,7 +1,8 @@
 #include "headers/exceptionHandler.h"
 
 void exceptionHandler() {
-    switch (CAUSE_GET_EXCCODE(getCAUSE())){
+    int syscode = -1; //codice della syscall da prendere dal campo a0 dello stato del current process
+    switch(CAUSE_GET_EXCCODE(getCAUSE())){
         case 0: 
             interruptHandler();
             break;
@@ -16,15 +17,14 @@ void exceptionHandler() {
         case 9:
         case 10:
         case 11:
-        case 12:
-            //ProgramTraps
+        case 12: //Case 4-7 9-12
+            trapHandler();
             break;
         case 8:
-            syscall_handler();
+            syscall_handler(syscode);
             break;
 
-        default: //Case 4-7 9-12
-            trapHandler();
+        default: //ERROR
             break;
     }
 }
