@@ -105,9 +105,10 @@ void doIOdevice() {
 }
 
 //da salvare in v0 quindi la funzione sarà void
-cpu_t getCpuTime() {
+void getCpuTime() {
     cpu_t t;
-    
+    STCK(t);
+    currentActiveProc->p_s.reg_v0 = t;
 }
 
 
