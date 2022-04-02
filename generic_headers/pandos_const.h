@@ -9,6 +9,10 @@
 
 #include <umps/const.h>
 
+/* Number of semaphore's device */
+#define SEMDEVLEN 49
+
+
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/
 #define WORDLEN  4    /* word size in bytes	*/

@@ -1,8 +1,6 @@
 #include "headers/syscall.h"
 
 /* Variabili globali esterne */
-#define SEMDEVLEN 49
-
 extern int processId;
 extern int activeProc;
 extern int blockedProc;
@@ -16,52 +14,51 @@ extern void assegnaPID(pcb_PTR p);
 extern void insertReadyQueue(int prio, pcb_PTR p);
 
 
-void createProcess() {
+void createProcess(pcb_PTR callerProcess) {
     pcb_PTR p = allocPcb();
     
     if(p == NULL)
-        currentActiveProc->p_s.reg_v0 = -1;
+        callerProcess->p_s.reg_v0 = -1;
     else {
-        currentActiveProc->p_s.reg_v0 = p->p_pid;
+        callerProcess->p_s.reg_v0 = p->p_pid;
         assegnaPID(p);
 
-        insertChild(currentActiveProc,p);        
+        insertChild(callerProcess, p);        
         
-        p->p_s = (*(state_t *)currentActiveProc->p_s.reg_a1);
-        p->p_prio = currentActiveProc->p_s.reg_a2;
-        p->p_supportStruct = currentActiveProc->p_s.reg_a3;
+        p->p_s = (*(state_t *)callerProcess->p_s.reg_a1);
+        p->p_prio = callerProcess->p_s.reg_a2;
+        p->p_supportStruct = callerProcess->p_s.reg_a3;
 
         insertReadyQueue(p->p_prio, p);
     }
-    return;
 }
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
 void terminateProcess(int pid) {
-
-    int found = 0; //flag found per efficienza
     pcb_PTR p;
-    struct list_head *pos;
-
     if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
         __terminateProcess(currentActiveProc);
     } else {
         // senno' lo cerco nelle liste dei processi ready
-        list_for_each(pos, &queueLowProc) {
-            if((p = container_of(pos, pcb_t, p_list))->p_pid == pid) {
-                __terminateProcess(p);
-                found = 1;
-            }
-        }
-        if(!found) {
-            list_for_each(pos, &queueHighProc) {
-                if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
-                    __terminateProcess(p);
-            }
-        }
+        p = findPcb(pid, queueLowProc);
+        if(p == NULL)
+            p = findPcb(pid, queueHighProc);
+        __terminateProcess(p);
     }
+}
+
+
+/* cerca un pcb in una lista dato il pid e la lista in cui cercare*/
+static pcb_PTR findPcb(int pid, struct list_head queue) {
+    struct list_head *pos;
+    pcb_PTR p;
+    list_for_each(pos, &queue) {
+        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+            return p;
+    }
+    return NULL;
 }
 
 
@@ -83,6 +80,7 @@ static void terminateDescendance(pcb_PTR rootPtr) {
         removeChild(rootPtr);
     }
 }
+
 
 void passeren(int *semaddr) {
     if((*semaddr) > 0)

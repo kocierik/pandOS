@@ -1,6 +1,7 @@
 #ifndef SYSCALL_H_INCLUDED
 #define SYSCALL_H_INCLUDED
 
+#include "../../generic_headers/pandos_const.h"
 #include "../../phase1/headers/pcb.h"
 #include "../../phase1/headers/asl.h"
 #include "../../phase1/headers/listx.h"

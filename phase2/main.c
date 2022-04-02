@@ -8,8 +8,6 @@
 #include "headers/scheduler.h"
 #include "p2test.c"
 
-//usiamo questa costante per il numero di semDevice -> da trasferire su pandos_const?
-#define SEMDEVLEN 49
 
 /* Variabili Globali */
 int processId;

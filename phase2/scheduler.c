@@ -1,7 +1,5 @@
 #include "headers/scheduler.h"
 
-#define SEMDEVLEN 49
-
 extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
