@@ -9,7 +9,7 @@ static LIST_HEAD(ASL_h);               /* Active Semaphore List                 
     Given a semAdd key, return the pointer to the Semaphore
     with that key if present in ASL, else return NULL
 */
-static semd_PTR findASL(int *semAdd) {
+semd_PTR findASL(int *semAdd) {
     semd_PTR sem;
     struct list_head *pos;
 
@@ -31,6 +31,7 @@ static int isSemdFree(semd_PTR sem) {
     if(list_empty(&sem->s_procq)) {
         list_del(&sem->s_link);
         list_add_tail(&sem->s_link, &semdFree_h);
+        (*sem->s_key) = 1;
         return TRUE;
     }
     return FALSE;
@@ -42,6 +43,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 
     if(sem != NULL) {                                         /*If p found add p to blocked process queue   */
         p->p_semAdd = semAdd;
+        (*sem->s_key) = 0;
         insertProcQ(&sem->s_procq, p);
     } else {
         if(list_empty(&semdFree_h))
@@ -53,6 +55,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
         /* Initialize variables */
         p->p_semAdd = semAdd;
         sem->s_key  = semAdd;
+        (*sem->s_key) = 0;
         INIT_LIST_HEAD(&sem->s_procq);
         insertProcQ(&sem->s_procq, p);                         /* Insert blocked process                    */
         list_add_tail(&sem->s_link, &ASL_h);                   /* Add Semaphore to the active ones list     */
@@ -105,10 +108,12 @@ pcb_t* headBlocked(int *semAdd) {
     return NULL;
 }
 
-
+//inizializziamo i semafori come liberi
+//TODO: CONTROLLARE CHE SIA GIUSTO
 void initASL() {
     for(int i=0; i < MAXPROC; i++) {
 		semd_t* semd = &semd_table[i];
+        (*semd->s_key) = 1;
 		list_add_tail(&semd->s_link, &semdFree_h);
 	}
 }

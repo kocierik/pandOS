@@ -2,6 +2,7 @@
 #define SYSCALL_H_INCLUDED
 
 #include "../../phase1/headers/pcb.h"
+#include "../../phase1/headers/asl.h"
 #include "../../phase1/headers/listx.h"
 
 
@@ -10,10 +11,10 @@ void terminateProcess();
 void passeren();
 void verhogen();
 void doIOdevice();
-void getCpuTime();
+cpu_t getCpuTime();
 void waitForClock();
-void getSupportData();
-void getIDprocess();
+support_t* getSupportData();
+int getIDprocess();
 void yield();
 
 
