@@ -4,24 +4,24 @@
 #include "../phase1/headers/asl.h"
 #include "../phase1/headers/pcb.h"
 #include "../phase1/headers/listx.h"
-#include "headers/exceptionHandler.h"
-#include "headers/scheduler.h"
 
-extern void uTLB_RefillHandler();
+
 extern void test();
+extern void uTLB_RefillHandler();
+extern void exceptionHandler();
+extern void scheduler();
 
 // TEMPORARY
 extern void klog_print(char *s);
 
-
-/* Variabili Globali */
-static int processId;           //Variabile globale utilizzata per assegnare un id unico ai processi creati
-int activeProc;                 //Processi iniziati e non ancora terminati: attivi || Process Count
-int blockedProc;                //Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
-LIST_HEAD(queueLowProc);        //Coda dei processi a bassa priorità
-LIST_HEAD(queueHighProc);       //Coda dei processi a alta priorità
-pcb_t *currentActiveProc;       //Puntatore processo in stato "running" (attivo) || Current Process
-short semDevice[SEMDEVLEN];     //Semplice intero per i semafori dei device|| Device Semaphores
+/* Global Variables */
+static int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
+int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
+int blockedProc;                // Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
+LIST_HEAD(queueLowProc);        // Coda dei processi a bassa priorità
+LIST_HEAD(queueHighProc);       // Coda dei processi a alta priorità
+pcb_t *currentActiveProc;       // Puntatore processo in stato "running" (attivo) || Current Process
+short semDevice[SEMDEVLEN];     // Vettore di interi per i semafori dei device|| Device Semaphores
 
 
 void initGlobalVar() {
@@ -76,7 +76,7 @@ int main(int argc, int* argv[]){
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
-    /* Allocchiamo il primo processo a bassa priorita' */
+    /* Allocchiamo il primo processo a bassa priorita' e settiamo le cose giuste */
     pcb_PTR firstProc = allocPcb();
     assegnaPID(firstProc);
 
