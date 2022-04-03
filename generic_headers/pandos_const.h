@@ -168,7 +168,7 @@
  * Il parametro "il_no" rappresenta tutti i possibili device che abbiamo. (file /umps3/umps/arch.h line 68)
  * Dunque la funzione ci permette di andare a verificare per ogni dispositivo quale di essi è in funzione.
  * Se uno dispositivo è in funzione CAUSE_IP_GET ci restituisce 1, 0 in caso contrario.
- * Come ci viene richieste da 3.4 exception 0 chiamiamo l'interrupt del primo dispositivo
+ * Come ci viene richieste da capitolo 3.4 exception 0 chiamiamo l'interrupt del primo dispositivo
  *  che troviamo "acceso"/"in esecuzione"/"del quale otteniamo 1 da questa funzione"
 */
 #define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8))) // esegue uno shift dei bit in base ai parametri
