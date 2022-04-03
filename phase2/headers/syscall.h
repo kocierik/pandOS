@@ -8,15 +8,21 @@
 #include "umps/const.h"
 
 
-void createProcess();
-void terminateProcess();
-void passeren();
-void verhogen();
-void doIOdevice();
+/* Funzioni di aiuto */
+void __terminateProcess(pcb_PTR p);
+void terminateDescendance(pcb_PTR rootPtr);
+pcb_PTR findPcb(int *pid, struct list_head queue);
+
+
+void createProcess(state_t * callerProcess);
+void terminateProcess(int *pid);
+void passeren(int *semaddr);
+void verhogen(int *semaddr);
+void doIOdevice(int *cmdAddr, int cmdValue);
 void getCpuTime();
 void waitForClock();
 support_t* getSupportData();
-int getIDprocess();
+int getIDprocess(int parent);
 void yield();
 
 

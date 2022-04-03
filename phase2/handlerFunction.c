@@ -1,35 +1,35 @@
 #include "headers/exceptionHandler.h"
-
+extern void klog_print(char *s);
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
 * Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
 * restituisce 1 quando un dispositivo è attivo. 
 * //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
 */
+
 int interruptHandler(){
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
-        // pandos_kprintf(">> INTERRUPT: IL_IPI"); 
-        return interrupt_ipi();
+        klog_print(">> INTERRUPT: IL_IPI\n"); 
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-        return interrupt_local_timer();
+        klog_print("Interrupt local timer\n");
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
-        return interrupt_timer();
+        klog_print("interrupt timer\n");
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
-        // pandos_kprintf("<< INTERRUPT(GENERIC)\n");
+        klog_print("<< INTERRUPT(GENERIC)\n");
 
-        return interrupt_generic(cause);
 
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        return interrupt_terminal();
+        klog_print("interrupt terminal\n");
     }
     return -1;
 }
 
+
 void passOrDie(int pageFault){
-    //klog_print("passOrDie chiamato, è il momento di implementarlo");
+    klog_print("passOrDie chiamato, è il momento di implementarlo\n");
 }
 
 int TLBHandler(){
@@ -41,22 +41,26 @@ void trapHandler(){
     passOrDie(GENERALEXCEPT);
 }
 
-void syscall_handler(int SYS){
-    switch(SYS) {
+void syscall_handler(state_t *callerProc){
+//codice della syscall da prendere dal campo a0 dello stato del processo che ha alzato l'eccezione
+    int syscode = (*callerProc).reg_a0;
+    void * a1 = (void *) (*callerProc).reg_a1;
+    void * a2 = (void *) (*callerProc).reg_a2;
+    switch(syscode) {
         case CREATEPROCESS:
-            createProcess();
+            createProcess(callerProc);
             break;
         case TERMPROCESS:
-            terminateProcess();
+            terminateProcess((int *)a1);
             break;
         case PASSEREN:
-            passeren();
+            passeren((int*)a1);
             break;
         case VERHOGEN:
-            verhogen();
+            verhogen((int*)a1);
             break;
         case DOIO:
-            doIOdevice();
+            doIOdevice((int*)a1, (int)a2);
             break;
         case GETTIME:
             getCpuTime();
@@ -68,10 +72,10 @@ void syscall_handler(int SYS){
             getSupportData();
             break;
         case GETPROCESSID:
-            createProcess();
+            getIDprocess((int)a1);
             break;
         case YIELD:
-            getIDprocess();
+            getIDprocess((int)a1);
             break;
         default:
             break;

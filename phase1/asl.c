@@ -113,7 +113,7 @@ pcb_t* headBlocked(int *semAdd) {
 void initASL() {
     for(int i=0; i < MAXPROC; i++) {
 		semd_t* semd = &semd_table[i];
-        (*semd->s_key) = 1;
+        //(*semd->s_key) = 1;
 		list_add_tail(&semd->s_link, &semdFree_h);
 	}
 }

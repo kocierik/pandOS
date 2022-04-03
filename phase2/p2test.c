@@ -139,9 +139,11 @@ void uTLB_RefillHandler() {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
-void test() {
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
+extern void klog_print(char *s);
+void test() {
+    klog_print("Siamo dentro\n\n");
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */

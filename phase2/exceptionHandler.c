@@ -1,13 +1,12 @@
 #include "headers/exceptionHandler.h"
-#include "umps3/umps/cp0.h"
+#include "klog.c"
 
 
 void exceptionHandler() {
+    klog_print("Dentro Exception Handler\n\n"); //TODO rimuovi
     //Stato al momento dell'eccezione; utile dopo per capire se la chiamata alla SysCall è avvenuta in Kernel mode o no.
-    state_t *exceptionState = (state_t *) BIOSDATAPAGE; 
-
-    // TODO: capire come e dove prendere questo codice
-    int syscode = -1; //codice della syscall da prendere dal campo a0 dello stato del current process
+    state_t *exceptionState = (state_t *) BIOSDATAPAGE;
+    
     switch(CAUSE_GET_EXCCODE(getCAUSE())){
         case IOINTERRUPTS: // Interrupt
             interruptHandler();
@@ -17,10 +16,9 @@ void exceptionHandler() {
         case TLBINVLDS: 
             TLBHandler();
             break;
-        case SYSEXCEPTION: // Chiamata una System Call 
-            // TODO
+        case SYSEXCEPTION: // Chiamata una System Call
             // Bisogna capire qui se la SysCall è chiamata in Kernel Mode o no. Non so come si fa ad ora.
-            syscall_handler(syscode);
+            syscall_handler(exceptionState);
             break;
         default: // TRAP
             trapHandler();

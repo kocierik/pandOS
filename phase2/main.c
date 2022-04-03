@@ -6,11 +6,16 @@
 #include "../phase1/headers/listx.h"
 #include "headers/exceptionHandler.h"
 #include "headers/scheduler.h"
-#include "p2test.c"
+
+extern void uTLB_RefillHandler();
+extern void test();
+
+// TEMPORARY
+extern void klog_print(char *s);
 
 
 /* Variabili Globali */
-int processId;
+static int processId;           //Variabile globale utilizzata per assegnare un id unico ai processi creati
 int activeProc;                 //Processi iniziati e non ancora terminati: attivi || Process Count
 int blockedProc;                //Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
 LIST_HEAD(queueLowProc);        //Coda dei processi a bassa priorità
@@ -37,7 +42,9 @@ void initPassUpVector(passupvector_t *vector) {
 }
 
 
+// inserisco un processo nella giusta coda
 void insertReadyQueue(int prio, pcb_PTR p) {
+    p->p_prio = prio;
     ++activeProc;
     if(prio == PROCESS_PRIO_LOW)
         insertProcQ(&queueLowProc, p);
@@ -45,6 +52,8 @@ void insertReadyQueue(int prio, pcb_PTR p) {
         insertProcQ(&queueHighProc, p);
 }
 
+
+//funzione di aiuto che assegna un id unico a un processo 
 void assegnaPID(pcb_PTR p) {
     p->p_pid = ++processId;
 }
@@ -52,45 +61,34 @@ void assegnaPID(pcb_PTR p) {
 
 int main(int argc, int* argv[]){
 
-    //Inizializzazione fase 1
+    /* Inizializzazione variabili */
     initPcbs();
     initASL();
-
-    //Inizializzare le variabili dichiarate precedentemente
     initGlobalVar();
+
+    klog_print("Variabili inizializzate...\n\n");
     
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
+    klog_print("Pass Up Vector inizializzato...\n\n");
+
     LDIT(100000); //imposto l'interval timer a 100 ms
 
-    //Alloc low priority process
+    /* Allocchiamo il primo processo a bassa priorita' */
     pcb_PTR firstProc = allocPcb();
     assegnaPID(firstProc);
 
-
-    firstProc->p_prio = PROCESS_PRIO_LOW; //Setto priorità bassa
-    
-    //Inserisco il processore nella coda dei processi Ready
-    insertReadyQueue(firstProc->p_prio, firstProc);
-
-    insertProcQ(&queueLowProc, firstProc);
-    ++activeProc; 
-
-
-    //Setto lo status del processo con i bit di Interrupt Mask, Local Timer e Kernel Mode
-    firstProc->p_s.status = ALLOFF | IEPON | IMON | TEBITON;
-
-    //Setto il PC (e t9) del proccesso a test
-    firstProc->p_s.pc_epc = (memaddr) test;
-    firstProc->p_s.reg_t9 = (memaddr) test;
-
-    //Carico SP in cima alla RAM e lo status del processo nel processore
+    insertReadyQueue(PROCESS_PRIO_LOW, firstProc);
+    firstProc->p_s.status = IEPON | IMON | TEBITON;
+    firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
-    STST(&firstProc->p_s);
+
+    klog_print("Primo processo creato, chiamo lo scheduler...\n\n");
 
     scheduler();
 
+    klog_print("ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
     return 0;
 }
