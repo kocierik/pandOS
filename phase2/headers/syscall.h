@@ -1,7 +1,11 @@
 #ifndef SYSCALL_H_INCLUDED
 #define SYSCALL_H_INCLUDED
 
+#include "../../generic_headers/pandos_const.h"
 #include "../../phase1/headers/pcb.h"
+#include "../../phase1/headers/asl.h"
+#include "../../phase1/headers/listx.h"
+#include "umps/const.h"
 
 
 void createProcess();
@@ -11,9 +15,9 @@ void verhogen();
 void doIOdevice();
 void getCpuTime();
 void waitForClock();
-void getSupportData();
-void getIDprocess();
-void yeild();
+support_t* getSupportData();
+int getIDprocess();
+void yield();
 
 
 #endif

@@ -8,10 +8,9 @@
 #include "headers/scheduler.h"
 #include "p2test.c"
 
-//usiamo questa costante per il numero di semDevice -> da trasferire su pandos_const?
-#define SEMDEVLEN 49
 
 /* Variabili Globali */
+int processId;
 int activeProc;                 //Processi iniziati e non ancora terminati: attivi || Process Count
 int blockedProc;                //Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
 LIST_HEAD(queueLowProc);        //Coda dei processi a bassa priorità
@@ -21,6 +20,7 @@ short semDevice[SEMDEVLEN];     //Semplice intero per i semafori dei device|| De
 
 
 void initGlobalVar() {
+    processId = -1;
     activeProc  = 0;
     blockedProc = 0;
     currentActiveProc = NULL;
@@ -34,6 +34,19 @@ void initPassUpVector(passupvector_t *vector) {
     vector->tlb_refill_stackPtr = KERNELSTACK;
     vector->exception_handler = (memaddr) (exceptionHandler);
     vector->exception_stackPtr = KERNELSTACK;
+}
+
+
+void insertReadyQueue(int prio, pcb_PTR p) {
+    ++activeProc;
+    if(prio == PROCESS_PRIO_LOW)
+        insertProcQ(&queueLowProc, p);
+    else
+        insertProcQ(&queueHighProc, p);
+}
+
+void assegnaPID(pcb_PTR p) {
+    p->p_pid = ++processId;
 }
 
 
@@ -54,12 +67,17 @@ int main(int argc, int* argv[]){
 
     //Alloc low priority process
     pcb_PTR firstProc = allocPcb();
+    assegnaPID(firstProc);
 
+
+    firstProc->p_prio = PROCESS_PRIO_LOW; //Setto priorità bassa
+    
     //Inserisco il processore nella coda dei processi Ready
+    insertReadyQueue(firstProc->p_prio, firstProc);
+
     insertProcQ(&queueLowProc, firstProc);
     ++activeProc; 
 
-    firstProc->p_prio = PROCESS_PRIO_LOW; //Setto priorità bassa
 
     //Setto lo status del processo con i bit di Interrupt Mask, Local Timer e Kernel Mode
     firstProc->p_s.status = ALLOFF | IEPON | IMON | TEBITON;
