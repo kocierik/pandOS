@@ -116,17 +116,18 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
     return NULL;
 }
 
-
+/* Porta il processo attualmente attivo in stato "Blocked" */
 void passeren(int *semaddr) {
     if (*semaddr > 0) (*semaddr) --;
     else{
         pcb_t *pid = currentActiveProc;
         insertBlocked(semaddr, pid);
+        currentActiveProc = NULL; // Il processo che prima era attivo ora non lo è più.
     }
     klog_print("Chiamata ed eseguita passeren\n\n");
 }
 
-
+/* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(int *semaddr) {
     pcb_t *pid = removeBlocked(semaddr);
     if (pid == NULL){   //Non vi è alcun processo da rimuovere
@@ -143,8 +144,15 @@ void verhogen(int *semaddr) {
 }
 
 
-void doIOdevice(int *cmdAddr, int cmdValue) {
-
+int doIOdevice(int *cmdAddr, int cmdValue) {
+    //Current process da running state va in blocked state
+    /*
+    Dunque devo eseguire una P sul processo corrente.
+    Ma con quale semaforo chiamo la P?
+    "P operation on the semaphore that
+    the Nucleus maintains for the I/O device indicated by the values in a1, a2,
+    and optionally a3."
+    */
 }
 
 
