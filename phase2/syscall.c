@@ -118,12 +118,28 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
 
 
 void passeren(int *semaddr) {
-    --(*semaddr);
+    if (*semaddr > 0) (*semaddr) --;
+    else{
+        pcb_t *pid = currentActiveProc;
+        insertBlocked(semaddr, pid);
+    }
+    klog_print("Chiamata ed eseguita passeren\n\n");
 }
 
 
 void verhogen(int *semaddr) {
-    ++(*semaddr);
+    pcb_t *pid = removeBlocked(semaddr);
+    if (pid == NULL){   //Non vi è alcun processo da rimuovere
+        klog_print("Nessun processo da rimuovere\n\n");
+        (*semaddr) ++;
+    }else{ //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
+        if (pid->p_prio){ //Proc ad alta priorità
+            insertProcQ(&queueHighProc, pid);
+        }else{ //Proc a bassa priorità
+            insertProcQ(&queueLowProc, pid);
+        }        
+    }
+    klog_print("Chiamata ed eseguita verhogen\n\n");
 }
 
 

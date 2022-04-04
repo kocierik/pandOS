@@ -18,7 +18,7 @@
 #include "../generic_headers/pandos_const.h"
 #include "../generic_headers/pandos_types.h"
 #include <umps/libumps.h>
-
+extern void klog_print(char *s); //TODO rimuovi
 typedef unsigned int devregtr;
 
 /* hardware constants */
@@ -104,17 +104,16 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
-
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
     devregtr  status;
-
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
+            klog_print("Panico paura\n\n");
             PANIC();
         }
         s++;
@@ -142,7 +141,7 @@ void uTLB_RefillHandler() {
 
 extern void klog_print(char *s);
 void test() {
-    klog_print("Siamo dentro\n\n");
+    klog_print("Ingresso nel file p2test.c\n\n");
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     print("p1 v(sem_testsem)\n");
 
