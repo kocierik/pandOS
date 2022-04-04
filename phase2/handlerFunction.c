@@ -41,17 +41,18 @@ void trapHandler(){
     passOrDie(GENERALEXCEPT);
 }
 
-void syscall_handler(state_t *callerProc){
-//codice della syscall da prendere dal campo a0 dello stato del processo che ha alzato l'eccezione
-    int syscode = (*callerProc).reg_a0;
-    void * a1 = (void *) (*callerProc).reg_a1;
-    void * a2 = (void *) (*callerProc).reg_a2;
+void syscall_handler(state_t *callerProcState){
+    //codice della syscall da prendere dal campo a0 dello stato del processo che ha alzato l'eccezione
+    pcb_PTR callerProcess = container_of(callerProcState, pcb_t, p_s);
+    int syscode = (*callerProcState).reg_a0;
+    void * a1 = (void *) (*callerProcState).reg_a1;
+    void * a2 = (void *) (*callerProcState).reg_a2;
     switch(syscode) {
         case CREATEPROCESS:
-            createProcess(callerProc);
+            createProcess(callerProcState);
             break;
         case TERMPROCESS:
-            terminateProcess((int *)a1);
+            terminateProcess((int *)a1, callerProcess);
             break;
         case PASSEREN:
             passeren((int*)a1);

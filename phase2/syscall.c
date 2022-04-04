@@ -14,88 +14,116 @@ extern void assegnaPID(pcb_PTR p);
 extern void insertReadyQueue(int prio, pcb_PTR p);
 
 
-void createProcess(state_t * callerProcess) {
-    /*
+void copyState(state_t * s, pcb_PTR p) {
+    p->p_s.cause = s->cause;
+    p->p_s.entry_hi = s->entry_hi;
+    for (int i = 0; i < STATE_GPR_LEN; i++) {
+        p->p_s.gpr[i] = s->gpr[i];
+    }
+    p->p_s.hi = s->hi;
+    p->p_s.lo = s->lo;
+    p->p_s.pc_epc = s->pc_epc;
+    p->p_s.status = s->status;
+}
+
+
+void createProcess(state_t * callerProcState) {
+    
     pcb_PTR p = allocPcb();
     
     if(p == NULL)
-        (*callerProcess).reg_v0 = -1;
+        (*callerProcState).reg_v0 = NOPROC;
     else {
-        (*callerProcess).reg_v0 = p->p_pid;
         assegnaPID(p);
+        (*callerProcState).reg_v0 = p->p_pid;
 
-        insertChild(container_of(callerProcess, pcb_t, p_s), p);        
-        
-        p->p_s = (*(state_t *)(*callerProcess).reg_a1);
-        p->p_prio = (*callerProcess).reg_a2;
-        p->p_supportStruct = (support_t *)(*callerProcess).reg_a3;
-
-        insertReadyQueue(p->p_prio, p);
+        insertChild(container_of(callerProcState, pcb_t, p_s), p);
+          
+        copyState((state_t *)(*callerProcState).reg_a1,p);
+        insertReadyQueue((*callerProcState).reg_a2, p);
+        p->p_supportStruct = (support_t *)(*callerProcState).reg_a3;
     }
+    // control is returned to the Current Process. [Section 3.5.12] 
+    LDST(callerProcState); //TODO: CONTROLLARE
+    /*
+    qui bisognerebbe capire meglio come gestircela visto che bisogna distinguere tra
+    syscall BLOCCANTI e syscall NON BLOCCANTI :
+    le syscall NON BLOCCANTI continuano l'esecuzione del processo chiamante,
+    invece le syscall BLOCCANTI fanno delle altre robe e chiamano poi lo scheduler
+    MAGARI CE LO GESTIAMO NEL SYSCALL_HANDLER?? invece che nelle singole syscall,
+    Per ora lasciamo quel LDST così...
+    by geno
     */
 }
 
-/* cerca un pcb in una lista dato il pid e la lista in cui cercare*/
-pcb_PTR findPcb(int *pid, struct list_head queue) {
-    struct list_head *pos;
-    pcb_PTR p;
-    list_for_each(pos, &queue) {
-        if(&((p = container_of(pos, pcb_t, p_list))->p_pid) == pid)
-            return p;
-    }
-    return NULL;
-}
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-void terminateProcess(int *pid) {
+void terminateProcess(int *pid, pcb_PTR callerProcess) {
     pcb_PTR p;
-    if (pid == 0) {
+    if (*pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
-        __terminateProcess(currentActiveProc);
+        __terminateProcess(callerProcess);
     } else {
         // senno' lo cerco nelle liste dei processi ready
-        p = findPcb(pid, queueLowProc);
+        p = findPcb(*pid, queueLowProc);
         if(p == NULL)
-            p = findPcb(pid, queueHighProc);
+            p = findPcb(*pid, queueHighProc);
         __terminateProcess(p);
     }
 }
 
 
-/* funzione ricorsiva di aiuto per terminare tutti i processi figli di un processo */
-void terminateDescendance(pcb_PTR rootPtr) {
-    while (!emptyChild(rootPtr)) {
-        //termino il primo processo figlio
-        //questa chiamata termina ricorsivamente anche i processi figlio del figlio
-        terminateProcess(&(container_of(rootPtr->p_child.next, pcb_t, p_sib)->p_pid));
-        //rimuovendo il primo figlio vado avanti con la lista dei figli
-        removeChild(rootPtr);
-    }
-}
-
-
-/* funzione che libera un processo */
+/* termina un processo */
 void __terminateProcess(pcb_PTR p) {
     terminateDescendance(p);
+    //gestisco il semaforo del processo
+    /*
+    If the value of a semaphore is negative, it is an invariant that
+    the absolute value of the semaphore equal the number of pcb’s blocked on that
+    semaphore. Hence if a terminated process is blocked on a semaphore,
+    the value of the semaphore must be adjusted; i.e. incremented.
+    */
+    //aggiusto coda e variabili globali
     freePcb(p);
 }
 
 
+/* termina tutti i processi figli di un processo */
+void terminateDescendance(pcb_PTR parent) {
+    /* per non usare una funzione ricorsiva, controllo tutti i possibili pcb
+       e li termino se hanno come parent il processo da terminare */
+
+    // controllo il processo corrente
+    if(currentActiveProc->p_parent == parent)
+        terminateProcess(0, currentActiveProc);
+
+    // controllo i processi nelle ready queue
+
+    // controllo i processi bloccati dai semafori
+    
+
+}
+
+
+/* cerca un pcb in una lista dato il pid e la lista in cui cercare, ritorna NULL se non lo trova */
+pcb_PTR findPcb(int pid, struct list_head queue) {
+    struct list_head *pos;
+    pcb_PTR p;
+    list_for_each(pos, &queue) {
+        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+            return p;
+    }
+    return NULL;
+}
+
 
 void passeren(int *semaddr) {
-    if((*semaddr) > 0)
-        --(*semaddr);
-    if ((*semaddr) == 0) {
-        //int pid = currentActiveProc->p_pid;
-        //blocca il processo
-    }
+    --(*semaddr);
 }
 
 
 void verhogen(int *semaddr) {
-    //if(list_empty(&findASL(semaddr)->s_procq))
-    //    ++(*semaddr);
-    klog_print("sono nel verhogen");
+    ++(*semaddr);
 }
 
 

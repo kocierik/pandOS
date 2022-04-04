@@ -42,14 +42,14 @@ void initPassUpVector(passupvector_t *vector) {
 }
 
 
-// inserisco un processo nella giusta coda
+// inserisco un processo nella giusta coda e assegno la priorità al processo
 void insertReadyQueue(int prio, pcb_PTR p) {
     p->p_prio = prio;
     ++activeProc;
-    if(prio == PROCESS_PRIO_LOW)
-        insertProcQ(&queueLowProc, p);
-    else
+    if(prio == PROCESS_PRIO_HIGH)
         insertProcQ(&queueHighProc, p);
+    else
+        insertProcQ(&queueLowProc, p);
 }
 
 

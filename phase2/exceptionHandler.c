@@ -3,7 +3,7 @@
 
 
 void exceptionHandler() {
-    klog_print("Dentro Exception Handler\n\n"); //TODO rimuovi
+    //klog_print("Dentro Exception Handler\n\n"); //TODO rimuovi
     //Stato al momento dell'eccezione; utile dopo per capire se la chiamata alla SysCall è avvenuta in Kernel mode o no.
     state_t *exceptionState = (state_t *) BIOSDATAPAGE;
     

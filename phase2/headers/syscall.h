@@ -6,16 +6,17 @@
 #include "../../phase1/headers/asl.h"
 #include "../../phase1/headers/listx.h"
 #include "umps/const.h"
+#include "umps/libumps.h"
 
 
 /* Funzioni di aiuto */
 void __terminateProcess(pcb_PTR p);
 void terminateDescendance(pcb_PTR rootPtr);
-pcb_PTR findPcb(int *pid, struct list_head queue);
+pcb_PTR findPcb(int pid, struct list_head queue);
 
 
 void createProcess(state_t * callerProcess);
-void terminateProcess(int *pid);
+void terminateProcess(int *pid, pcb_PTR callerProcess);
 void passeren(int *semaddr);
 void verhogen(int *semaddr);
 void doIOdevice(int *cmdAddr, int cmdValue);
