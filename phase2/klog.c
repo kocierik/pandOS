@@ -33,7 +33,26 @@ void klog_print(char *str) {
         }
     }
 }
-
+/* Funzione per la stampa di numeri nei registri di memoria usati per il debugging.
+*  N.B. La funzione stampa numeri in un intervallo compreso tra 0 e 99
+*/
+void klog_print_dec(unsigned int num) {
+    const char digits[] = "0123456789";
+    if(num < 10){
+        do {
+            klog_buffer[klog_line_index][klog_char_index] = digits[num % 10];
+            num /= 10;
+            next_char();
+        } while (num > 0);
+    }else{
+        int buff = num % 10;
+        num /= 10;
+        klog_buffer[klog_line_index][klog_char_index] = digits[num % 10];
+        next_char();
+        klog_buffer[klog_line_index][klog_char_index] = digits[buff];
+        next_char();
+    }
+}
 
 // Princ a number in hexadecimal format (best for addresses)
 void klog_print_hex(unsigned int num) {
