@@ -47,6 +47,7 @@ void syscall_handler(state_t *callerProcState){
     int syscode = (*callerProcState).reg_a0;
     void * a1 = (void *) (*callerProcState).reg_a1;
     void * a2 = (void *) (*callerProcState).reg_a2;
+    // dobbiamo incrementare di una word (4 byte) slide 38 di 48
     switch(syscode) {
         case CREATEPROCESS:
             createProcess(callerProcState);

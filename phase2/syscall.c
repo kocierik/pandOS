@@ -189,8 +189,9 @@ int getIDprocess(int parent) {
         return currentActiveProc->p_parent->p_pid;
 }
 
+// inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
 void yield(){ 
-    list_del(currentActiveProc->p_list);
+    list_del(&currentActiveProc->p_list);
     if(currentActiveProc->p_prio == PROCESS_PRIO_LOW){ 
         insertReadyQueue(PROCESS_PRIO_LOW, currentActiveProc); 
     }else{                                              
