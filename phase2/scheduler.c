@@ -1,8 +1,7 @@
 #include "headers/scheduler.h"
-#include "klog.c"
 // TEMPORARY
 extern void klog_print(char *s);
-
+extern void klog_print_dec(unsigned int num);
 
 extern int activeProc;
 extern int blockedProc;
@@ -34,7 +33,7 @@ void scheduler() {
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         
-        klog_print("Carico un processo a bassa priorita'...\n\n");    
+        klog_print("Carico un processo a bassa priorita'...\n\n");   
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT
         setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE
