@@ -42,12 +42,13 @@ void trapHandler(){
 }
 
 void syscall_handler(state_t *callerProcState){
-    //codice della syscall da prendere dal campo a0 dello stato del processo che ha alzato l'eccezione
+    int blockingCall = FALSE;
+    
     pcb_PTR callerProcess = container_of(callerProcState, pcb_t, p_s);
     int syscode = (*callerProcState).reg_a0;
     void * a1 = (void *) (*callerProcState).reg_a1;
     void * a2 = (void *) (*callerProcState).reg_a2;
-    // dobbiamo incrementare di una word (4 byte) slide 38 di 48
+
     switch(syscode) {
         case CREATEPROCESS:
             createProcess(callerProcState);
@@ -69,17 +70,28 @@ void syscall_handler(state_t *callerProcState){
             break;
         case CLOCKWAIT:
             waitForClock();
+            blockingCall = TRUE;
             break;
         case GETSUPPORTPTR:
             getSupportData();
             break;
         case GETPROCESSID:
-            getIDprocess((int)a1);
+            getIDprocess(callerProcess, (int)a1);
             break;
         case YIELD:
-            getIDprocess((int)a1);
+            yield((int)a1);
             break;
         default:
             break;
+    }
+
+    
+    // dobbiamo incrementare di una word (4 byte) slide 38 di 48
+
+    // TODO : CAPIRE COSA FARE QUANDO C'E' UNA CHIAMATA BLOCCANTE 
+    if(blockingCall) {
+        scheduler();
+    } else {
+        LDST(callerProcess);
     }
 }

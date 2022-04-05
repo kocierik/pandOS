@@ -24,7 +24,7 @@ int doIOdevice(int *cmdAddr, int cmdValue);
 void getCpuTime();
 void waitForClock();
 support_t* getSupportData();
-int getIDprocess(int parent);
+void getIDprocess(pcb_PTR callerProcess, int parent);
 void yield();
 
 

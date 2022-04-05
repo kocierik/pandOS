@@ -5,7 +5,7 @@
 #include "../phase1/headers/pcb.h"
 #include "../phase1/headers/listx.h"
 
-
+/* Extern functions */
 extern void test();
 extern void uTLB_RefillHandler();
 extern void exceptionHandler();
@@ -25,7 +25,7 @@ int semDevice[SEMDEVLEN];     // Vettore di interi per i semafori dei device|| D
 
 
 void initGlobalVar() {
-    processId = -1;
+    processId = 0;
     activeProc  = 0;
     blockedProc = 0;
     currentActiveProc = NULL;

@@ -45,17 +45,6 @@ void createProcess(state_t * callerProcState) {
         insertReadyQueue((*callerProcState).reg_a2, p);
         p->p_supportStruct = (support_t *)(*callerProcState).reg_a3;
     }
-    // control is returned to the Current Process. [Section 3.5.12] 
-    LDST(callerProcState); //TODO: CONTROLLARE
-    /*
-    qui bisognerebbe capire meglio come gestircela visto che bisogna distinguere tra
-    syscall BLOCCANTI e syscall NON BLOCCANTI :
-    le syscall NON BLOCCANTI continuano l'esecuzione del processo chiamante,
-    invece le syscall BLOCCANTI fanno delle altre robe e chiamano poi lo scheduler
-    MAGARI CE LO GESTIAMO NEL SYSCALL_HANDLER?? invece che nelle singole syscall,
-    Per ora lasciamo quel LDST così...
-    by geno
-    */
 }
 
 
@@ -85,15 +74,22 @@ void term_proc_and_child(pcb_PTR parent) {
 
 
 void __terminate_process(pcb_PTR p) {
+    // GESTISCO VARIABILI GLOBALI E SEMAFORO
     if (p->p_semAdd == NULL) {
         list_del(&p->p_list);   // lo tolgo da qualsiasi lista
+        if (p == currentActiveProc)
+            currentActiveProc = NULL;
         --activeProc;
     } else {
         --blockedProc;
-        if (p->p_semAdd >= &(semDevice[0]) && p->p_semAdd <= &(semDevice[SEMDEVLEN-1]))
-            ++(*p->p_semAdd);
-        outBlocked(p);
-        
+        if (p->p_semAdd <= &(semDevice[0]) || p->p_semAdd >= &(semDevice[SEMDEVLEN-1])) {
+            outBlocked(p);
+            if((*p->p_semAdd) < 0)
+                ++(*p->p_semAdd);
+        } else {
+            // TODO?? When the interrupt eventually occurs the semaphore
+            // will get V’ed (and hence incremented) by the interrupt handler.
+        }
     }
     
     outChild(p); // tolgo p come figlio così va avanti
@@ -127,27 +123,30 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
 void passeren(int *semaddr) {
-    if (*semaddr > 0) (*semaddr) --;
-    else{
-        pcb_t *pid = currentActiveProc;
-        insertBlocked(semaddr, pid);
+    if (*semaddr > 0)
+        --(*semaddr);
+    else {
+        insertBlocked(semaddr, currentActiveProc);
+        --activeProc;
+        ++blockedProc;
         currentActiveProc = NULL; // Il processo che prima era attivo ora non lo è più.
     }
     klog_print("Chiamata ed eseguita passeren\n\n");
 }
 
+
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(int *semaddr) {
-    pcb_t *pid = removeBlocked(semaddr);
-    if (pid == NULL){   //Non vi è alcun processo da rimuovere
+    pcb_PTR pid = removeBlocked(semaddr);
+    if (pid == NULL) { 
+        //Non vi è alcun processo da rimuovere
         klog_print("Nessun processo da rimuovere\n\n");
-        (*semaddr) ++;
-    }else{ //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
-        if (pid->p_prio){ //Proc ad alta priorità
-            insertProcQ(&queueHighProc, pid);
-        }else{ //Proc a bassa priorità
-            insertProcQ(&queueLowProc, pid);
-        }        
+        ++(*semaddr);
+    } else {
+        //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
+        insertReadyQueue(pid->p_prio, pid);
+        ++activeProc;
+        --blockedProc;
     }
     klog_print("Chiamata ed eseguita verhogen\n\n");
 }
@@ -162,18 +161,22 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
     the Nucleus maintains for the I/O device indicated by the values in a1, a2,
     and optionally a3."
     */
+
 }
 
 
 void getCpuTime() {
     cpu_t t;
-    STCK(t);
+    STCK(t); 
     currentActiveProc->p_s.reg_v0 = t;
 }
 
 
-void waitForClock() {
-
+void waitForClock(pcb_PTR callerProccess) {
+    passeren(&semDevice[SEMDEVLEN-1]);
+    insertBlocked(&semDevice[SEMDEVLEN-1], callerProccess);
+    --activeProc;
+    ++blockedProc;
 }
 
 
@@ -181,20 +184,21 @@ support_t* getSupportData() {
     return (currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL;
 }
 
-//da salvare in v0 quindi la funzione sarà void
-int getIDprocess(int parent) {
+
+void getIDprocess(pcb_PTR callerProcess, int parent) {
     if(parent==0)
-        return currentActiveProc->p_pid;
+        callerProcess->p_s.reg_v0 = callerProcess->p_pid;
     else
-        return currentActiveProc->p_parent->p_pid;
+        callerProcess->p_s.reg_v0 = callerProcess->p_parent->p_pid;
 }
 
+
 // inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
-void yield(){ 
+void yield() {
     list_del(&currentActiveProc->p_list);
-    if(currentActiveProc->p_prio == PROCESS_PRIO_LOW){ 
+
+    if(currentActiveProc->p_prio == PROCESS_PRIO_LOW)
         insertReadyQueue(PROCESS_PRIO_LOW, currentActiveProc); 
-    }else{                                              
+    else                          
         insertReadyQueue(PROCESS_PRIO_HIGH,currentActiveProc);
-    }
 }
