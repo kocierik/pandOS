@@ -1,5 +1,8 @@
 #include "headers/exceptionHandler.h"
+
 extern void klog_print(char *s);
+extern void scheduler();
+
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
 * Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
@@ -63,7 +66,7 @@ void syscall_handler(state_t *callerProcState){
             verhogen((int*)a1);
             break;
         case DOIO:
-            doIOdevice((int*)a1, (int)a2);
+            doIOdevice((int*)a1, (int)a2, callerProcess);
             break;
         case GETTIME:
             getCpuTime();

@@ -20,7 +20,7 @@ void createProcess(state_t * callerProcess);
 void terminateProcess(int *pid, pcb_PTR callerProcess);
 void passeren(int *semaddr);
 void verhogen(int *semaddr);
-int doIOdevice(int *cmdAddr, int cmdValue);
+int doIOdevice(int *cmdAddr, int cmdValue, pcb_PTR callerProcess);
 void getCpuTime();
 void waitForClock();
 support_t* getSupportData();

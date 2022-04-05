@@ -18,16 +18,18 @@ extern void klog_print(char *s);
 static int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
 int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
 int blockedProc;                // Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
-LIST_HEAD(queueLowProc);        // Coda dei processi a bassa priorità
-LIST_HEAD(queueHighProc);       // Coda dei processi a alta priorità
-pcb_t *currentActiveProc;       // Puntatore processo in stato "running" (attivo) || Current Process
-int semDevice[SEMDEVLEN];     // Vettore di interi per i semafori dei device|| Device Semaphores
+struct list_head queueLowProc;  // Coda dei processi a bassa priorità
+struct list_head queueHighProc; // Coda dei processi a alta priorità
+pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
+int semDevice[SEMDEVLEN];       // Vettore di interi per i semafori dei device|| Device Semaphores
 
 
 void initGlobalVar() {
     processId = 0;
     activeProc  = 0;
     blockedProc = 0;
+    mkEmptyProcQ(&queueLowProc);
+    mkEmptyProcQ(&queueHighProc);
     currentActiveProc = NULL;
     for (int i = 0; i < SEMDEVLEN; ++i)
         semDevice[i] = 0;

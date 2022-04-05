@@ -16,12 +16,11 @@ extern void assegnaPID(pcb_PTR p);
 extern void insertReadyQueue(int prio, pcb_PTR p);
 
 
-void copyState(state_t * s, pcb_PTR p) {
+void copyState(state_t *s, pcb_PTR p) {
     p->p_s.cause = s->cause;
     p->p_s.entry_hi = s->entry_hi;
-    for (int i = 0; i < STATE_GPR_LEN; i++) {
+    for (int i = 0; i < STATE_GPR_LEN; i++)
         p->p_s.gpr[i] = s->gpr[i];
-    }
     p->p_s.hi = s->hi;
     p->p_s.lo = s->lo;
     p->p_s.pc_epc = s->pc_epc;
@@ -30,7 +29,6 @@ void copyState(state_t * s, pcb_PTR p) {
 
 
 void createProcess(state_t * callerProcState) {
-    
     pcb_PTR p = allocPcb();
     
     if(p == NULL)
@@ -64,9 +62,8 @@ void term_proc_and_child(pcb_PTR parent) {
     pcb_PTR p;
     while(!isPcbFree(parent->p_pid)) {
         p = parent;
-        while(!emptyChild(p)) {
+        while(!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
-        }
         
         __terminate_process(p); // termino p
     }
@@ -74,7 +71,7 @@ void term_proc_and_child(pcb_PTR parent) {
 
 
 void __terminate_process(pcb_PTR p) {
-    // GESTISCO VARIABILI GLOBALI E SEMAFORO
+    // gestisco variabili globali e semaforo
     if (p->p_semAdd == NULL) {
         list_del(&p->p_list);   // lo tolgo da qualsiasi lista
         if (p == currentActiveProc)
@@ -82,8 +79,8 @@ void __terminate_process(pcb_PTR p) {
         --activeProc;
     } else {
         --blockedProc;
+        outBlocked(p);
         if (p->p_semAdd <= &(semDevice[0]) || p->p_semAdd >= &(semDevice[SEMDEVLEN-1])) {
-            outBlocked(p);
             if((*p->p_semAdd) < 0)
                 ++(*p->p_semAdd);
         } else {
@@ -96,7 +93,8 @@ void __terminate_process(pcb_PTR p) {
     freePcb(p);
 }
 
-/* ok penso di avere un problema con l'inclusione della libreria di umps3 e quindi mi da errore nell'avvio del kernel...
+
+/*
 int lenQ(struct list_head queue) {
     struct list_head *pos;
     int c = 0;
@@ -123,9 +121,9 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
 void passeren(int *semaddr) {
-    if (*semaddr > 0)
-        --(*semaddr);
-    else {
+    --(*semaddr);
+
+    if (*semaddr <= 0) {
         insertBlocked(semaddr, currentActiveProc);
         --activeProc;
         ++blockedProc;
@@ -137,22 +135,18 @@ void passeren(int *semaddr) {
 
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(int *semaddr) {
+    ++(*semaddr);
     pcb_PTR pid = removeBlocked(semaddr);
-    if (pid == NULL) { 
-        //Non vi è alcun processo da rimuovere
-        klog_print("Nessun processo da rimuovere\n\n");
-        ++(*semaddr);
-    } else {
+    if (pid != NULL) {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
-        insertReadyQueue(pid->p_prio, pid);
-        ++activeProc;
         --blockedProc;
+        insertReadyQueue(pid->p_prio, pid);
     }
     klog_print("Chiamata ed eseguita verhogen\n\n");
 }
 
 
-int doIOdevice(int *cmdAddr, int cmdValue) {
+int doIOdevice(int *cmdAddr, int cmdValue, pcb_PTR callerProcess) {
     //Current process da running state va in blocked state
     /*
     Dunque devo eseguire una P sul processo corrente.
@@ -161,7 +155,8 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
     the Nucleus maintains for the I/O device indicated by the values in a1, a2,
     and optionally a3."
     */
-
+    int ret = insertBlocked(NULL, callerProcess);
+    return ret;
 }
 
 
