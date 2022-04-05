@@ -114,3 +114,13 @@ pcb_t* outChild(pcb_t *p) {
     }
     return NULL;
 }
+
+
+int isPcbFree(int pid) {
+    struct list_head *pos;
+    list_for_each(pos, &pcbFree_h) {
+        if(container_of(pos, pcb_t, p_list)->p_pid == pid)
+            return TRUE;
+    }
+    return FALSE;
+}

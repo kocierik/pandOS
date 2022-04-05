@@ -10,9 +10,10 @@
 
 
 /* Funzioni di aiuto */
-void __terminateProcess(pcb_PTR p);
-void terminateDescendance(pcb_PTR rootPtr);
-pcb_PTR findPcb(int pid, struct list_head queue);
+void __terminate_process(pcb_PTR p);
+void term_proc_and_child(pcb_PTR rootPtr);
+int lenQ(struct list_head queue);
+//pcb_PTR findPcb(int pid, struct list_head queue);
 
 
 void createProcess(state_t * callerProcess);

@@ -3,6 +3,8 @@
 extern void klog_print(char *s);
 
 /* Variabili globali esterne */
+extern int activeProc;
+extern int blockedProc; 
 extern int processId;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
@@ -62,50 +64,66 @@ void terminateProcess(int *pid, pcb_PTR callerProcess) {
     pcb_PTR p;
     if (*pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
-        __terminateProcess(callerProcess);
+        term_proc_and_child(callerProcess);
     } else {
-        // senno' lo cerco nelle liste dei processi ready
-        p = findPcb(*pid, queueLowProc);
-        if(p == NULL)
-            p = findPcb(*pid, queueHighProc);
-        __terminateProcess(p);
+        term_proc_and_child(container_of(pid, pcb_t, p_pid));
     }
 }
 
 
-/* termina un processo */
-void __terminateProcess(pcb_PTR p) {
-    terminateDescendance(p);
-    //gestisco il semaforo del processo
-    /*
-    If the value of a semaphore is negative, it is an invariant that
-    the absolute value of the semaphore equal the number of pcb’s blocked on that
-    semaphore. Hence if a terminated process is blocked on a semaphore,
-    the value of the semaphore must be adjusted; i.e. incremented.
-    */
-    //aggiusto coda e variabili globali
-    freePcb(p);
+/* funzione iterativa che elimina i figli e il processo stesso */
+void term_proc_and_child(pcb_PTR parent) {
+    pcb_PTR p;
+    while(!isPcbFree(parent)) {
+        p = parent;
+        while(!emptyChild(p)) {
+            p = container_of(p->p_child.next, pcb_t, p_sib);
+        }
+        
+        __terminate_process(p); // termino p
+    }
 }
 
 
-/* termina tutti i processi figli di un processo */
-void terminateDescendance(pcb_PTR parent) {
-    /* per non usare una funzione ricorsiva, controllo tutti i possibili pcb
-       e li termino se hanno come parent il processo da terminare */
+void __terminate_process(pcb_PTR p) {
+    list_del(&p->p_list);   // lo tolgo da qualsiasi lista
+    freePcb(p);             // lo inserisco nei pcb liberi
 
-    // controllo il processo corrente
-    if(currentActiveProc->p_parent == parent)
-        terminateProcess(0, currentActiveProc);
-
-    // controllo i processi nelle ready queue
-
-    // controllo i processi bloccati dai semafori
+    //aggiorno le variabili globali
+    if (p == currentActiveProc || lenQ(queueHighProc) + lenQ(queueLowProc) == activeProc+2)
+        --activeProc;
+    else
+        --blockedProc;
     
+    semd_PTR s = findASL(p->p_semAdd);
 
+    //gestisco i semafori
+
+    // se e' null vuol dire che è un semaforo di un device
+    if(s != NULL && (*p->p_semAdd) < 0)
+        if((*p->p_semAdd) < 0)
+            ++(*p->p_semAdd); // FACCIO COSI' O DIRETTAMENTE passeren O UNA SYSCALL
+        else if((*p->p_semAdd) > 0)
+            --(*p->p_semAdd); // FACCIO COSI' O DIRETTAMENTE passeren O UNA SYSCALL
+
+
+    outChild(p); // tolgo p come figlio così va avanti
+}
+
+
+
+int lenQ(struct list_head queue) {
+    struct list_head *pos;
+    int c = 0;
+    list_for_each(pos, &queue) {
+        ++c;
+    }
+    return c;
 }
 
 
 /* cerca un pcb in una lista dato il pid e la lista in cui cercare, ritorna NULL se non lo trova */
+/*
 pcb_PTR findPcb(int pid, struct list_head queue) {
     struct list_head *pos;
     pcb_PTR p;
@@ -115,6 +133,7 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
     }
     return NULL;
 }
+*/
 
 
 void passeren(int *semaddr) {
