@@ -21,7 +21,7 @@ int blockedProc;                // Processi 'blocked': in attesa di I/O oppure t
 LIST_HEAD(queueLowProc);        // Coda dei processi a bassa priorità
 LIST_HEAD(queueHighProc);       // Coda dei processi a alta priorità
 pcb_t *currentActiveProc;       // Puntatore processo in stato "running" (attivo) || Current Process
-short semDevice[SEMDEVLEN];     // Vettore di interi per i semafori dei device|| Device Semaphores
+int semDevice[SEMDEVLEN];     // Vettore di interi per i semafori dei device|| Device Semaphores
 
 
 void initGlobalVar() {

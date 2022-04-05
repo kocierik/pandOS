@@ -9,7 +9,7 @@ extern int processId;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
-extern short semDevice[SEMDEVLEN];
+extern int semDevice[SEMDEVLEN];
 
 /* Funzioni globali esterne */
 extern void assegnaPID(pcb_PTR p);
@@ -61,7 +61,6 @@ void createProcess(state_t * callerProcState) {
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
 void terminateProcess(int *pid, pcb_PTR callerProcess) {
-    pcb_PTR p;
     if (*pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
         term_proc_and_child(callerProcess);
@@ -74,7 +73,7 @@ void terminateProcess(int *pid, pcb_PTR callerProcess) {
 /* funzione iterativa che elimina i figli e il processo stesso */
 void term_proc_and_child(pcb_PTR parent) {
     pcb_PTR p;
-    while(!isPcbFree(parent)) {
+    while(!isPcbFree(parent->p_pid)) {
         p = parent;
         while(!emptyChild(p)) {
             p = container_of(p->p_child.next, pcb_t, p_sib);
@@ -86,32 +85,22 @@ void term_proc_and_child(pcb_PTR parent) {
 
 
 void __terminate_process(pcb_PTR p) {
-    list_del(&p->p_list);   // lo tolgo da qualsiasi lista
-    freePcb(p);             // lo inserisco nei pcb liberi
-
-    //aggiorno le variabili globali
-    if (p == currentActiveProc || lenQ(queueHighProc) + lenQ(queueLowProc) == activeProc+2)
+    if (p->p_semAdd == NULL) {
+        list_del(&p->p_list);   // lo tolgo da qualsiasi lista
         --activeProc;
-    else
+    } else {
         --blockedProc;
+        if (p->p_semAdd >= &(semDevice[0]) && p->p_semAdd <= &(semDevice[SEMDEVLEN-1]))
+            ++(*p->p_semAdd);
+        outBlocked(p);
+        
+    }
     
-    semd_PTR s = findASL(p->p_semAdd);
-
-    //gestisco i semafori
-
-    // se e' null vuol dire che è un semaforo di un device
-    if(s != NULL && (*p->p_semAdd) < 0)
-        if((*p->p_semAdd) < 0)
-            ++(*p->p_semAdd); // FACCIO COSI' O DIRETTAMENTE passeren O UNA SYSCALL
-        else if((*p->p_semAdd) > 0)
-            --(*p->p_semAdd); // FACCIO COSI' O DIRETTAMENTE passeren O UNA SYSCALL
-
-
     outChild(p); // tolgo p come figlio così va avanti
+    freePcb(p);
 }
 
-
-
+/* ok penso di avere un problema con l'inclusione della libreria di umps3 e quindi mi da errore nell'avvio del kernel...
 int lenQ(struct list_head queue) {
     struct list_head *pos;
     int c = 0;
@@ -120,6 +109,7 @@ int lenQ(struct list_head queue) {
     }
     return c;
 }
+*/
 
 
 /* cerca un pcb in una lista dato il pid e la lista in cui cercare, ritorna NULL se non lo trova */
@@ -188,7 +178,7 @@ void waitForClock() {
 
 
 support_t* getSupportData() {
-    return currentActiveProc->p_supportStruct;
+    return (currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL;
 }
 
 //da salvare in v0 quindi la funzione sarà void
@@ -199,7 +189,11 @@ int getIDprocess(int parent) {
         return currentActiveProc->p_parent->p_pid;
 }
 
-
-void yield() {
-    
+void yield(){ 
+    list_del(currentActiveProc->p_list);
+    if(currentActiveProc->p_prio == PROCESS_PRIO_LOW){ 
+        insertReadyQueue(PROCESS_PRIO_LOW, currentActiveProc); 
+    }else{                                              
+        insertReadyQueue(PROCESS_PRIO_HIGH,currentActiveProc);
+    }
 }
