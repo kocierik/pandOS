@@ -1,6 +1,7 @@
 #include "headers/syscall.h"
 
 extern void klog_print(char *s);
+extern void klog_print_dec(unsigned int num);
 
 /* Variabili globali esterne */
 extern int activeProc;
@@ -99,58 +100,38 @@ int __terminate_process(pcb_PTR p) {
     return ret;
 }
 
-
-/*
-int lenQ(struct list_head queue) {
-    struct list_head *pos;
-    int c = 0;
-    list_for_each(pos, &queue) {
-        ++c;
-    }
-    return c;
-}
-*/
-
-
-/* cerca un pcb in una lista dato il pid e la lista in cui cercare, ritorna NULL se non lo trova */
-/*
-pcb_PTR findPcb(int pid, struct list_head queue) {
-    struct list_head *pos;
-    pcb_PTR p;
-    list_for_each(pos, &queue) {
-        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
-            return p;
-    }
-    return NULL;
-}
-*/
-
 /* Porta il processo attualmente attivo in stato "Blocked" */
 int passeren(int *semaddr) {
-    --(*semaddr);
 
-    if (*semaddr <= 0) {
+    if (*semaddr > 0) --(*semaddr);
+    else {
         insertBlocked(semaddr, currentActiveProc);
         --activeProc;
         ++blockedProc;
-        currentActiveProc = NULL; // Il processo che prima era attivo ora non lo è più.
+        klog_print("\n\nP: Passeren eseguita su processo: ");
+        klog_print_dec(currentActiveProc->p_pid);
+        currentActiveProc = NULL; // TODO: ridondante dato il valore di return???
         return TRUE;
     }
-    klog_print("\n\nPasseren eseguita con successo...");
     return FALSE;
 }
 
 
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(int *semaddr) {
-    ++(*semaddr);
     pcb_PTR pid = removeBlocked(semaddr);
-    if (pid != NULL) {
+
+    if (pid == NULL) ++(*semaddr);
+    else {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
         --blockedProc;
         insertReadyQueue(pid->p_prio, pid);
     }
-    klog_print("\n\nVerhogen eseguita con successo...");
+    /*
+     * //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: 
+     *Rimuovendo questa print ti ritroverai nel bug dell'interrupt local timer loop.
+    */
+    klog_print("\n\nVerhogen eseguita con successo..."); 
 }
 
 int doIOdevice(int *cmdAddr, int cmdValue) {
@@ -170,7 +151,7 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
     termreg_t terminal = deviceRegs->devreg[4][deviceNumber].term;
     
     //Semaforo sul quale devo bloccare il processo corrente.
-    int semaphoreIndex = 4 * 8 + deviceNumber + is_recv_command; 
+    int semaphoreIndex = 4 * 8 + deviceNumber*2 + is_recv_command; 
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;

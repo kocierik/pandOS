@@ -27,13 +27,15 @@ void scheduler() {
     */
 
     if((p = removeProcQ(&queueHighProc)) != NULL) {
-        klog_print("\n\nCarico un processo ad alta priorita'...");
+        klog_print("\n\nscheduler: Carico un processo ad alta priorita' con ID:");
+        klog_print_dec(p->p_pid);
         currentActiveProc = p;
         LDST(&(p->p_s));
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         
-        klog_print("\n\nCarico un processo a bassa priorita'...");   
+        klog_print("\n\nscheduler: Carico un processo a bassa priorita' con ID:");
+        klog_print_dec(p->p_pid);   
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT
         setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE

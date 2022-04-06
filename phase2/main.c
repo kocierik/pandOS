@@ -46,7 +46,7 @@ void initGlobalVar() {
 void initPassUpVector(passupvector_t *vector) {
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
-    vector->exception_handler = (memaddr) (exceptionHandler);
+    vector->exception_handler = (memaddr) exceptionHandler;
     vector->exception_stackPtr = KERNELSTACK;
 }
 
@@ -75,13 +75,13 @@ int main(int argc, int* argv[]){
     initASL();
     initGlobalVar();
 
-    klog_print("\n\n\nVariabili inizializzate...");
+    klog_print("\n\nmain: Variabili inizializzate...");
     
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
-    klog_print("\n\nPass Up Vector inizializzato...");
+    klog_print("\n\nmain: Pass Up Vector inizializzato...");
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
@@ -94,10 +94,10 @@ int main(int argc, int* argv[]){
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
-    klog_print("\n\nPrimo processo creato, chiamo lo scheduler...");
+    klog_print("\n\nmain: Primo processo creato, chiamo lo scheduler...");
 
     scheduler();
 
-    klog_print("ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
+    klog_print("main: ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
     return 0;
 }
