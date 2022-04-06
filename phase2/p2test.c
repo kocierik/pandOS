@@ -144,6 +144,7 @@ void test() {
     klog_print("Ingresso nel file p2test.c\n\n");
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //print("p1 v(sem_testsem)\n");
+    klog_print("Verhogen fatta\n\n");
 
     /* set up states of the other processes */
 
@@ -151,6 +152,8 @@ void test() {
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
     hp_p1state.status                     = hp_p1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+
+    klog_print("store state fatto\n\n");
 
     STST(&hp_p2state);
     hp_p2state.reg_sp = hp_p1state.reg_sp - QPAGE;
@@ -232,10 +235,13 @@ void test() {
     p10state.pc_epc = p10state.reg_t9 = (memaddr)p10;
     p10state.status                   = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+
+    klog_print("fatti tutti i storestate\n\n");
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
-    print("p2 was started\n");
+    //print("p2 was started\n");
+    klog_print("p2 iniziato\n\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
@@ -243,12 +249,14 @@ void test() {
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
-        print("error: p1/p2 synchronization bad\n");
+        klog_print("error: p1/p2 synchronization bad\n\n");
+        //print("error: p1/p2 synchronization bad\n");
     }
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
-    print("p3 is started\n");
+    //print("p3 is started\n");
+    klog_print("p3 iniziato\n\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 

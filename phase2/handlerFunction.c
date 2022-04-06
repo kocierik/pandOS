@@ -57,16 +57,18 @@ void syscall_handler(state_t *callerProcState){
             createProcess(callerProcState);
             break;
         case TERMPROCESS:
-            terminateProcess((int *)a1, callerProcess);
+            blockingCall = terminateProcess((int *)a1, callerProcess);
             break;
         case PASSEREN:
-            passeren((int*)a1);
+            blockingCall = passeren((int*)a1);
             break;
         case VERHOGEN:
             verhogen((int*)a1);
+            klog_print("Verhogen brosfata\n\n");
             break;
         case DOIO:
-            doIOdevice((int*)a1, (int)a2, callerProcess);
+            //doIOdevice((int*)a1, (int)a2, callerProcess);
+            blockingCall = TRUE;
             break;
         case GETTIME:
             getCpuTime();
@@ -90,11 +92,14 @@ void syscall_handler(state_t *callerProcState){
 
     
     // dobbiamo incrementare di una word (4 byte) slide 38 di 48
+    callerProcState->pc_epc += 4;
 
+    klog_print("incremento di 4 il pc\n\n");
     // TODO : CAPIRE COSA FARE QUANDO C'E' UNA CHIAMATA BLOCCANTE 
     if(blockingCall) {
         scheduler();
     } else {
-        LDST(callerProcess);
+        klog_print("se fa il load del rpocesso chiam\n\n");
+        LDST(callerProcState);
     }
 }

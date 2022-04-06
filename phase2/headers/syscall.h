@@ -10,15 +10,15 @@
 
 
 /* Funzioni di aiuto */
-void __terminate_process(pcb_PTR p);
-void term_proc_and_child(pcb_PTR rootPtr);
+int __terminate_process(pcb_PTR p);
+int term_proc_and_child(pcb_PTR rootPtr);
 int lenQ(struct list_head queue);
 //pcb_PTR findPcb(int pid, struct list_head queue);
 
 
 void createProcess(state_t * callerProcess);
-void terminateProcess(int *pid, pcb_PTR callerProcess);
-void passeren(int *semaddr);
+int terminateProcess(int *pid, pcb_PTR callerProcess);
+int passeren(int *semaddr);
 void verhogen(int *semaddr);
 int doIOdevice(int *cmdAddr, int cmdValue, pcb_PTR callerProcess);
 void getCpuTime();

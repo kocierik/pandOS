@@ -47,50 +47,56 @@ void createProcess(state_t * callerProcState) {
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-void terminateProcess(int *pid, pcb_PTR callerProcess) {
+int terminateProcess(int *pid, pcb_PTR callerProcess) {
+    int blocking_callerProc = FALSE;
     if (*pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
+        blocking_callerProc = TRUE;
         term_proc_and_child(callerProcess);
     } else {
-        term_proc_and_child(container_of(pid, pcb_t, p_pid));
+        blocking_callerProc = term_proc_and_child(container_of(pid, pcb_t, p_pid));
     }
+    return blocking_callerProc;
 }
 
 
 /* funzione iterativa che elimina i figli e il processo stesso */
-void term_proc_and_child(pcb_PTR parent) {
+int term_proc_and_child(pcb_PTR parent) {
+    int ret = FALSE;
     pcb_PTR p;
     while(!isPcbFree(parent->p_pid)) {
         p = parent;
         while(!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
         
-        __terminate_process(p); // termino p
+        ret = __terminate_process(p); // termino p
     }
+    return ret;
 }
 
 
-void __terminate_process(pcb_PTR p) {
+int __terminate_process(pcb_PTR p) {
+    int ret = FALSE;
     // gestisco variabili globali e semaforo
     if (p->p_semAdd == NULL) {
         list_del(&p->p_list);   // lo tolgo da qualsiasi lista
-        if (p == currentActiveProc)
+        if (p == currentActiveProc) {
             currentActiveProc = NULL;
+            ret = TRUE;
+        }
         --activeProc;
     } else {
         --blockedProc;
-        outBlocked(p);
         if (p->p_semAdd <= &(semDevice[0]) || p->p_semAdd >= &(semDevice[SEMDEVLEN-1])) {
             if((*p->p_semAdd) < 0)
                 ++(*p->p_semAdd);
-        } else {
-            // TODO?? When the interrupt eventually occurs the semaphore
-            // will get V’ed (and hence incremented) by the interrupt handler.
         }
+        outBlocked(p);
     }
     
     outChild(p); // tolgo p come figlio così va avanti
     freePcb(p);
+    return ret;
 }
 
 
@@ -120,7 +126,7 @@ pcb_PTR findPcb(int pid, struct list_head queue) {
 */
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
-void passeren(int *semaddr) {
+int passeren(int *semaddr) {
     --(*semaddr);
 
     if (*semaddr <= 0) {
@@ -128,8 +134,9 @@ void passeren(int *semaddr) {
         --activeProc;
         ++blockedProc;
         currentActiveProc = NULL; // Il processo che prima era attivo ora non lo è più.
+        return TRUE;
     }
-    klog_print("Chiamata ed eseguita passeren\n\n");
+    return FALSE;
 }
 
 
@@ -142,7 +149,6 @@ void verhogen(int *semaddr) {
         --blockedProc;
         insertReadyQueue(pid->p_prio, pid);
     }
-    klog_print("Chiamata ed eseguita verhogen\n\n");
 }
 
 
