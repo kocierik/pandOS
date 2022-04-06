@@ -31,7 +31,7 @@ void initGlobalVar() {
     mkEmptyProcQ(&queueLowProc);
     mkEmptyProcQ(&queueHighProc);
     currentActiveProc = NULL;
-    for (int i = 0; i < SEMDEVLEN; ++i)
+    for (int i = 0; i < SEMDEVLEN; i++)
         semDevice[i] = 0;
 }
 
