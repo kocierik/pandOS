@@ -21,7 +21,14 @@ int blockedProc;                // Processi 'blocked': in attesa di I/O oppure t
 struct list_head queueLowProc;  // Coda dei processi a bassa priorità
 struct list_head queueHighProc; // Coda dei processi a alta priorità
 pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
-int semDevice[SEMDEVLEN];       // Vettore di interi per i semafori dei device|| Device Semaphores
+
+// Vettore di interi per i semafori dei device|| Device Semaphores
+/* 
+    * Consideriamo ogni coppia di semafori dei terminali come segue: 
+    * Primo semaforo dedicato alle operazioni di scrittura (transm)
+    * Secondo semaforo dedicato alle operazioni di lettura (recv)
+*/
+int semDevice[SEMDEVLEN];       
 
 
 void initGlobalVar() {
@@ -68,13 +75,13 @@ int main(int argc, int* argv[]){
     initASL();
     initGlobalVar();
 
-    klog_print("Variabili inizializzate...\n\n");
+    klog_print("\n\n\nVariabili inizializzate...");
     
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
-    klog_print("Pass Up Vector inizializzato...\n\n");
+    klog_print("\n\nPass Up Vector inizializzato...");
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
@@ -87,7 +94,7 @@ int main(int argc, int* argv[]){
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
-    klog_print("Primo processo creato, chiamo lo scheduler...\n\n");
+    klog_print("\n\nPrimo processo creato, chiamo lo scheduler...");
 
     scheduler();
 

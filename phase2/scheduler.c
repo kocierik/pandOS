@@ -27,13 +27,13 @@ void scheduler() {
     */
 
     if((p = removeProcQ(&queueHighProc)) != NULL) {
-        klog_print("Carico un processo ad alta priorita'...\n\n");
+        klog_print("\n\nCarico un processo ad alta priorita'...");
         currentActiveProc = p;
         LDST(&(p->p_s));
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         
-        klog_print("Carico un processo a bassa priorita'...\n\n");   
+        klog_print("\n\nCarico un processo a bassa priorita'...");   
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT
         setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE
@@ -46,7 +46,7 @@ void scheduler() {
         * dallo stato di "ready" allo stato "running".
         * Altrimenti, se le code dei processi "ready" sono vuote, eseguo i seguenti controlli.       
         */
-        klog_print("Code dei processi in attesa vuote...\n\n");
+        klog_print("\n\nCode dei processi in attesa vuote...");
         if(activeProc == 0)
             HALT(); //Il processore non deve fare niente quindi si ferma
             

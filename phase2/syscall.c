@@ -28,7 +28,7 @@ void copyState(state_t *s, pcb_PTR p) {
 }
 
 
-void createProcess(state_t * callerProcState) {
+void createProcess(state_t *callerProcState) {
     pcb_PTR p = allocPcb();
     
     if(p == NULL)
@@ -37,7 +37,7 @@ void createProcess(state_t * callerProcState) {
         assegnaPID(p);
         (*callerProcState).reg_v0 = p->p_pid;
 
-        insertChild(container_of(callerProcState, pcb_t, p_s), p);
+        insertChild(currentActiveProc, p);
           
         copyState((state_t *)(*callerProcState).reg_a1,p);
         insertReadyQueue((*callerProcState).reg_a2, p);
@@ -47,12 +47,12 @@ void createProcess(state_t * callerProcState) {
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-int terminateProcess(int *pid, pcb_PTR callerProcess) {
+int terminateProcess(int *pid) {
     int blocking_callerProc = FALSE;
     if (*pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
         blocking_callerProc = TRUE;
-        term_proc_and_child(callerProcess);
+        term_proc_and_child(currentActiveProc);
     } else {
         blocking_callerProc = term_proc_and_child(container_of(pid, pcb_t, p_pid));
     }
@@ -136,6 +136,7 @@ int passeren(int *semaddr) {
         currentActiveProc = NULL; // Il processo che prima era attivo ora non lo è più.
         return TRUE;
     }
+    klog_print("\n\nPasseren eseguita con successo...");
     return FALSE;
 }
 
@@ -149,20 +150,36 @@ void verhogen(int *semaddr) {
         --blockedProc;
         insertReadyQueue(pid->p_prio, pid);
     }
+    klog_print("\n\nVerhogen eseguita con successo...");
 }
 
+int doIOdevice(int *cmdAddr, int cmdValue) {
 
-int doIOdevice(int *cmdAddr, int cmdValue, pcb_PTR callerProcess) {
-    //Current process da running state va in blocked state
-    /*
-    Dunque devo eseguire una P sul processo corrente.
-    Ma con quale semaforo chiamo la P?
-    "P operation on the semaphore that
-    the Nucleus maintains for the I/O device indicated by the values in a1, a2,
-    and optionally a3."
-    */
-    int ret = insertBlocked(NULL, callerProcess);
-    return ret;
+    int deviceNumber;
+    int is_recv_command = 0;
+    devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
+    for (int i = 0; i < 8; i++){
+        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) 
+            deviceNumber = i;
+        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){
+            deviceNumber = i;
+            is_recv_command = 1;
+        }
+    }
+    //Terminale che esegue la chiamata.
+    termreg_t terminal = deviceRegs->devreg[4][deviceNumber].term;
+    
+    //Semaforo sul quale devo bloccare il processo corrente.
+    int semaphoreIndex = 4 * 8 + deviceNumber + is_recv_command; 
+
+    // Eseguo il comando richiesto.
+    *cmdAddr = cmdValue;
+
+    //Eseguo la P del processo attualmente in esecuzione.
+    passeren((int*) semDevice[semaphoreIndex]);
+
+    if (is_recv_command) return terminal.recv_status;
+    else return terminal.transm_status;
 }
 
 
@@ -173,9 +190,9 @@ void getCpuTime() {
 }
 
 
-void waitForClock(pcb_PTR callerProccess) {
+void waitForClock() {
     passeren(&semDevice[SEMDEVLEN-1]);
-    insertBlocked(&semDevice[SEMDEVLEN-1], callerProccess);
+    insertBlocked(&semDevice[SEMDEVLEN-1], currentActiveProc);
     --activeProc;
     ++blockedProc;
 }
@@ -186,11 +203,11 @@ support_t* getSupportData() {
 }
 
 
-void getIDprocess(pcb_PTR callerProcess, int parent) {
+void getIDprocess(state_t *callerProcess, int parent) {
     if(parent==0)
-        callerProcess->p_s.reg_v0 = callerProcess->p_pid;
+        (*callerProcess).reg_v0 = currentActiveProc->p_pid;
     else
-        callerProcess->p_s.reg_v0 = callerProcess->p_parent->p_pid;
+        (*callerProcess).reg_v0 = currentActiveProc->p_parent->p_pid;
 }
 
 

@@ -12,19 +12,19 @@
 /* Funzioni di aiuto */
 int __terminate_process(pcb_PTR p);
 int term_proc_and_child(pcb_PTR rootPtr);
-int lenQ(struct list_head queue);
+//int lenQ(struct list_head queue);
 //pcb_PTR findPcb(int pid, struct list_head queue);
 
 
-void createProcess(state_t * callerProcess);
-int terminateProcess(int *pid, pcb_PTR callerProcess);
+void createProcess(state_t *callerProcess);
+int terminateProcess(int *pid);
 int passeren(int *semaddr);
 void verhogen(int *semaddr);
-int doIOdevice(int *cmdAddr, int cmdValue, pcb_PTR callerProcess);
+int doIOdevice(int *cmdAddr, int cmdValue);
 void getCpuTime();
 void waitForClock();
 support_t* getSupportData();
-void getIDprocess(pcb_PTR callerProcess, int parent);
+void getIDprocess(state_t *callerProcess, int parent);
 void yield();
 
 

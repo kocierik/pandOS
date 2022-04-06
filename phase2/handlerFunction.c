@@ -3,6 +3,11 @@
 extern void klog_print(char *s);
 extern void scheduler();
 
+extern void insertReadyQueue(int prio, pcb_PTR p);
+extern void copyState(state_t *s, pcb_PTR p);
+
+extern pcb_t *currentActiveProc;
+
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
 * Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
@@ -15,7 +20,7 @@ int interruptHandler(){
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
         klog_print(">> INTERRUPT: IL_IPI\n"); 
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-        klog_print("Interrupt local timer\n");
+        klog_print("\n\nInterrupt local timer");
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
         klog_print("interrupt timer\n");
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
@@ -32,7 +37,7 @@ int interruptHandler(){
 
 
 void passOrDie(int pageFault){
-    klog_print("passOrDie chiamato, è il momento di implementarlo\n");
+    klog_print("\n\npassOrDie chiamato, e' il momento di implementarlo");
 }
 
 int TLBHandler(){
@@ -47,7 +52,6 @@ void trapHandler(){
 void syscall_handler(state_t *callerProcState){
     int blockingCall = FALSE;
     
-    pcb_PTR callerProcess = container_of(callerProcState, pcb_t, p_s);
     int syscode = (*callerProcState).reg_a0;
     void * a1 = (void *) (*callerProcState).reg_a1;
     void * a2 = (void *) (*callerProcState).reg_a2;
@@ -57,17 +61,16 @@ void syscall_handler(state_t *callerProcState){
             createProcess(callerProcState);
             break;
         case TERMPROCESS:
-            blockingCall = terminateProcess((int *)a1, callerProcess);
+            blockingCall = terminateProcess((int *)a1);
             break;
         case PASSEREN:
             blockingCall = passeren((int*)a1);
             break;
         case VERHOGEN:
             verhogen((int*)a1);
-            klog_print("Verhogen brosfata\n\n");
             break;
         case DOIO:
-            //doIOdevice((int*)a1, (int)a2, callerProcess);
+            (*callerProcState).reg_v0 = doIOdevice((int*)a1, (int)a2);
             blockingCall = TRUE;
             break;
         case GETTIME:
@@ -81,7 +84,7 @@ void syscall_handler(state_t *callerProcState){
             getSupportData();
             break;
         case GETPROCESSID:
-            getIDprocess(callerProcess, (int)a1);
+            getIDprocess(callerProcState, (int)a1);
             break;
         case YIELD:
             yield((int)a1);
@@ -90,16 +93,13 @@ void syscall_handler(state_t *callerProcState){
             break;
     }
 
-    
     // dobbiamo incrementare di una word (4 byte) slide 38 di 48
     callerProcState->pc_epc += 4;
 
-    klog_print("incremento di 4 il pc\n\n");
-    // TODO : CAPIRE COSA FARE QUANDO C'E' UNA CHIAMATA BLOCCANTE 
     if(blockingCall) {
+        copyState(callerProcState, currentActiveProc);
         scheduler();
     } else {
-        klog_print("se fa il load del rpocesso chiam\n\n");
         LDST(callerProcState);
     }
 }

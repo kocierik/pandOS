@@ -109,11 +109,14 @@ void print(char *msg) {
     devregtr *command = base + 3;
     devregtr  status;
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
+    klog_print("\n\nPasseren all'interno della print eseguita");
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
+        klog_print("\n\nSto per usare la DOIO");
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
+        klog_print("\n\nDOIO usata");
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("Panico paura\n\n");
+            klog_print("Sono nel PANIC della print\n\n");
             PANIC();
         }
         s++;
@@ -141,19 +144,18 @@ void uTLB_RefillHandler() {
 
 extern void klog_print(char *s);
 void test() {
-    klog_print("Ingresso nel file p2test.c\n\n");
+    klog_print("\n\nIngresso nel file p2test.c...");
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
-    //print("p1 v(sem_testsem)\n");
-    klog_print("Verhogen fatta\n\n");
+    klog_print("\n\nProvo a printare qualcosa su terminale...");
+    print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
-
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
     hp_p1state.status                     = hp_p1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-    klog_print("store state fatto\n\n");
+    klog_print("\n\nStore state fatto...");
 
     STST(&hp_p2state);
     hp_p2state.reg_sp = hp_p1state.reg_sp - QPAGE;
