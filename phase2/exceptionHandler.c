@@ -23,6 +23,8 @@ void exception_handler() {
             klog_print("cause ignota");
             break;
     }
+
+    //LDST(exceptionState);
 }
 
 
