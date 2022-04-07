@@ -7,6 +7,7 @@
 
 /* Extern functions */
 extern void test();
+extern void test1();
 extern void uTLB_RefillHandler();
 extern void exceptionHandler();
 extern void scheduler();

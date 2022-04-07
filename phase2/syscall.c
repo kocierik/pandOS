@@ -153,11 +153,7 @@ void verhogen(int *semaddr) {
         --blockedProc;
         insertReadyQueue(pid->p_prio, pid);
     }
-    /*
-     * //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: //NOTA BENE: 
-     *Rimuovendo questa print ti ritroverai nel bug dell'interrupt local timer loop.
-    */
-    klog_print("\n\nVerhogen eseguita con successo..."); 
+    //klog_print("\n\nVerhogen eseguita con successo..."); 
 }
 
 

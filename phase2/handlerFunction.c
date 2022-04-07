@@ -41,8 +41,10 @@ int interruptHandler(state_t *excState){
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
         klog_print("\n\nInterruptHandler: INTERRUPT: IL_IPI\n");         //Nulla da fare.
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-
-        setTIMER(TIMESLICE);
+        
+        //setTIMER(-1);
+        klog_print("\n\nSlice time finito di proc: ");
+        klog_print_dec(currentActiveProc->p_pid);
         copyState(excState, &currentActiveProc->p_s);
         insertReadyQueue(currentActiveProc->p_prio, currentActiveProc);
         --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso

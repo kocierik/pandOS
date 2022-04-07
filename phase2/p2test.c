@@ -19,6 +19,7 @@
 #include "../generic_headers/pandos_types.h"
 #include <umps/libumps.h>
 extern void klog_print(char *s); //TODO rimuovi
+extern void klog_print_dec(int n); //TODO rimuovi
 typedef unsigned int devregtr;
 
 /* hardware constants */
@@ -128,11 +129,9 @@ void print(char *msg) {
 /* TLB-Refill Handler */
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler() {
-
     setENTRYHI(0x80000000);
     setENTRYLO(0x00000000);
     TLBWR();
-
     LDST((state_t *)0x0FFFF000);
 }
 
@@ -142,12 +141,64 @@ void uTLB_RefillHandler() {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 
-extern void klog_print(char *s);
+
+int sem1 = 0;
+int sem2 = 0;
+
+void k1() {
+    klog_print("sono in k1");
+    int c = 0;
+    while(TRUE) {
+        //SYSCALL(VERHOGEN, (int)&sem1, 0, 0);
+        klog_print("\n\nk1");
+        klog_print_dec(c);
+        c++;
+        //SYSCALL(PASSEREN, (int)&sem2, 0, 0);
+    }
+}
+
+void k2() {
+    klog_print("sono in k2");
+    int c = 0;
+    while(TRUE) {
+        SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
+        klog_print("k2: ");
+        klog_print_dec(c);
+        c++;
+        SYSCALL(PASSEREN, (int)&sem1, 0, 0);
+    }
+}
+
+void test1(){
+
+    STST(&p2state);
+    p2state.reg_sp = hp_p2state.reg_sp - QPAGE;
+    p2state.pc_epc = p2state.reg_t9 = (memaddr)k1;
+    p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+
+    /* create process p2 */
+    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
+
+    klog_print("ho creato p2");
+
+    int c = 0;
+    while(TRUE) {
+        //SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
+        klog_print("\n\n2k2:");
+        klog_print_dec(c);
+        c++;
+        //SYSCALL(PASSEREN, (int)&sem1, 0, 0);
+    }
+}
+
+
+
+
 void test() {
     klog_print("\n\nIngresso nel file p2test.c...");
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //klog_print("\n\nProvo a printare qualcosa su terminale...");
-    print("p1 v(sem_testsem)\n");
+    //print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);

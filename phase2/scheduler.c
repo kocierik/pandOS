@@ -44,12 +44,12 @@ void scheduler() {
         currentActiveProc = p;
         //setSTATUS(ALLOFF); //suggerito da gian
         STCK(startTime);
-        LDST(&(p->p_s));
+        LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         
-        klog_print("\n\nscheduler: Carico un processo a bassa priorita' con ID:");
-        klog_print_dec(p->p_pid);   
+        //klog_print("\n\nscheduler: Carico un processo a bassa priorita' con ID:");
+        //klog_print_dec(p->p_pid);   
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT
         setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE
