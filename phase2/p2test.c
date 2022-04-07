@@ -317,7 +317,7 @@ void p2() {
 
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
-    //print("p2 starts\n");
+    print("c2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {

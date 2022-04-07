@@ -38,7 +38,10 @@ int createProcess(state_t *a1, int a2, support_t *a3) {
         insertChild(currentActiveProc, p);
         copyState(a1, p);
         insertReadyQueue(a2, p);
-        p->p_supportStruct = a3;
+        if(a3 != NULL || a3 != 0)
+            p->p_supportStruct = a3;
+        else
+            p->p_supportStruct = NULL;
         return p->p_pid;
     }
 }
@@ -85,10 +88,6 @@ int __terminate_process(pcb_PTR p) {
         --activeProc;
     } else {
         --blockedProc;
-        if (p->p_semAdd <= &(semDevice[0]) || p->p_semAdd >= &(semDevice[SEMDEVLEN-1])) {
-            if((*p->p_semAdd) < 0)
-                ++(*p->p_semAdd);
-        }
         outBlocked(p);
     }
     
@@ -99,15 +98,14 @@ int __terminate_process(pcb_PTR p) {
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
 int passeren(int *semaddr) {
-
-    if (*semaddr > 0) --(*semaddr);
+    if (*semaddr > 0)
+        --(*semaddr);
     else {
         insertBlocked(semaddr, currentActiveProc);
         --activeProc;
         ++blockedProc;
         klog_print("\n\nP: Passeren eseguita su processo: ");
         klog_print_dec(currentActiveProc->p_pid);
-        currentActiveProc = NULL; // TODO: ridondante dato il valore di return???
         return TRUE;
     }
     return FALSE;

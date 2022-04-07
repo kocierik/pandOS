@@ -41,14 +41,24 @@ int interruptHandler(){
 
 void passOrDie(int pageFault){
     klog_print("\n\npassOrDie chiamato, e' il momento di implementarlo");
+    if (currentActiveProc != NULL) {
+        if (currentActiveProc->p_supportStruct == NULL) {
+            klog_print("\n\n Termino il processo corrente");
+            terminateProcess(0);
+        } else {
+            klog_print("\n\n Devo fare il pass up");
+        }
+    } else {
+        klog_print("currentProc e' null");
+    }
 }
 
-int TLBHandler(){
+int TLBHandler() {
     passOrDie(PGFAULTEXCEPT);
     return -1;
 }
 
-void trapHandler(){
+void trapHandler() {
     passOrDie(GENERALEXCEPT);
 }
 
@@ -94,6 +104,7 @@ void syscall_handler(state_t *callerProcState){
             yield((int)a1);
             break;
         default:
+            trapHandler();
             break;
     }
 
