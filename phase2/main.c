@@ -75,29 +75,28 @@ int main(int argc, int* argv[]){
     initASL();
     initGlobalVar();
 
-    klog_print("\n\nmain: Variabili inizializzate...");
+    //klog_print("\n\nmain: Variabili inizializzate...");
     
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
     initPassUpVector(vector);
 
-    klog_print("\n\nmain: Pass Up Vector inizializzato...");
+    //klog_print("\n\nmain: Pass Up Vector inizializzato...");
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
     /* Allocchiamo il primo processo a bassa priorita' e settiamo le cose giuste */
     pcb_PTR firstProc = allocPcb();
-    assegnaPID(firstProc);
 
     insertReadyQueue(PROCESS_PRIO_LOW, firstProc);
     firstProc->p_s.status = IEPON | IMON | TEBITON;
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
-    klog_print("\n\nmain: Primo processo creato, chiamo lo scheduler...");
+    //klog_print("\n\nmain: Primo processo creato, chiamo lo scheduler...");
 
     scheduler();
 
-    klog_print("main: ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
+    //klog_print("main: ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
     return 0;
 }

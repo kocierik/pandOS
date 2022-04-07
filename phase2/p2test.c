@@ -145,17 +145,15 @@ void uTLB_RefillHandler() {
 extern void klog_print(char *s);
 void test() {
     klog_print("\n\nIngresso nel file p2test.c...");
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
-    klog_print("\n\nProvo a printare qualcosa su terminale...");
-    print("p1 v(sem_testsem)\n");
+    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    //klog_print("\n\nProvo a printare qualcosa su terminale...");
+    //print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
     hp_p1state.status                     = hp_p1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
-    klog_print("\n\nStore state fatto...");
 
     STST(&hp_p2state);
     hp_p2state.reg_sp = hp_p1state.reg_sp - QPAGE;
@@ -319,7 +317,7 @@ void p2() {
 
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
-    print("p2 starts\n");
+    //print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {

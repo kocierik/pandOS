@@ -12,11 +12,9 @@
 /* Funzioni di aiuto */
 int __terminate_process(pcb_PTR p);
 int term_proc_and_child(pcb_PTR rootPtr);
-//int lenQ(struct list_head queue);
-//pcb_PTR findPcb(int pid, struct list_head queue);
 
 
-void createProcess(state_t *callerProcess);
+int createProcess(state_t *a1, int a2, support_t *a3);
 int terminateProcess(int *pid);
 int passeren(int *semaddr);
 void verhogen(int *semaddr);

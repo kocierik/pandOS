@@ -29,20 +29,17 @@ void copyState(state_t *s, pcb_PTR p) {
 }
 
 
-void createProcess(state_t *callerProcState) {
+int createProcess(state_t *a1, int a2, support_t *a3) {
     pcb_PTR p = allocPcb();
     
     if(p == NULL)
-        (*callerProcState).reg_v0 = NOPROC;
+        return NOPROC;
     else {
-        assegnaPID(p);
-        (*callerProcState).reg_v0 = p->p_pid;
-
         insertChild(currentActiveProc, p);
-          
-        copyState((state_t *)(*callerProcState).reg_a1,p);
-        insertReadyQueue((*callerProcState).reg_a2, p);
-        p->p_supportStruct = (support_t *)(*callerProcState).reg_a3;
+        copyState(a1, p);
+        insertReadyQueue(a2, p);
+        p->p_supportStruct = a3;
+        return p->p_pid;
     }
 }
 

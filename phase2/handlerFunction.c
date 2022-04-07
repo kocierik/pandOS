@@ -20,8 +20,11 @@ int interruptHandler(){
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
         klog_print(">> INTERRUPT: IL_IPI\n"); 
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
+
+        //PLT
         klog_print("\n\nInterrupt local timer");
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
+        //Interval timer
         klog_print("interrupt timer\n");
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
@@ -55,10 +58,11 @@ void syscall_handler(state_t *callerProcState){
     int syscode = (*callerProcState).reg_a0;
     void * a1 = (void *) (*callerProcState).reg_a1;
     void * a2 = (void *) (*callerProcState).reg_a2;
+    void * a3 = (void *) (*callerProcState).reg_a3;
 
     switch(syscode) {
         case CREATEPROCESS:
-            createProcess(callerProcState);
+            (*callerProcState).reg_v0 = createProcess(a1, (int)a2, a3);
             break;
         case TERMPROCESS:
             blockingCall = terminateProcess((int *)a1);
