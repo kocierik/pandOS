@@ -7,12 +7,13 @@ void exceptionHandler() {
 
     switch(CAUSE_GET_EXCCODE(getCAUSE())){
         case IOINTERRUPTS: // Interrupt // 0 
-            interruptHandler();
+            interruptHandler(exceptionState);
             break;
         case 1 ... 3:         // TLB Exception 
+            klog_print("\n\n passo dal TLB");
             TLBHandler(exceptionState);
         case 4 ... 7:
-        case 9 ... 12: 
+        case 9 ... 12:
             trapHandler(exceptionState);
             break;
         case 8: // Chiamata una System Call

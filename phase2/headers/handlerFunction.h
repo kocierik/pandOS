@@ -11,7 +11,7 @@
 * restituisce 1 quando un dispositivo è attivo. 
 * //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
 */
-int interruptHandler();
+int interruptHandler(state_t *excState);
 
 void passOrDie();
 int TLBHandler(state_t *callerProc);

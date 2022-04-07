@@ -21,14 +21,21 @@ int blockedProc;                // Processi 'blocked': in attesa di I/O oppure t
 struct list_head queueLowProc;  // Coda dei processi a bassa priorità
 struct list_head queueHighProc; // Coda dei processi a alta priorità
 pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
+cpu_t startTime;
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
 /* 
     * Consideriamo ogni coppia di semafori dei terminali come segue: 
     * Primo semaforo dedicato alle operazioni di scrittura (transm)
     * Secondo semaforo dedicato alle operazioni di lettura (recv)
-*/
-int semDevice[SEMDEVLEN];       
+*/  
+int semIntervalTimer;
+int semDiskDevice[8];
+int semFlashDevice[8];
+int semNetworkDevice[8];
+int semPrinterDevice[8];
+int semTerminalDeviceReading[8]; 
+int semTerminalDeviceWriting[8];
 
 
 void initGlobalVar() {
@@ -38,8 +45,15 @@ void initGlobalVar() {
     mkEmptyProcQ(&queueLowProc);
     mkEmptyProcQ(&queueHighProc);
     currentActiveProc = NULL;
-    for (int i = 0; i < SEMDEVLEN; i++)
-        semDevice[i] = 0;
+    semIntervalTimer = 0;
+    for (int i = 0; i < 8; i++) {
+        semDiskDevice[i] = 0;
+        semFlashDevice[i] = 0;
+        semNetworkDevice[i] = 0;
+        semPrinterDevice[i] = 0;
+        semTerminalDeviceReading[i] = 0;
+        semTerminalDeviceWriting[i] = 0;
+    }
 }
 
 
@@ -75,13 +89,9 @@ int main(int argc, int* argv[]){
     initASL();
     initGlobalVar();
 
-    //klog_print("\n\nmain: Variabili inizializzate...");
-    
     /* Pass Up Vector */
-    passupvector_t *vector = (passupvector_t *) PASSUPVECTOR;
+    passupvector_t *vector = (passupvector_t *)PASSUPVECTOR;
     initPassUpVector(vector);
-
-    //klog_print("\n\nmain: Pass Up Vector inizializzato...");
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
@@ -93,10 +103,7 @@ int main(int argc, int* argv[]){
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
-    //klog_print("\n\nmain: Primo processo creato, chiamo lo scheduler...");
-
     scheduler();
 
-    //klog_print("main: ERRORE: NON DEVO MAI ARRIVARE QUA\n"); 
     return 0;
 }

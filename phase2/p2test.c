@@ -241,7 +241,7 @@ void test() {
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
     //print("p2 was started\n");
-    klog_print("p2 iniziato\n\n");
+    //klog_print("p2 iniziato\n\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 

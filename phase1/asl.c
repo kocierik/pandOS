@@ -28,7 +28,7 @@ pcb_PTR isPcbBlocked(int pid) {
     pcb_PTR p;
     list_for_each(pos, &ASL_h) {                     /* Looking for Semaphore */
         sem = container_of(pos, semd_t, s_link);
-        list_for_each(tmp, &sem->s_procq) {                     /* Looking for Semaphore */
+        list_for_each(tmp, &sem->s_procq) {                     /* Looking for Pcb */
             if((p = container_of(tmp, pcb_t, p_list))->p_pid == pid)
                 return p;
         }

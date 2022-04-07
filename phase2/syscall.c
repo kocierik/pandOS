@@ -10,7 +10,13 @@ extern int processId;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
-extern int semDevice[SEMDEVLEN];
+extern int semIntervalTimer;
+extern int semDiskDevice[8];
+extern int semFlashDevice[8];
+extern int semNetworkDevice[8];
+extern int semPrinterDevice[8];
+extern int semTerminalDeviceReading[8]; 
+extern int semTerminalDeviceWriting[8];
 
 /* Funzioni globali esterne */
 extern void assegnaPID(pcb_PTR p);
@@ -84,7 +90,7 @@ int __terminate_process(pcb_PTR p) {
     if (p->p_semAdd == NULL) {
         list_del(&p->p_list);   // lo tolgo da qualsiasi lista
         if (p == currentActiveProc) {
-            currentActiveProc = NULL;
+            //currentActiveProc = NULL;
             ret = TRUE;
         }
         --activeProc;
@@ -140,7 +146,8 @@ int passeren(int *semaddr) {
 void verhogen(int *semaddr) {
     pcb_PTR pid = removeBlocked(semaddr);
 
-    if (pid == NULL) ++(*semaddr);
+    if (pid == NULL)
+        ++(*semaddr);
     else {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
         --blockedProc;
@@ -153,33 +160,55 @@ void verhogen(int *semaddr) {
     klog_print("\n\nVerhogen eseguita con successo..."); 
 }
 
+
+
 int doIOdevice(int *cmdAddr, int cmdValue) {
 
     int deviceNumber;
-    int is_recv_command = 0;
+    int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
+    devreg_t callingDevice;
+    int *devSemaphore; //Indirizzo del semaforo 
+    int returnStatus;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
+
     for (int i = 0; i < 8; i++){
-        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) 
-            deviceNumber = i;
-        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){
-            deviceNumber = i;
-            is_recv_command = 1;
+        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr){ //Terminal Devices Writing
+            devSemaphore = &semTerminalDeviceWriting[i];
+            returnStatus = deviceRegs->devreg[4][i].term.transm_status;
+            break;
+        }
+        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){ //Terminal Devices Reading
+            devSemaphore = &semTerminalDeviceReading[i];
+            returnStatus = deviceRegs->devreg[4][i].term.recv_status;
+            break;
+        }
+        for(int j = 0; j < 4; j++){
+            if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
+                returnStatus = deviceRegs->devreg[j][i].dtp.status;
+                if (j == 0)      devSemaphore = &semDiskDevice[i];
+                else if (j == 1) devSemaphore = &semFlashDevice[i];
+                else if (j == 2) devSemaphore = &semNetworkDevice[i];
+                else             devSemaphore = &semPrinterDevice[i];
+            }
+            break;
         }
     }
+
     //Terminale che esegue la chiamata.
-    termreg_t terminal = deviceRegs->devreg[4][deviceNumber].term;
+    //termreg_t *terminal = (0x10000054 + (4 * 0x80) + (deviceNumber * 0x10));
+    //termreg_t terminal = deviceRegs->devreg[4][deviceNumber].term;
     
     //Semaforo sul quale devo bloccare il processo corrente.
-    int semaphoreIndex = 4 * 8 + deviceNumber*2 + is_recv_command; 
+    //int semaphoreIndex = 4 * 8 + deviceNumber*2 + is_recv_command; 
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
+    //terminal->transm_command = cmdValue;
 
     //Eseguo la P del processo attualmente in esecuzione.
-    passeren((int*) semDevice[semaphoreIndex]);
-
-    if (is_recv_command) return terminal.recv_status;
-    else return terminal.transm_status;
+    passeren(devSemaphore); 
+    
+    return returnStatus;
 }
 
 
@@ -201,8 +230,8 @@ void getCpuTime(state_t *excState) {
 
 
 void waitForClock() {
-    passeren(&semDevice[SEMDEVLEN-1]);
-    insertBlocked(&semDevice[SEMDEVLEN-1], currentActiveProc);
+    passeren(&semIntervalTimer);
+    insertBlocked(&semIntervalTimer, currentActiveProc);
     --activeProc;
     ++blockedProc;
 }

@@ -8,19 +8,31 @@ extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
+extern cpu_t startTime;
+
+
+void adjustTime() {
+    cpu_t now;
+    STCK(now); // Tempo attuale della cpu
+    if(currentActiveProc != NULL)
+        currentActiveProc->p_time += now - startTime;
+}
+
+void P(){
+    //int pid = currentActiveProc;
+    
+}
+
+
 
 
 void scheduler() {
     
     pcb_PTR p;
+
+    //adjustTime();
     
     /*
-    cpu_t startCpuTime=1;
-    cpu_t cpuTime;
-    STCK(cpuTime); // Tempo attuale della cpu
-    if(currentActiveProc != NULL)
-        currentActiveProc->p_time += cpuTime - startCpuTime;
-    
     * Verifico che la coda dei processi ad alta priorità non sia vuota.
     * Se non lo è estraggo il processo che è li ad attendere;
     * e lo assegno ad una variabile indicante il processo correntemente attivo. 
@@ -30,6 +42,8 @@ void scheduler() {
         klog_print("\n\nscheduler: Carico un processo ad alta priorita' con ID:");
         klog_print_dec(p->p_pid);
         currentActiveProc = p;
+        //setSTATUS(ALLOFF); //suggerito da gian
+        STCK(startTime);
         LDST(&(p->p_s));
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
@@ -39,7 +53,7 @@ void scheduler() {
         currentActiveProc = p;
         //Load 5 milliseconds on the PLT
         setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE
-        //STCK(startCpuTime);
+        STCK(startTime);
         LDST(&p->p_s);
 
     } else {
