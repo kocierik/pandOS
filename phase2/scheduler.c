@@ -18,12 +18,6 @@ void adjustTime() {
         currentActiveProc->p_time += now - startTime;
 }
 
-void P(){
-    //int pid = currentActiveProc;
-    
-}
-
-
 
 
 void scheduler() {
@@ -47,12 +41,10 @@ void scheduler() {
         LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        
         //klog_print("\n\nscheduler: Carico un processo a bassa priorita' con ID:");
         //klog_print_dec(p->p_pid);   
         currentActiveProc = p;
-        //Load 5 milliseconds on the PLT
-        setTIMER(TIMESLICE);  //TODO: DA CONTROLLARE
+        setTIMER(TIMESLICE);    //Load 5 milliseconds on the PLT
         STCK(startTime);
         LDST(&p->p_s);
 
@@ -68,8 +60,8 @@ void scheduler() {
             
         if(activeProc > 0 && blockedProc > 0) {
             //Enabling interrupts and disable PLT.
-            STATE_PTR status = (STATE_PTR)(IEPON | IMON);
-            setSTATUS((int)status);  // TODO: DA CONTROLLARE, si può usare setStatus???
+            unsigned int status = IEPON | IMON;
+            setSTATUS(status);
             WAIT(); //twiddling its thumbs
         }
 

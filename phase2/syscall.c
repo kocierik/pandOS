@@ -20,7 +20,10 @@ extern int semTerminalDeviceWriting[8];
 
 /* Funzioni globali esterne */
 extern void assegnaPID(pcb_PTR p);
-extern void insertReadyQueue(int prio, pcb_PTR p);
+extern void insert_ready_queue(int prio, pcb_PTR p);
+
+
+/* FUNZIONI DI AIUTO */
 
 
 void copyState(state_t *new, state_t *old) {
@@ -33,41 +36,6 @@ void copyState(state_t *new, state_t *old) {
     old->pc_epc = new->pc_epc;
     old->status = new->status;
 }
-
-
-int createProcess(state_t *a1, int a2, support_t *a3) {
-    pcb_PTR p = allocPcb();
-    
-    if(p == NULL)
-        return NOPROC;
-    else {
-        insertChild(currentActiveProc, p);
-        copyState(a1, &p->p_s);
-        insertReadyQueue(a2, p);
-        if(a3 != NULL || a3 != 0)
-            p->p_supportStruct = a3;
-        else
-            p->p_supportStruct = NULL;
-        return p->p_pid;
-    }
-}
-
-
-/* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-int terminateProcess(int pid) {
-    int blocking_callerProc = FALSE;
-    pcb_PTR p;
-    if (pid == 0) {
-        // se il pid e' 0, allora termino il processo corrente
-        blocking_callerProc = TRUE;
-        term_proc_and_child(currentActiveProc);
-    } else {
-        p = findPcb(pid);
-        blocking_callerProc = term_proc_and_child(p);
-    }
-    return blocking_callerProc;
-}
-
 
 /* funzione iterativa che elimina i figli e il processo stesso */
 int term_proc_and_child(pcb_PTR parent) {
@@ -126,6 +94,43 @@ pcb_PTR findPcb(int pid) {
 }
 
 
+/* SYSCALL */
+
+
+int createProcess(state_t *a1, int a2, support_t *a3) {
+    pcb_PTR p = allocPcb();
+    
+    if(p == NULL)
+        return NOPROC;
+    else {
+        insertChild(currentActiveProc, p);
+        copyState(a1, &p->p_s);
+        insert_ready_queue(a2, p);
+        if(a3 != NULL || a3 != 0)
+            p->p_supportStruct = a3;
+        else
+            p->p_supportStruct = NULL;
+        return p->p_pid;
+    }
+}
+
+
+/* Ricerca il processo da terminare ed invoca la funzione che lo termina */
+int terminateProcess(int pid) {
+    int blocking_callerProc = FALSE;
+    pcb_PTR p;
+    if (pid == 0) {
+        // se il pid e' 0, allora termino il processo corrente
+        blocking_callerProc = TRUE;
+        term_proc_and_child(currentActiveProc);
+    } else {
+        p = findPcb(pid);
+        blocking_callerProc = term_proc_and_child(p);
+    }
+    return blocking_callerProc;
+}
+
+
 /* Porta il processo attualmente attivo in stato "Blocked" */
 int passeren(int *semaddr) {
     if (*semaddr > 0)
@@ -151,11 +156,10 @@ void verhogen(int *semaddr) {
     else {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
         --blockedProc;
-        insertReadyQueue(pid->p_prio, pid);
+        insert_ready_queue(pid->p_prio, pid);
     }
     //klog_print("\n\nVerhogen eseguita con successo..."); 
 }
-
 
 
 int doIOdevice(int *cmdAddr, int cmdValue) {
@@ -252,7 +256,7 @@ void yield() {
     list_del(&currentActiveProc->p_list);
 
     if(currentActiveProc->p_prio == PROCESS_PRIO_LOW)
-        insertReadyQueue(PROCESS_PRIO_LOW, currentActiveProc); 
+        insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc); 
     else                          
-        insertReadyQueue(PROCESS_PRIO_HIGH,currentActiveProc);
+        insert_ready_queue(PROCESS_PRIO_HIGH,currentActiveProc);
 }

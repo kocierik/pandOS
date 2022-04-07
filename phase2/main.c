@@ -9,7 +9,7 @@
 extern void test();
 extern void test1();
 extern void uTLB_RefillHandler();
-extern void exceptionHandler();
+extern void exception_handler();
 extern void scheduler();
 
 // TEMPORARY
@@ -39,7 +39,7 @@ int semTerminalDeviceReading[8];
 int semTerminalDeviceWriting[8];
 
 
-void initGlobalVar() {
+void init_global_var() {
     processId = 0;
     activeProc  = 0;
     blockedProc = 0;
@@ -61,13 +61,13 @@ void initGlobalVar() {
 void initPassUpVector(passupvector_t *vector) {
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
-    vector->exception_handler = (memaddr) exceptionHandler;
+    vector->exception_handler = (memaddr) exception_handler;
     vector->exception_stackPtr = KERNELSTACK;
 }
 
 
 // inserisco un processo nella giusta coda e assegno la priorità al processo
-void insertReadyQueue(int prio, pcb_PTR p) {
+void insert_ready_queue(int prio, pcb_PTR p) {
     p->p_prio = prio;
     ++activeProc;
     if(prio == PROCESS_PRIO_HIGH)
@@ -88,7 +88,7 @@ int main(int argc, int* argv[]){
     /* Inizializzazione variabili */
     initPcbs();
     initASL();
-    initGlobalVar();
+    init_global_var();
 
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *)PASSUPVECTOR;
@@ -99,7 +99,7 @@ int main(int argc, int* argv[]){
     /* Allocchiamo il primo processo a bassa priorita' e settiamo le cose giuste */
     pcb_PTR firstProc = allocPcb();
 
-    insertReadyQueue(PROCESS_PRIO_LOW, firstProc);
+    insert_ready_queue(PROCESS_PRIO_LOW, firstProc);
     firstProc->p_s.status = IEPON | IMON | TEBITON;
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);

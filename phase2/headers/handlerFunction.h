@@ -4,20 +4,16 @@
 #include <umps/libumps.h>
 #include <umps/arch.h>
 #include "syscall.h"
+#include "exceptionHandler.h"
 
-/*
-* La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
-* Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
-* restituisce 1 quando un dispositivo è attivo. 
-* //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
-*/
-int interruptHandler(state_t *excState);
 
-void passOrDie();
-int TLBHandler(state_t *callerProc);
-void trapHandler(state_t *callerProc);
-int interrupt_timer();
-int interrupt_generic(int cause);
+int getBlockedSem(int bitAddress);
+void pltTimerHandler(state_t *excState);
+void intervallTimerHandler(state_t *excState);
+void deviceIntHandler(int cause);
+void terminalHandler();
+
+void passOrDie(int pageFault, state_t *excState);
 void syscall_handler(state_t *callerProc);
-int interrupt_terminal();
+
 #endif
