@@ -54,8 +54,8 @@ void scheduler() {
             
         if(activeProc > 0 && blockedProc > 0) {
             //Enabling interrupts and disable PLT.
-            STATE_PTR status = (STATE_PTR)(ALLOFF | IEPON | IMON);
-            STST(status);  // TODO: DA CONTROLLARE, si può usare setStatus???
+            STATE_PTR status = (STATE_PTR)(IEPON | IMON);
+            setSTATUS((int)status);  // TODO: DA CONTROLLARE, si può usare setStatus???
             WAIT(); //twiddling its thumbs
         }
 

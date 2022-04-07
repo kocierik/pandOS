@@ -147,7 +147,7 @@ void test() {
     klog_print("\n\nIngresso nel file p2test.c...");
     //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //klog_print("\n\nProvo a printare qualcosa su terminale...");
-    //print("p1 v(sem_testsem)\n");
+    //print("XXX1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);
@@ -236,7 +236,7 @@ void test() {
     p10state.status                   = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
 
-    klog_print("fatti tutti i storestate\n\n");
+    klog_print("\n\nfatti tutti i storestate");
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 

@@ -17,15 +17,15 @@ extern void assegnaPID(pcb_PTR p);
 extern void insertReadyQueue(int prio, pcb_PTR p);
 
 
-void copyState(state_t *s, pcb_PTR p) {
-    p->p_s.cause = s->cause;
-    p->p_s.entry_hi = s->entry_hi;
+void copyState(state_t *new, state_t *old) {
+    old->cause = new->cause;
+    old->entry_hi = new->entry_hi;
     for (int i = 0; i < STATE_GPR_LEN; i++)
-        p->p_s.gpr[i] = s->gpr[i];
-    p->p_s.hi = s->hi;
-    p->p_s.lo = s->lo;
-    p->p_s.pc_epc = s->pc_epc;
-    p->p_s.status = s->status;
+        old->gpr[i] = new->gpr[i];
+    old->hi = new->hi;
+    old->lo = new->lo;
+    old->pc_epc = new->pc_epc;
+    old->status = new->status;
 }
 
 
@@ -36,7 +36,7 @@ int createProcess(state_t *a1, int a2, support_t *a3) {
         return NOPROC;
     else {
         insertChild(currentActiveProc, p);
-        copyState(a1, p);
+        copyState(a1, &p->p_s);
         insertReadyQueue(a2, p);
         if(a3 != NULL || a3 != 0)
             p->p_supportStruct = a3;
@@ -48,14 +48,16 @@ int createProcess(state_t *a1, int a2, support_t *a3) {
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-int terminateProcess(int *pid) {
+int terminateProcess(int pid) {
     int blocking_callerProc = FALSE;
-    if (*pid == 0) {
+    pcb_PTR p;
+    if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
         blocking_callerProc = TRUE;
         term_proc_and_child(currentActiveProc);
     } else {
-        blocking_callerProc = term_proc_and_child(container_of(pid, pcb_t, p_pid));
+        p = findPcb(pid);
+        blocking_callerProc = term_proc_and_child(p);
     }
     return blocking_callerProc;
 }
@@ -95,6 +97,28 @@ int __terminate_process(pcb_PTR p) {
     freePcb(p);
     return ret;
 }
+
+
+pcb_PTR findPcb(int pid) {
+    
+    struct list_head *pos;
+    pcb_PTR p;
+    if (pid == currentActiveProc->p_pid)
+        return currentActiveProc;
+
+    list_for_each(pos, &queueHighProc) {
+        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+            return p;
+    }
+    
+    list_for_each(pos, &queueLowProc) {
+        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+            return p;
+    }
+    p = isPcbBlocked(pid);
+    return p;
+}
+
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
 int passeren(int *semaddr) {
@@ -159,10 +183,20 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
 }
 
 
-void getCpuTime() {
+void getCpuTime(state_t *excState) {
     cpu_t t;
-    STCK(t); 
-    currentActiveProc->p_s.reg_v0 = t;
+    STCK(t);
+    //currentActiveProc->p_time += (t - startT);
+    excState->reg_v0 = currentActiveProc->p_time;
+    //La load la faccio dopo
+    /*
+     * cpu_t currTime;
+     * STCK(currTime); //tempo attuale
+     * curr_proc->p_time += (currTime - startTod); //aggiorno il tempo
+     * statep->reg_v0 = curr_proc->p_time; //preparo il regitro di ritorno
+     * STCK(startTod); //faccio ripartire il "cronometro"
+     * LDST(statep);
+    */
 }
 
 

@@ -14,8 +14,8 @@
 int interruptHandler();
 
 void passOrDie();
-int TLBHandler();
-void trapHandler();
+int TLBHandler(state_t *callerProc);
+void trapHandler(state_t *callerProc);
 int interrupt_timer();
 int interrupt_generic(int cause);
 void syscall_handler(state_t *callerProc);

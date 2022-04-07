@@ -4,7 +4,7 @@ extern void klog_print(char *s);
 extern void scheduler();
 
 extern void insertReadyQueue(int prio, pcb_PTR p);
-extern void copyState(state_t *s, pcb_PTR p);
+extern void copyState(state_t *s, state_t *p);
 
 extern pcb_t *currentActiveProc;
 
@@ -18,48 +18,53 @@ extern pcb_t *currentActiveProc;
 int interruptHandler(){
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
-        klog_print(">> INTERRUPT: IL_IPI\n"); 
+        klog_print("\n\nInterruptHandler: INTERRUPT: IL_IPI\n");         //IGNORA
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-
         //PLT
-        klog_print("\n\nInterrupt local timer");
+        klog_print("\n\nInterruptHandler: Interrupt local timer");
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
         //Interval timer
-        klog_print("interrupt timer\n");
+        LDIT(100000);
+
+        klog_print("\n\nInterruptHandler: interrupt timer\n");
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
-        klog_print("<< INTERRUPT(GENERIC)\n");
+        klog_print("\n\nInterruptHandler: INTERRUPT(GENERIC)\n");
 
 
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        klog_print("interrupt terminal\n");
+        klog_print("\n\nInterruptHandler: interrupt terminal");
     }
     return -1;
 }
 
 
-void passOrDie(int pageFault){
-    klog_print("\n\npassOrDie chiamato, e' il momento di implementarlo");
+void passOrDie(int pageFault, state_t *excState){
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
             klog_print("\n\n Termino il processo corrente");
             terminateProcess(0);
         } else {
-            klog_print("\n\n Devo fare il pass up");
+            copyState(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
+            int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
+            int status   = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;
+            int pc       = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].pc;
+            klog_print("\n\n Fatto il pass up");
+            LDCXT(stackPtr, status, pc);
         }
     } else {
         klog_print("currentProc e' null");
     }
 }
 
-int TLBHandler() {
-    passOrDie(PGFAULTEXCEPT);
+int TLBHandler(state_t *excState) {
+    passOrDie(PGFAULTEXCEPT, excState);
     return -1;
 }
 
-void trapHandler() {
-    passOrDie(GENERALEXCEPT);
+void trapHandler(state_t *excState) {
+    passOrDie(GENERALEXCEPT, excState);
 }
 
 void syscall_handler(state_t *callerProcState){
@@ -75,7 +80,7 @@ void syscall_handler(state_t *callerProcState){
             (*callerProcState).reg_v0 = createProcess(a1, (int)a2, a3);
             break;
         case TERMPROCESS:
-            blockingCall = terminateProcess((int *)a1);
+            blockingCall = terminateProcess((int)a1);
             break;
         case PASSEREN:
             blockingCall = passeren((int*)a1);
@@ -88,7 +93,7 @@ void syscall_handler(state_t *callerProcState){
             blockingCall = TRUE;
             break;
         case GETTIME:
-            getCpuTime();
+            getCpuTime(callerProcState);
             break;
         case CLOCKWAIT:
             waitForClock();
@@ -104,7 +109,7 @@ void syscall_handler(state_t *callerProcState){
             yield((int)a1);
             break;
         default:
-            trapHandler();
+            trapHandler(callerProcState);
             break;
     }
 
@@ -112,7 +117,7 @@ void syscall_handler(state_t *callerProcState){
     callerProcState->pc_epc += 4;
 
     if(blockingCall) {
-        copyState(callerProcState, currentActiveProc);
+        copyState(callerProcState, &currentActiveProc->p_s);
         scheduler();
     } else {
         LDST(callerProcState);

@@ -3,22 +3,23 @@
 
 
 void exceptionHandler() {
-    state_t *exceptionState = (state_t *) BIOSDATAPAGE;
+    state_t *exceptionState = (state_t *)BIOSDATAPAGE;
 
     switch(CAUSE_GET_EXCCODE(getCAUSE())){
-        case IOINTERRUPTS: // Interrupt
+        case IOINTERRUPTS: // Interrupt // 0 
             interruptHandler();
             break;
-        case 1:         // TLB Exception
-        case TLBINVLDL:
-        case TLBINVLDS: 
-            TLBHandler();
+        case 1 ... 3:         // TLB Exception 
+            TLBHandler(exceptionState);
+        case 4 ... 7:
+        case 9 ... 12: 
+            trapHandler(exceptionState);
             break;
-        case SYSEXCEPTION: // Chiamata una System Call
+        case 8: // Chiamata una System Call
             syscall_handler(exceptionState);
             break;
-        default: // TRAP
-            trapHandler();
+        default:
+            klog_print("cause ignota");
             break;
     }
 }

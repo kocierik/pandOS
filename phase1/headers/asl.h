@@ -13,6 +13,9 @@
 semd_PTR findASL(int *semAdd);
 
 
+pcb_PTR isPcbBlocked(int pid);
+
+
 /*
     Viene inserito il PCB puntato da p nella coda dei 
     processi bloccati associata al SEMD con chiave 

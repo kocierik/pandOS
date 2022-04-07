@@ -12,14 +12,15 @@
 /* Funzioni di aiuto */
 int __terminate_process(pcb_PTR p);
 int term_proc_and_child(pcb_PTR rootPtr);
+pcb_PTR findPcb(int pid);
 
 
 int createProcess(state_t *a1, int a2, support_t *a3);
-int terminateProcess(int *pid);
+int terminateProcess(int pid);
 int passeren(int *semaddr);
 void verhogen(int *semaddr);
 int doIOdevice(int *cmdAddr, int cmdValue);
-void getCpuTime();
+void getCpuTime(state_t *callerProcState);
 void waitForClock();
 support_t* getSupportData();
 void getIDprocess(state_t *callerProcess, int parent);
