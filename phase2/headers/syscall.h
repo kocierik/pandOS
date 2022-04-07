@@ -7,6 +7,7 @@
 #include "../../phase1/headers/listx.h"
 #include "umps/const.h"
 #include "umps/libumps.h"
+#include "umps/cp0.h"
 
 
 /* Funzioni di aiuto */

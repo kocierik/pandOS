@@ -201,12 +201,13 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
     //Semaforo sul quale devo bloccare il processo corrente.
     //int semaphoreIndex = 4 * 8 + deviceNumber*2 + is_recv_command; 
 
+    //Eseguo la P del processo attualmente in esecuzione.
+    passeren(devSemaphore);
+    currentActiveProc->p_s.status |= STATUS_IM(IEPON); //TODO INSERIRE INTERRUPT LINE AL POSTO DI IEPON
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
     //terminal->transm_command = cmdValue;
 
-    //Eseguo la P del processo attualmente in esecuzione.
-    passeren(devSemaphore); 
     
     return returnStatus;
 }

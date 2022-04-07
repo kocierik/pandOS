@@ -78,6 +78,11 @@ int interruptHandler(state_t *excState){
         deviceNumber = getBlockedSem(IL_TERMINAL);
         verhogen(&semTerminalDeviceWriting[deviceNumber]);
 
+        /*
+        TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice
+
+        */
+
         klog_print("\n\nInterruptHandler: interrupt terminal");
     }
     return -1;

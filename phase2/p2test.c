@@ -145,9 +145,9 @@ void uTLB_RefillHandler() {
 extern void klog_print(char *s);
 void test() {
     klog_print("\n\nIngresso nel file p2test.c...");
-    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //klog_print("\n\nProvo a printare qualcosa su terminale...");
-    //print("XXX1 v(sem_testsem)\n");
+    print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);
