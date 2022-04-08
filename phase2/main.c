@@ -15,7 +15,7 @@ extern void scheduler();
 
 // TEMPORARY
 extern void klog_print(char *s);
-
+extern void klog_print_dec(int n); 
 
 void init_global_var() {
     processId = 0;
@@ -48,16 +48,24 @@ void initPassUpVector(passupvector_t *vector) {
 void insert_ready_queue(int prio, pcb_PTR p) {
     p->p_prio = prio;
     ++activeProc;
-    if(prio == PROCESS_PRIO_HIGH)
+    if(prio == PROCESS_PRIO_HIGH) {
         insertProcQ(&queueHighProc, p);
-    else
+        klog_print("\n\nIPQ: aggiunti in alta priorita' proc numero -> ");
+        klog_print_dec(p->p_pid);
+    }
+    else {
         insertProcQ(&queueLowProc, p);
+        klog_print("\n\nIPQ: aggiunto in bassa priorita' proc numero -> ");
+        klog_print_dec(p->p_pid);
+    }
 }
 
 
 //funzione di aiuto che assegna un id unico a un processo 
 void assegnaPID(pcb_PTR p) {
     p->p_pid = ++processId;
+    klog_print("\n\naP: assegnato ID -> ");
+    klog_print_dec(p->p_pid);
 }
 
 
@@ -82,6 +90,7 @@ int main(int argc, int* argv[]){
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
+    klog_print("\n\nmain: chiamo lo scheduler");
     scheduler();
 
     return 0;

@@ -33,7 +33,7 @@ void scheduler() {
     */
 
     if((p = removeProcQ(&queueHighProc)) != NULL) {
-        klog_print("\n\nscheduler: Carico un processo ad alta priorita' con ID:");
+        klog_print("\n\nscheduler: ho caricato proc ad alta priorita' con ID -> ");
         klog_print_dec(p->p_pid);
         currentActiveProc = p;
         //setSTATUS(ALLOFF); //suggerito da gian
@@ -41,8 +41,8 @@ void scheduler() {
         LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        //klog_print("\n\nscheduler: Carico un processo a bassa priorita' con ID:");
-        //klog_print_dec(p->p_pid);   
+        klog_print("\n\nscheduler: ho caricato proc a bassa priorita' con ID -> ");
+        klog_print_dec(p->p_pid);   
         currentActiveProc = p;
         setTIMER(TIMESLICE);    //Load 5 milliseconds on the PLT
         STCK(startTime);

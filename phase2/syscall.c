@@ -151,64 +151,71 @@ int passeren(int *semaddr) {
 void verhogen(int *semaddr) {
     pcb_PTR pid = removeBlocked(semaddr);
 
-    if (pid == NULL)
+    if (pid == NULL){
         ++(*semaddr);
+        klog_print("\n\nV: non ho trovato nulla da mettere in Ready");
+    }
     else {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
         --blockedProc;
         insert_ready_queue(pid->p_prio, pid);
+        klog_print("\n\nV: ho messo in ready state il processo numero ");
+        klog_print_dec(pid->p_pid);
     }
     //klog_print("\n\nVerhogen eseguita con successo..."); 
 }
 
 
 int doIOdevice(int *cmdAddr, int cmdValue) {
-
+    
     int deviceNumber;
     int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
     devreg_t callingDevice;
     int *devSemaphore; //Indirizzo del semaforo 
     int returnStatus;
+    int interruptLine;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
     for (int i = 0; i < 8; i++){
         if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr){ //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
             returnStatus = deviceRegs->devreg[4][i].term.transm_status;
+            interruptLine = i;
+            klog_print("\n\ndoio: terminale di scrittura numero -> ");
+            klog_print_dec(i);
             break;
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){ //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
             returnStatus = deviceRegs->devreg[4][i].term.recv_status;
+            interruptLine = i;
+            klog_print("\n\ndoio: terminale di lettura numero -> ");
+            klog_print_dec(i);
             break;
         }
         for(int j = 0; j < 4; j++){
             if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
                 returnStatus = deviceRegs->devreg[j][i].dtp.status;
-                if (j == 0)      devSemaphore = &semDiskDevice[i];
-                else if (j == 1) devSemaphore = &semFlashDevice[i];
-                else if (j == 2) devSemaphore = &semNetworkDevice[i];
-                else             devSemaphore = &semPrinterDevice[i];
+                if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
+                else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
+                else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
+                else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
             }
             break;
         }
     }
 
-    //Terminale che esegue la chiamata.
-    //termreg_t *terminal = (0x10000054 + (4 * 0x80) + (deviceNumber * 0x10));
-    //termreg_t terminal = deviceRegs->devreg[4][deviceNumber].term;
-    
-    //Semaforo sul quale devo bloccare il processo corrente.
-    //int semaphoreIndex = 4 * 8 + deviceNumber*2 + is_recv_command; 
+
 
     //Eseguo la P del processo attualmente in esecuzione.
     passeren(devSemaphore);
-    currentActiveProc->p_s.status |= STATUS_IM(IEPON); //TODO INSERIRE INTERRUPT LINE AL POSTO DI IEPON
+
+    currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
+
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
-    //terminal->transm_command = cmdValue;
 
-    
+    //Ritorno lo stato del dispositivo che ha eseguit I/O
     return returnStatus;
 }
 

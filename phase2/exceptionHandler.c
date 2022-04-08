@@ -14,9 +14,11 @@ void exception_handler() {
             tlb_handler(exceptionState);
         case 4 ... 7:                           // Trap 
         case 9 ... 12:
+            klog_print("\n\nTrapHandlerExc");
             trap_handler(exceptionState);
             break;
         case 8:                                 // System Call
+            klog_print("\n\nSyscallExc");
             syscall_handler(exceptionState);
             break;
         default:

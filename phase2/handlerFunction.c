@@ -37,10 +37,10 @@ int getBlockedSem(int bitAddress) {
 
 
 void pltTimerHandler(state_t *excState) {
-    klog_print("\n\nSlice time finito di proc: ");
+    klog_print("\nSlice time finito di proc: ");
     klog_print_dec(currentActiveProc->p_pid);
 
-    setTIMER(ACK);
+    setTIMER(-2);
     copyState(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso

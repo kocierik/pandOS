@@ -105,19 +105,19 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
+    klog_print("\n\nIngresso nella funzione di print");
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
     devregtr  status;
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    klog_print("\n\nPasseren all'interno della print eseguita");
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         klog_print("\n\nSto per usare la DOIO");
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         klog_print("\n\nDOIO usata");
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("Sono nel PANIC della print\n\n");
+            klog_print("\n\nSono nel PANIC della print");
             PANIC();
         }
         s++;
@@ -145,17 +145,7 @@ void uTLB_RefillHandler() {
 int sem1 = 0;
 int sem2 = 0;
 
-void k1() {
-    klog_print("sono in k1");
-    int c = 0;
-    while(TRUE) {
-        //SYSCALL(VERHOGEN, (int)&sem1, 0, 0);
-        klog_print("\n\nk1");
-        klog_print_dec(c);
-        c++;
-        //SYSCALL(PASSEREN, (int)&sem2, 0, 0);
-    }
-}
+
 
 void k2() {
     klog_print("sono in k2");
@@ -169,6 +159,16 @@ void k2() {
     }
 }
 
+void k1() {
+    klog_print("sono in k1");
+    int c = 0;
+    while(TRUE) {
+        klog_print("\n\nContatore k1: ");
+        klog_print_dec(c);
+        c++;
+    }
+}
+
 void test1(){
 
     STST(&p2state);
@@ -179,26 +179,23 @@ void test1(){
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
-    klog_print("ho creato p2");
+    klog_print("\n\nho creato p2");
 
     int c = 0;
     while(TRUE) {
-        //SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
-        klog_print("\n\n2k2:");
+        klog_print("\n\nContatore k2:");
         klog_print_dec(c);
         c++;
-        //SYSCALL(PASSEREN, (int)&sem1, 0, 0);
     }
 }
 
 
 
-
 void test() {
-    klog_print("\n\nIngresso nel file p2test.c...");
+    klog_print("\n\nIngresso nel file p2test.c ...");
     //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //klog_print("\n\nProvo a printare qualcosa su terminale...");
-    //print("p1 v(sem_testsem)\n");
+    print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);
