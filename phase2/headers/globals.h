@@ -10,7 +10,7 @@ int blockedProc;                // Processi 'blocked': in attesa di I/O oppure t
 struct list_head queueLowProc;  // Coda dei processi a bassa priorità
 struct list_head queueHighProc; // Coda dei processi a alta priorità
 pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
-cpu_t startTime;
+cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
 /* 

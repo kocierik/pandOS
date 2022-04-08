@@ -11,21 +11,13 @@ extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
 
 
-void adjustTime() {
-    cpu_t now;
-    STCK(now); // Tempo attuale della cpu
-    if(currentActiveProc != NULL)
-        currentActiveProc->p_time += now - startTime;
-}
-
-
 
 void scheduler() {
     
-    pcb_PTR p;
+    if(currentActiveProc != NULL)
+        updateCurrProcTime();
 
-    //adjustTime();
-    
+    pcb_PTR p;
     /*
     * Verifico che la coda dei processi ad alta priorità non sia vuota.
     * Se non lo è estraggo il processo che è li ad attendere;
@@ -41,8 +33,8 @@ void scheduler() {
         LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        klog_print("\n\nscheduler: ho caricato proc a bassa priorita' con ID -> ");
-        klog_print_dec(p->p_pid);   
+        //klog_print("\n\nscheduler: ho caricato proc a bassa priorita' con ID -> ");
+        //klog_print_dec(p->p_pid);   
         currentActiveProc = p;
         setTIMER(TIMESLICE);    //Load 5 milliseconds on the PLT
         STCK(startTime);

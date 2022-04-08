@@ -15,6 +15,7 @@ void copyState(state_t *new, state_t *old);
 int __terminate_process(pcb_PTR p);
 int term_proc_and_child(pcb_PTR rootPtr);
 pcb_PTR findPcb(int pid);
+void updateCurrProcTime();
 
 
 int createProcess(state_t *a1, int a2, support_t *a3);

@@ -55,8 +55,8 @@ void insert_ready_queue(int prio, pcb_PTR p) {
     }
     else {
         insertProcQ(&queueLowProc, p);
-        klog_print("\n\nIPQ: aggiunto in bassa priorita' proc numero -> ");
-        klog_print_dec(p->p_pid);
+        //klog_print("\n\nIPQ: aggiunto in bassa priorita' proc numero -> ");
+        //klog_print_dec(p->p_pid);
     }
 }
 
@@ -64,8 +64,8 @@ void insert_ready_queue(int prio, pcb_PTR p) {
 //funzione di aiuto che assegna un id unico a un processo 
 void assegnaPID(pcb_PTR p) {
     p->p_pid = ++processId;
-    klog_print("\n\naP: assegnato ID -> ");
-    klog_print_dec(p->p_pid);
+    //klog_print("\n\naP: assegnato ID -> ");
+    //klog_print_dec(p->p_pid);
 }
 
 

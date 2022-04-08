@@ -10,23 +10,21 @@ void exception_handler() {
             interrupt_handler(exceptionState);
             break;
         case 1 ... 3:                           // TLB Exception 
-            klog_print("\n\n passo dal TLB");
+            //klog_print("\n\n passo dal TLB");
             tlb_handler(exceptionState);
         case 4 ... 7:                           // Trap 
         case 9 ... 12:
-            klog_print("\n\nTrapHandlerExc");
+            //klog_print("\n\nTrapHandlerExc");
             trap_handler(exceptionState);
             break;
         case 8:                                 // System Call
-            klog_print("\n\nSyscallExc");
+            //klog_print("\n\nSyscallExc");
             syscall_handler(exceptionState);
             break;
         default:
             klog_print("cause ignota");
             break;
     }
-
-    //LDST(exceptionState);
 }
 
 

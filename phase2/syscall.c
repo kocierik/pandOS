@@ -17,6 +17,7 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
+extern cpu_t startTime;
 
 /* Funzioni globali esterne */
 extern void assegnaPID(pcb_PTR p);
@@ -36,6 +37,7 @@ void copyState(state_t *new, state_t *old) {
     old->pc_epc = new->pc_epc;
     old->status = new->status;
 }
+
 
 /* funzione iterativa che elimina i figli e il processo stesso */
 int term_proc_and_child(pcb_PTR parent) {
@@ -94,6 +96,14 @@ pcb_PTR findPcb(int pid) {
 }
 
 
+void updateCurrProcTime() {
+    cpu_t now;
+    STCK(now);
+    currentActiveProc->p_time += now - startTime;
+    STCK(startTime);
+}
+
+
 /* SYSCALL */
 
 
@@ -139,8 +149,8 @@ int passeren(int *semaddr) {
         insertBlocked(semaddr, currentActiveProc);
         --activeProc;
         ++blockedProc;
-        klog_print("\n\nP: Passeren eseguita su processo: ");
-        klog_print_dec(currentActiveProc->p_pid);
+        //klog_print("\n\nP: Passeren eseguita su processo: ");
+        //klog_print_dec(currentActiveProc->p_pid);
         return TRUE;
     }
     return FALSE;
@@ -153,14 +163,14 @@ void verhogen(int *semaddr) {
 
     if (pid == NULL){
         ++(*semaddr);
-        klog_print("\n\nV: non ho trovato nulla da mettere in Ready");
+        //klog_print("\n\nV: non ho trovato nulla da mettere in Ready");
     }
     else {
         //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
         --blockedProc;
         insert_ready_queue(pid->p_prio, pid);
-        klog_print("\n\nV: ho messo in ready state il processo numero ");
-        klog_print_dec(pid->p_pid);
+        //klog_print("\n\nV: ho messo in ready state il processo numero ");
+        //klog_print_dec(pid->p_pid);
     }
     //klog_print("\n\nVerhogen eseguita con successo..."); 
 }
@@ -221,19 +231,8 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
 
 
 void getCpuTime(state_t *excState) {
-    cpu_t t;
-    STCK(t);
-    //currentActiveProc->p_time += (t - startT);
+    updateCurrProcTime();
     excState->reg_v0 = currentActiveProc->p_time;
-    //La load la faccio dopo
-    /*
-     * cpu_t currTime;
-     * STCK(currTime); //tempo attuale
-     * curr_proc->p_time += (currTime - startTod); //aggiorno il tempo
-     * statep->reg_v0 = curr_proc->p_time; //preparo il regitro di ritorno
-     * STCK(startTod); //faccio ripartire il "cronometro"
-     * LDST(statep);
-    */
 }
 
 

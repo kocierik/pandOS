@@ -37,8 +37,8 @@ int getBlockedSem(int bitAddress) {
 
 
 void pltTimerHandler(state_t *excState) {
-    klog_print("\nSlice time finito di proc: ");
-    klog_print_dec(currentActiveProc->p_pid);
+    //klog_print("\nSlice time finito di proc: ");
+    //klog_print_dec(currentActiveProc->p_pid);
 
     setTIMER(-2);
     copyState(excState, &currentActiveProc->p_s);
@@ -56,6 +56,8 @@ void intervallTimerHandler(state_t *excState) {
         insert_ready_queue(p->p_prio, p);
     }
     semIntervalTimer = 0;
+    if (currentActiveProc == NULL)
+        scheduler();
     LDST(excState);
 }
 
@@ -144,11 +146,11 @@ void syscall_handler(state_t *callerProcState) {
             break;
     }
 
-    // dobbiamo incrementare di una word (4 byte) slide 38 di 48
     callerProcState->pc_epc += 4;
 
     if(blockingCall) {
         copyState(callerProcState, &currentActiveProc->p_s);
+        updateCurrProcTime();
         scheduler();
     } else {
         LDST(callerProcState);

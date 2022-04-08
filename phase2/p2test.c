@@ -152,29 +152,45 @@ void k2() {
     int c = 0;
     while(TRUE) {
         SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
-        klog_print("k2: ");
+        klog_print("\n\nk2: ");
         klog_print_dec(c);
         c++;
         SYSCALL(PASSEREN, (int)&sem1, 0, 0);
     }
 }
 
-
 void k1() {
-    
+    klog_print("sono in k1");
+    int c = 0;
+    while(TRUE) {
+        SYSCALL(VERHOGEN, (int)&sem1, 0, 0);
+        klog_print("\n\nk1: ");
+        klog_print_dec(c);
+        c++;
+        SYSCALL(PASSEREN, (int)&sem2, 0, 0);
+    }
 }
 
-void test1(){
+void test1() {
+    int sem = 0;
 
     STST(&p2state);
     p2state.reg_sp = p2state.reg_sp - QPAGE;
     p2state.pc_epc = p2state.reg_t9 = (memaddr)k1;
     p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-    /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
+    STST(&p3state);
+    p3state.reg_sp = p2state.reg_sp - QPAGE;
+    p3state.pc_epc = p3state.reg_t9 = (memaddr)k2;
+    p3state.status                  = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
+    
+    p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
+
+
     klog_print("\n\nho creato p2");
+    SYSCALL(PASSEREN, (int)&sem, 0, 0);
 
 }
 
