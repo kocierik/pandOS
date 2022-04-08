@@ -159,20 +159,15 @@ void k2() {
     }
 }
 
+
 void k1() {
-    klog_print("sono in k1");
-    int c = 0;
-    while(TRUE) {
-        klog_print("\n\nContatore k1: ");
-        klog_print_dec(c);
-        c++;
-    }
+    
 }
 
 void test1(){
 
     STST(&p2state);
-    p2state.reg_sp = hp_p2state.reg_sp - QPAGE;
+    p2state.reg_sp = p2state.reg_sp - QPAGE;
     p2state.pc_epc = p2state.reg_t9 = (memaddr)k1;
     p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
@@ -181,12 +176,6 @@ void test1(){
 
     klog_print("\n\nho creato p2");
 
-    int c = 0;
-    while(TRUE) {
-        klog_print("\n\nContatore k2:");
-        klog_print_dec(c);
-        c++;
-    }
 }
 
 
