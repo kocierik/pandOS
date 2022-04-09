@@ -62,18 +62,35 @@ void intervallTimerHandler(state_t *excState) {
 }
 
 
-void deviceIntHandler(int cause) {
-    //TODO
-    for (int i = 3; i < 7; i++) {
-        if(CAUSE_IP_GET(cause, i)) {
-            //deviceNumber = getBlockedSem(i);
-            //verhogen(deviceNumber);
-        }
+
+void deviceIntHandler(int interrLine, state_t *excState) {
+    int pow2[] =  {1,2,4,8,16,32,64,128,256};
+    memaddr * interruptLineAddr = (0x10000054 + (interrLine - 3)); 
+    int devNumber; //da calcolare
+    dtpreg_t *devAddrBase = 0x10000054 + ((interrLine - 3) * 0x80) + (devNumber * 0x10);
+
+    unsigned int statusCode = devAddrBase->status; //Salvo lo status code 
+
+    devAddrBase->command = ACK; //Acknowledge the interrupt
+
+    int *deviceSemaphore; // = getDeviceSemaphore(intLine, DevNumber) falla.
+
+    pcb_PTR process = removeBlocked(deviceSemaphore);
+    if (process != NULL){
+        process->p_s.reg_v0 = statusCode;
+        --blockedProc;
+        insert_ready_queue(process->p_prio, process);
     }
+    else klog_print("\n\ndeviceIntHandler: Errore Critico");
+    
+    LDST(excState); //verificare se ha senso 
+
+    //Leggere Important Point 
 }
 
 
 void terminalHandler() {
+    klog_print("\n\nterminalHandler: chiamato ");
     int deviceNumber = getBlockedSem(IL_TERMINAL);
     verhogen(&semTerminalDeviceWriting[deviceNumber]);
     /* TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice */

@@ -27,25 +27,29 @@ void exception_handler() {
     }
 }
 
-
+/*
+Nota bene: generic device, timer, e terminale, non sembrano essere mai chiamati :/
+*/
 void interrupt_handler(state_t *excState){
+    //klog_print("\n\ninterrupt_handler: chiamato");
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
-    int deviceNumber;
-
+    //int deviceNumber;
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
+        klog_print("interrupt_handler:Il_IPI");
         // Ignora
-    } else if (CAUSE_IP_GET(cause, IL_CPUTIMER))    {
-        pltTimerHandler(excState);
-    } else if (CAUSE_IP_GET(cause, IL_TIMER))       {
-        intervallTimerHandler(excState);
-    } else if  (CAUSE_IP_GET(cause, IL_DISK)        ||
-                CAUSE_IP_GET(cause, IL_FLASH)       ||
-                CAUSE_IP_GET(cause, IL_ETHERNET)    ||
-                CAUSE_IP_GET(cause, IL_PRINTER))    {
-        deviceIntHandler(cause);
-    } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        terminalHandler();
-    }
+    } else if  CAUSE_IP_GET(cause, IL_CPUTIMER)    pltTimerHandler(excState);
+        
+      else if  CAUSE_IP_GET(cause, IL_TIMER)       intervallTimerHandler(excState);
+        
+      else if  CAUSE_IP_GET(cause, IL_DISK)        deviceIntHandler(IL_DISK, excState);
+      else if  CAUSE_IP_GET(cause, IL_FLASH)       deviceIntHandler(IL_FLASH, excState);
+      else if  CAUSE_IP_GET(cause, IL_ETHERNET)    deviceIntHandler(IL_ETHERNET, excState);
+      else if  CAUSE_IP_GET(cause, IL_PRINTER)     deviceIntHandler(IL_PRINTER, excState);
+
+      else if  CAUSE_IP_GET(cause, IL_TERMINAL)    terminalHandler();
+
+    klog_print("\n\ninterrupt_handler:EERRORE GRAVE");
+    /* TODO: ma l'acknowledgment dell'interrupt??? Scritto in slide 41 phase2_ita*/
 }
 
 

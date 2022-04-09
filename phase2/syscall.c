@@ -177,10 +177,11 @@ void verhogen(int *semaddr) {
 
 
 int doIOdevice(int *cmdAddr, int cmdValue) {
-    
+    /*
     int deviceNumber;
     int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
     devreg_t callingDevice;
+    */
     int *devSemaphore; //Indirizzo del semaforo 
     int returnStatus;
     int interruptLine;
@@ -225,6 +226,7 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
 
+    klog_print("\n\ndoio: eseguita, ritorno lo status");
     //Ritorno lo stato del dispositivo che ha eseguit I/O
     return returnStatus;
 }
