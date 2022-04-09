@@ -18,6 +18,8 @@ extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
 
+int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
+
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
 * Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
@@ -60,28 +62,50 @@ void intervallTimerHandler(state_t *excState) {
         scheduler();
     LDST(excState);
 }
+/* La funzione mi permette di ottenere l'indirizzo del semaforo di un dispositivo generico (NON TERMINALE)
+ * Prendo in input l'interruptLine del dispositivo e il numero del dispositivo stesso (da 0 a 7)
+ */
+int *getDeviceSemaphore(int interruptLine, int devNumber){
+    switch (interruptLine){
+    case IL_DISK:       return &semDiskDevice[devNumber];
+    case IL_FLASH:      return &semFlashDevice[devNumber];
+    case IL_ETHERNET:   return &semNetworkDevice[devNumber];
+    case IL_PRINTER:    return &semPrinterDevice[devNumber];
+    
+    default:
+        klog_print("\n\ngetDeviceSemaphore: Errore Critico");
+        break;
+    }
+}
+
+int getDevice(memaddr *interLine){
+    unsigned int bitmap = *(interLine);
+    for(int i = 0; i < 8; i ++){
+        if (bitmap & powOf2[i]) return i;
+    }
+    return -1; // come codice errore
+}
+
+void deviceIntHandler(int interLine, state_t *excState) {
+    memaddr *interruptLineAddr = (0x10000054 + (interLine - 3)); 
+    int devNumber = getDevice(interLine);
+    dtpreg_t *devRegAddr = 0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10);
+    int *deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
+
+    unsigned int statusCode = devRegAddr->status; //Salvo lo status code 
+
+    devRegAddr->command = ACK; //Acknowledge the interrupt
 
 
-
-void deviceIntHandler(int interrLine, state_t *excState) {
-    int pow2[] =  {1,2,4,8,16,32,64,128,256};
-    memaddr * interruptLineAddr = (0x10000054 + (interrLine - 3)); 
-    int devNumber; //da calcolare
-    dtpreg_t *devAddrBase = 0x10000054 + ((interrLine - 3) * 0x80) + (devNumber * 0x10);
-
-    unsigned int statusCode = devAddrBase->status; //Salvo lo status code 
-
-    devAddrBase->command = ACK; //Acknowledge the interrupt
-
-    int *deviceSemaphore; // = getDeviceSemaphore(intLine, DevNumber) falla.
-
+    /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL){
         process->p_s.reg_v0 = statusCode;
         --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
-    else klog_print("\n\ndeviceIntHandler: Errore Critico");
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
+    else klog_print("\n\ndeviceIntHandler: Possibile errore");
     
     LDST(excState); //verificare se ha senso 
 
@@ -89,11 +113,36 @@ void deviceIntHandler(int interrLine, state_t *excState) {
 }
 
 
-void terminalHandler() {
-    klog_print("\n\nterminalHandler: chiamato ");
-    int deviceNumber = getBlockedSem(IL_TERMINAL);
-    verhogen(&semTerminalDeviceWriting[deviceNumber]);
-    /* TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice */
+void terminalHandler(state_t *excState) {
+    memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
+    int devNumber = getDevice(IL_TERMINAL);
+    termreg_t *devRegAddr = 0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10);
+
+    unsigned int statusCode;
+    int *deviceSemaphore;
+    int readingMode = devRegAddr->recv_status == READY;    
+
+    if (readingMode){
+        statusCode = devRegAddr->recv_status;
+        devRegAddr->recv_command = ACK;
+        deviceSemaphore = &semTerminalDeviceReading[devNumber];
+    } else {
+        statusCode = devRegAddr->transm_status;
+        devRegAddr->transm_command = ACK;
+        deviceSemaphore = &semTerminalDeviceWriting[devNumber];
+    }
+
+    /* Eseguo una custom V-Operation */ 
+    pcb_PTR process = removeBlocked(deviceSemaphore);
+    if (process != NULL){
+        process->p_s.reg_v0 = statusCode;
+        --blockedProc;
+        insert_ready_queue(process->p_prio, process);
+    }
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
+    else klog_print("\n\ndeviceIntHandler: Possibile errore");
+
+    LDST(excState);
 }
 
 
