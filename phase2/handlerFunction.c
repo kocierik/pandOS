@@ -2,6 +2,7 @@
 
 extern void klog_print(char *s);
 extern void klog_print_dec(int n);
+extern void klog_print_hex(unsigned int num);
 extern void scheduler();
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
@@ -88,6 +89,7 @@ int getDevice(int interLine){
 }
 
 void deviceIntHandler(int interLine, state_t *excState) {
+    klog_print("\n\ndeviceIntHandler: chiamato");
     //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
     int devNumber = getDevice(interLine);
     dtpreg_t *devRegAddr = (dtpreg_t *) ( (0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
@@ -96,7 +98,6 @@ void deviceIntHandler(int interLine, state_t *excState) {
     unsigned int statusCode = devRegAddr->status; //Salvo lo status code 
 
     devRegAddr->command = ACK; //Acknowledge the interrupt
-
 
     /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
@@ -115,15 +116,16 @@ void deviceIntHandler(int interLine, state_t *excState) {
 
 
 void terminalHandler(state_t *excState) {
+    klog_print("\n\nterminalHandler: chiamato");
     //memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
     int devNumber = getDevice(IL_TERMINAL);
     termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
-
+    
     unsigned int statusCode;
     int *deviceSemaphore;
     int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
 
-    if (readingMode){
+    if (readingMode) {
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -135,14 +137,21 @@ void terminalHandler(state_t *excState) {
 
     /* Eseguo una custom V-Operation */ 
     pcb_PTR process = removeBlocked(deviceSemaphore);
+
+    klog_print("\n\nterminalHandler: semaforo eccezione-> ");
+    klog_print_hex((memaddr *)deviceSemaphore);
+    klog_print("\n\nterminalHandler: deviceNumber -> ");
+    klog_print_dec(devNumber);
     if (process != NULL){
         process->p_s.reg_v0 = statusCode;
         --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
-    else klog_print("\n\ndeviceIntHandler: Possibile errore");
+    else klog_print("\n\nterminalHandler: Possibile errore");
 
+    if (currentActiveProc == NULL)
+        scheduler();
     LDST(excState);
 }
 
@@ -190,7 +199,8 @@ void syscall_handler(state_t *callerProcState) {
             break;
         case DOIO:
             doIOdevice((int*)a1, (int)a2);
-            blockingCall = TRUE;
+            LDST(callerProcState);
+            blockingCall = FALSE;
             break;
         case GETTIME:
             getCpuTime(callerProcState);

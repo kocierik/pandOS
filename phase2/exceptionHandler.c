@@ -30,7 +30,7 @@ void exception_handler() {
 /*
 Nota bene: generic device, timer, e terminale, non sembrano essere mai chiamati :/
 */
-void interrupt_handler(state_t *excState){
+void interrupt_handler(state_t *excState) {
     //klog_print("\n\ninterrupt_handler: chiamato");
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
     //int deviceNumber;

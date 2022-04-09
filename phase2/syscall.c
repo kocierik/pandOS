@@ -2,6 +2,7 @@
 
 extern void klog_print(char *s);
 extern void klog_print_dec(unsigned int num);
+extern void klog_print_hex(unsigned int num);
 
 /* Variabili globali esterne */
 extern int activeProc;
@@ -187,18 +188,18 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
     for (int i = 0; i < 8; i++){
-        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr){ //Terminal Devices Writing
+        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
             //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
-            interruptLine = i;
+            interruptLine = 7;
             klog_print("\n\ndoio: terminale di scrittura numero -> ");
             klog_print_dec(i);
             break;
         }
-        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){ //Terminal Devices Reading
+        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
             //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
-            interruptLine = i;
+            interruptLine = 7;
             klog_print("\n\ndoio: terminale di lettura numero -> ");
             klog_print_dec(i);
             break;
@@ -220,12 +221,17 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
     //Eseguo la P del processo attualmente in esecuzione.
     passeren(devSemaphore);
 
+    klog_print("\n\ndoio: semaforo syscall -> ");
+    klog_print_hex((memaddr *)devSemaphore);
+
+    //setSTATUS(IEPON);
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
+
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
 
-    klog_print("\n\ndoio: eseguita, ritorno lo status");
+    klog_print("\n\ndoio: eseguita.");
     //Ritorno lo stato del dispositivo che ha eseguit I/O
     //return returnStatus;
 }

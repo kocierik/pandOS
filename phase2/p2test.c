@@ -198,7 +198,7 @@ void test1() {
 
 void test() {
     klog_print("\n\nIngresso nel file p2test.c ...");
-    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     //klog_print("\n\nProvo a printare qualcosa su terminale...");
     print("p1 v(sem_testsem)\n");
 
