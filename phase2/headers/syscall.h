@@ -22,7 +22,7 @@ int createProcess(state_t *a1, int a2, support_t *a3);
 int terminateProcess(int pid);
 int passeren(int *semaddr);
 void verhogen(int *semaddr);
-int doIOdevice(int *cmdAddr, int cmdValue);
+void doIOdevice(int *cmdAddr, int cmdValue);
 void getCpuTime(state_t *callerProcState);
 void waitForClock();
 support_t* getSupportData();

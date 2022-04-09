@@ -176,21 +176,20 @@ void verhogen(int *semaddr) {
 }
 
 
-int doIOdevice(int *cmdAddr, int cmdValue) {
+void doIOdevice(int *cmdAddr, int cmdValue) {
     /*
     int deviceNumber;
     int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
     devreg_t callingDevice;
     */
     int *devSemaphore; //Indirizzo del semaforo 
-    int returnStatus;
     int interruptLine;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
     for (int i = 0; i < 8; i++){
         if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr){ //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            returnStatus = deviceRegs->devreg[4][i].term.transm_status;
+            //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
             interruptLine = i;
             klog_print("\n\ndoio: terminale di scrittura numero -> ");
             klog_print_dec(i);
@@ -198,7 +197,7 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){ //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            returnStatus = deviceRegs->devreg[4][i].term.recv_status;
+            //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
             interruptLine = i;
             klog_print("\n\ndoio: terminale di lettura numero -> ");
             klog_print_dec(i);
@@ -206,7 +205,7 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
         }
         for(int j = 0; j < 4; j++){
             if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                returnStatus = deviceRegs->devreg[j][i].dtp.status;
+                //returnStatus = deviceRegs->devreg[j][i].dtp.status;
                 if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
                 else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
                 else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
@@ -228,7 +227,7 @@ int doIOdevice(int *cmdAddr, int cmdValue) {
 
     klog_print("\n\ndoio: eseguita, ritorno lo status");
     //Ritorno lo stato del dispositivo che ha eseguit I/O
-    return returnStatus;
+    //return returnStatus;
 }
 
 

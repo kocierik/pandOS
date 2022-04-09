@@ -76,10 +76,11 @@ int *getDeviceSemaphore(int interruptLine, int devNumber){
         klog_print("\n\ngetDeviceSemaphore: Errore Critico");
         break;
     }
+    return NULL;
 }
 
-int getDevice(memaddr *interLine){
-    unsigned int bitmap = *(interLine);
+int getDevice(int interLine){
+    unsigned int bitmap = (interLine);
     for(int i = 0; i < 8; i ++){
         if (bitmap & powOf2[i]) return i;
     }
@@ -87,9 +88,9 @@ int getDevice(memaddr *interLine){
 }
 
 void deviceIntHandler(int interLine, state_t *excState) {
-    memaddr *interruptLineAddr = (0x10000054 + (interLine - 3)); 
+    //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
     int devNumber = getDevice(interLine);
-    dtpreg_t *devRegAddr = 0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10);
+    dtpreg_t *devRegAddr = (dtpreg_t *) ( (0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
     int *deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
 
     unsigned int statusCode = devRegAddr->status; //Salvo lo status code 
@@ -107,20 +108,20 @@ void deviceIntHandler(int interLine, state_t *excState) {
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\ndeviceIntHandler: Possibile errore");
     
-    LDST(excState); //verificare se ha senso 
+    LDST(excState); 
 
     //Leggere Important Point 
 }
 
 
 void terminalHandler(state_t *excState) {
-    memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
+    //memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
     int devNumber = getDevice(IL_TERMINAL);
-    termreg_t *devRegAddr = 0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10);
+    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
 
     unsigned int statusCode;
     int *deviceSemaphore;
-    int readingMode = devRegAddr->recv_status == READY;    
+    int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
 
     if (readingMode){
         statusCode = devRegAddr->recv_status;
@@ -188,7 +189,7 @@ void syscall_handler(state_t *callerProcState) {
             verhogen((int*)a1);
             break;
         case DOIO:
-            (*callerProcState).reg_v0 = doIOdevice((int*)a1, (int)a2);
+            doIOdevice((int*)a1, (int)a2);
             blockingCall = TRUE;
             break;
         case GETTIME:
