@@ -152,7 +152,7 @@ void k2() {
     int c = 0;
     while(TRUE) {
         SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
-        klog_print("\n\nk2: ");
+        klog_print("\n\nsk2: ");
         klog_print_dec(c);
         c++;
         SYSCALL(PASSEREN, (int)&sem1, 0, 0);

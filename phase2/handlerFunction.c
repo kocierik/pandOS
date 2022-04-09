@@ -6,7 +6,7 @@ extern void klog_print_hex(unsigned int num);
 extern void scheduler();
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
-extern void copyState(state_t *s, state_t *p);
+extern void copy_state(state_t *s, state_t *p);
 
 extern int activeProc;
 extern int blockedProc;
@@ -39,19 +39,19 @@ int getBlockedSem(int bitAddress) {
 }
 
 
-void pltTimerHandler(state_t *excState) {
+void plt_time_handler(state_t *excState) {
     //klog_print("\nSlice time finito di proc: ");
     //klog_print_dec(currentActiveProc->p_pid);
 
     setTIMER(-2);
-    copyState(excState, &currentActiveProc->p_s);
+    copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso
     scheduler();
 }
 
 
-void intervallTimerHandler(state_t *excState) {
+void intervall_timer_handler(state_t *excState) {
     LDIT(100000);
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
@@ -88,7 +88,7 @@ int getDevice(int interLine){
     return -1; // come codice errore
 }
 
-void deviceIntHandler(int interLine, state_t *excState) {
+void device_handler(int interLine, state_t *excState) {
     klog_print("\n\ndeviceIntHandler: chiamato");
     //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
     int devNumber = getDevice(interLine);
@@ -115,7 +115,7 @@ void deviceIntHandler(int interLine, state_t *excState) {
 }
 
 
-void terminalHandler(state_t *excState) {
+void terminal_handler(state_t *excState) {
     klog_print("\n\nterminalHandler: chiamato");
     //memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
     int devNumber = getDevice(IL_TERMINAL);
@@ -156,14 +156,14 @@ void terminalHandler(state_t *excState) {
 }
 
 
-void passOrDie(int pageFault, state_t *excState) {
+void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
             klog_print("\n\n Termino il processo corrente");
             terminateProcess(0);
             scheduler();
         } else {
-            copyState(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
+            copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status   = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;
             int pc       = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].pc;
@@ -226,8 +226,8 @@ void syscall_handler(state_t *callerProcState) {
     callerProcState->pc_epc += 4;
 
     if(blockingCall) {
-        copyState(callerProcState, &currentActiveProc->p_s);
-        updateCurrProcTime();
+        copy_state(callerProcState, &currentActiveProc->p_s);
+        update_curr_proc_time();
         scheduler();
     } else {
         LDST(callerProcState);

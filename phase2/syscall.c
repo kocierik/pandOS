@@ -21,14 +21,13 @@ extern int semTerminalDeviceWriting[8];
 extern cpu_t startTime;
 
 /* Funzioni globali esterne */
-extern void assegnaPID(pcb_PTR p);
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
 
 /* FUNZIONI DI AIUTO */
 
 
-void copyState(state_t *new, state_t *old) {
+void copy_state(state_t *new, state_t *old) {
     old->cause = new->cause;
     old->entry_hi = new->entry_hi;
     for (int i = 0; i < STATE_GPR_LEN; i++)
@@ -97,7 +96,7 @@ pcb_PTR findPcb(int pid) {
 }
 
 
-void updateCurrProcTime() {
+void update_curr_proc_time() {
     cpu_t now;
     STCK(now);
     currentActiveProc->p_time += now - startTime;
@@ -115,7 +114,7 @@ int createProcess(state_t *a1, int a2, support_t *a3) {
         return NOPROC;
     else {
         insertChild(currentActiveProc, p);
-        copyState(a1, &p->p_s);
+        copy_state(a1, &p->p_s);
         insert_ready_queue(a2, p);
         if(a3 != NULL || a3 != 0)
             p->p_supportStruct = a3;
@@ -238,7 +237,7 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
 
 
 void getCpuTime(state_t *excState) {
-    updateCurrProcTime();
+    update_curr_proc_time();
     excState->reg_v0 = currentActiveProc->p_time;
 }
 

@@ -15,7 +15,7 @@ extern cpu_t startTime;
 void scheduler() {
     
     if(currentActiveProc != NULL)
-        updateCurrProcTime();
+        update_curr_proc_time();
 
     pcb_PTR p;
     /*
