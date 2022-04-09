@@ -131,8 +131,11 @@ int terminateProcess(int pid) {
     pcb_PTR p;
     if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
-        blocking_callerProc = TRUE;
+        klog_print("sto per perminare il processo corrente");
         term_proc_and_child(currentActiveProc);
+        klog_print("ho terminato");
+        scheduler();
+        return TRUE;
     } else {
         p = findPcb(pid);
         blocking_callerProc = term_proc_and_child(p);
