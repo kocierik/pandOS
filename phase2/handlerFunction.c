@@ -39,7 +39,7 @@ int getBlockedSem(int bitAddress) {
 void pltTimerHandler(state_t *excState) {
     //klog_print("\nSlice time finito di proc: ");
     //klog_print_dec(currentActiveProc->p_pid);
-
+    // SETTARE IL PLT AD ----> CP0_Timer - 1; // vedi 4.1.4 pops MA DOVE LO TROVO?
     setTIMER(-2);
     copyState(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
@@ -49,7 +49,7 @@ void pltTimerHandler(state_t *excState) {
 
 
 void intervallTimerHandler(state_t *excState) {
-    LDIT(100000);
+    LDIT(100000*TIMESCALEADDR); // (4.1.3 pops) non so se lasciare 100000 come costante
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
         --blockedProc;
