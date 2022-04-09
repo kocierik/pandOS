@@ -40,7 +40,8 @@ void pltTimerHandler(state_t *excState) {
     //klog_print("\nSlice time finito di proc: ");
     //klog_print_dec(currentActiveProc->p_pid);
     // SETTARE IL PLT AD ----> CP0_Timer - 1; // vedi 4.1.4 pops MA DOVE LO TROVO?
-    setTIMER(-2);
+    
+    setTIMER(-2); // non bisogna decrementare di 1?
     copyState(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso
@@ -63,11 +64,14 @@ void intervallTimerHandler(state_t *excState) {
 
 
 void deviceIntHandler(int cause) {
-    //TODO
+    int deviceNumber; 
     for (int i = 3; i < 7; i++) {
         if(CAUSE_IP_GET(cause, i)) {
-            //deviceNumber = getBlockedSem(i);
-            //verhogen(deviceNumber);
+            deviceNumber = getBlockedSem(i); // non sono sicuro se devo utilizzare il deviceNumber o i
+            devreg_t* addressReg = (devreg_t*) CAUSE_IP_GET(cause,i);
+            int statusCode = addressReg->dtp.status;
+            addressReg->dtp.command = ACK;
+            //verhogen(deviceNumber); bisogna chiamarla??
         }
     }
 }
@@ -76,7 +80,7 @@ void deviceIntHandler(int cause) {
 void terminalHandler() {
     int deviceNumber = getBlockedSem(IL_TERMINAL);
     verhogen(&semTerminalDeviceWriting[deviceNumber]);
-    /* TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice */
+    /* TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice  si*/
 }
 
 

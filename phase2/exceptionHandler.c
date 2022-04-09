@@ -30,8 +30,8 @@ void exception_handler() {
 
 void interrupt_handler(state_t *excState){
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
-    int deviceNumber;
-    
+    int deviceNumber;    
+
     if (CAUSE_IP_GET(cause, IL_IPI)) {   
         // Ignora
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER))    {
