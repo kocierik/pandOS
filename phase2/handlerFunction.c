@@ -49,7 +49,7 @@ void pltTimerHandler(state_t *excState) {
 
 
 void intervallTimerHandler(state_t *excState) {
-    LDIT(100000*TIMESCALEADDR); // (4.1.3 pops) non so se lasciare 100000 come costante
+    LDIT(1*TIMESCALEADDR); // (4.1.3 pops) non so se lasciare 100000 come costante
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
         --blockedProc;
