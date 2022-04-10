@@ -200,13 +200,8 @@ void verhogen(state_t *excState) {
 void do_IO_device(state_t *excState) {
     int *cmdAddr = (int*) (*excState).reg_a1;
     int cmdValue = (int)  (*excState).reg_a2;
-    /*
-    int deviceNumber;
-    int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
-    devreg_t callingDevice;
-    */
-    int *devSemaphore; //Indirizzo del semaforo 
-    int interruptLine;
+    int *devSemaphore; //Indirizzo del semaforo.
+    int interruptLine; //Interrupt Line del dispositivo chiamante la DoIo.
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
     for (int i = 0; i < 8; i++){
@@ -235,26 +230,14 @@ void do_IO_device(state_t *excState) {
         }
     }
 
-
-
-    //Eseguo la P del processo attualmente in esecuzione.
-    //passeren(&semTerminalDeviceWriting[1]); for debug purpose
-    
-    //faccio una P()
+    //Eseguo la P del processo attualmente in esecuzione. TODO: rendi sta P decente.
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
     --activeProc;
     // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
-    //setSTATUS(IEPON);
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-/*
-    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((interruptLine - 3) * 0x80) + (deviceNumber * 0x10));
-    klog_print("\n\ntrovato da me: ");
-    klog_print_dec((memaddr*) &devRegAddr->transm_command); 
-    klog_print("\n\npreso da lui: ");
-    klog_print_dec((memaddr*) (cmdAddr));
-*/
+
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
 }

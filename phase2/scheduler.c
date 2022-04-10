@@ -10,7 +10,6 @@ extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
 
-
 void scheduler() {
 
     pcb_PTR p;
@@ -19,7 +18,6 @@ void scheduler() {
     * Se non lo è estraggo il processo che è li ad attendere;
     * e lo assegno ad una variabile indicante il processo correntemente attivo. 
     */
-
     if((p = removeProcQ(&queueHighProc)) != NULL) {
         klog_print("\n\nscheduler: ho caricato proc ad alta priorita' con ID -> ");
         klog_print_dec(p->p_pid);
