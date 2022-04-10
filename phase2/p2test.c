@@ -105,7 +105,6 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
-    klog_print("\n\nIngresso nella funzione di print");
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
@@ -113,12 +112,10 @@ void print(char *msg) {
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
-        klog_print("\n\nSto per usare la DOIO");
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        klog_print("\n\nDOIO usata");
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("\n\nSono nel PANIC della print");
-            PANIC();
+            //klog_print("\n\nSono nel PANIC della print");
+            //PANIC();
         }
         s++;
     }
@@ -141,64 +138,9 @@ void uTLB_RefillHandler() {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 
-/*
-
-int sem1 = 0;
-int sem2 = 0;
-
-void k2() {
-    klog_print("sono in k2");
-    int c = 0;
-    while(TRUE) {
-        SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
-        klog_print("\n\nsk2: ");
-        klog_print_dec(c);
-        c++;
-        SYSCALL(PASSEREN, (int)&sem1, 0, 0);
-    }
-}
-
-void k1() {
-    klog_print("sono in k1");
-    int c = 0;
-    while(TRUE) {
-        SYSCALL(VERHOGEN, (int)&sem1, 0, 0);
-        klog_print("\n\nk1: ");
-        klog_print_dec(c);
-        c++;
-        SYSCALL(PASSEREN, (int)&sem2, 0, 0);
-    }
-}
-
-void test1() {
-    int sem = 0;
-
-    STST(&p2state);
-    p2state.reg_sp = p2state.reg_sp - QPAGE;
-    p2state.pc_epc = p2state.reg_t9 = (memaddr)k1;
-    p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
-    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL);
-
-    STST(&p3state);
-    p3state.reg_sp = p2state.reg_sp - QPAGE;
-    p3state.pc_epc = p3state.reg_t9 = (memaddr)k2;
-    p3state.status                  = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-    
-    p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL);
-
-
-    klog_print("\n\nho creato p2");
-    SYSCALL(PASSEREN, (int)&sem, 0, 0);
-
-}
-
-*/
-
 void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     print("p1 v(sem_testsem)\n");
-    klog_print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
     STST(&hp_p1state);
@@ -289,26 +231,20 @@ void test() {
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
-    //print("p2 was started\n");
-    klog_print("p2 iniziato\n\n");
+    print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
-    klog_print("sono in p1 e continuo dopo verhogen!\n");
-
 
     SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
-    klog_print("p1 passeren fatta!\n");
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
-        klog_print("error: p1/p2 synchronization bad\n\n");
-        //print("error: p1/p2 synchronization bad\n");
+        print("error: p1/p2 synchronization bad\n");
     }
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
-    //print("p3 is started\n");
-    klog_print("p3 iniziato\n\n");
+    print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
@@ -334,8 +270,7 @@ void test() {
 
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
-    //print("p1 knows p5 ended\n");
-    klog_print("p1 knows p5 ended\n");
+    print("p1 knows p5 ended\n");
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
 
@@ -353,13 +288,11 @@ void test() {
         SYSCALL(PASSEREN, (int)&sem_endp8, 0, 0);
     }
 
-    //print("p1 finishes OK -- TTFN\n");
-    klog_print("p1 finishes OK -- TTFN\n");
+    print("p1 finishes OK -- TTFN\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */
 
     /* should not reach this point, since p1 just got a program trap */
-    klog_print("error: p1 still alive after progtrap & no trap vector\n");
-    //print("error: p1 still alive after progtrap & no trap vector\n");
+    print("error: p1 still alive after progtrap & no trap vector\n");
     PANIC(); /* PANIC !!!     */
 }
 
@@ -372,13 +305,11 @@ void p2() {
 
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
-    //print("c2 starts\n");
-    klog_print("c2 starts\n");
+    print("c2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {
-        //print("Inconsistent process id for p2!\n");
-        klog_print("Inconsistent process id for p2!\n");
+        print("Inconsistent process id for p2!\n");
         PANIC();
     }
 
@@ -392,12 +323,10 @@ void p2() {
         SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */
         SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */
         if (s[i] != 0)
-            klog_print("error: p2 bad v/p pairs\n");
-            //print("error: p2 bad v/p pairs\n");
+            print("error: p2 bad v/p pairs\n");
     }
 
-    //print("p2 v's successfully\n");
-    klog_print("p2 v's successfully\n");
+    print("p2 v's successfully\n");
 
     /* test of SYS6 */
 
@@ -412,30 +341,23 @@ void p2() {
     STCK(now2);                         /* time of day  */
 
     if (((now2 - now1) >= (cpu_t2 - cpu_t1)) && ((cpu_t2 - cpu_t1) >= (MINLOOPTIME / (*((cpu_t *)TIMESCALEADDR))))) {
-        //print("p2 is OK\n");
-        klog_print("p2 is OK\n");
+        print("p2 is OK\n");
     } else {
         if ((now2 - now1) < (cpu_t2 - cpu_t1))
-            klog_print("error: more cpu time than real time\n");
-            //print("error: more cpu time than real time\n");
+            print("error: more cpu time than real time\n");
         if ((cpu_t2 - cpu_t1) < (MINLOOPTIME / (*((cpu_t *)TIMESCALEADDR))))
-            klog_print("error: not enough cpu time went by\n");
-            //print("error: not enough cpu time went by\n");
-        //print("p2 blew it!\n");
-        klog_print("p2 blew it!\n");
+            print("error: not enough cpu time went by\n");
+        print("p2 blew it!\n");
     }
-    klog_print("provo verhogen!\n");
 
     p1p2synch = 1; /* p1 will check this */
 
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
-    klog_print("provo a terminare!\n");
 
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
 
     /* just did a SYS2, so should not get to this point */
-    //print("error: p2 didn't terminate\n");
-    klog_print("error: p2 didn't terminate\n");
+    print("error: p2 didn't terminate\n");
     PANIC(); /* PANIC!           */
 }
 
@@ -456,8 +378,7 @@ void p3() {
         STCK(time2); /* new time of day */
     }
 
-    //print("p3 - CLOCKWAIT OK\n");
-    klog_print("p3 - CLOCKWAIT OK\n");
+    print("p3 - CLOCKWAIT OK\n");
 
     /* now let's check to see if we're really charge for CPU
        time correctly */
@@ -470,17 +391,14 @@ void p3() {
     cpu_t2 = SYSCALL(GETTIME, 0, 0, 0);
 
     if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (*((cpu_t *)TIMESCALEADDR)))) {
-        //print("error: p3 - CPU time incorrectly maintained\n");
-        klog_print("error: p3 - CPU time incorrectly maintained\n");
+        print("error: p3 - CPU time incorrectly maintained\n");
     } else {
-        //print("p3 - CPU time correctly maintained\n");
-        klog_print("p3 - CPU time correctly maintained\n");
+        print("p3 - CPU time correctly maintained\n");
     }
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p3pid) {
-        //print("Inconsistent process id for p3!\n");
-        klog_print("Inconsistent process id for p3!\n");
+        print("Inconsistent process id for p3!\n");
         PANIC();
     }
 
@@ -489,8 +407,7 @@ void p3() {
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p3    */
 
     /* just did a SYS2, so should not get to this point */
-    //print("error: p3 didn't terminate\n");
-    klog_print("error: p3 didn't terminate\n");
+    print("error: p3 didn't terminate\n");
     PANIC(); /* PANIC            */
 }
 
@@ -499,20 +416,17 @@ void p3() {
 void p4() {
     switch (p4inc) {
         case 1:
-            //print("first incarnation of p4 starts\n");
-            klog_print("first incarnation of p4 starts\n");
+            print("first incarnation of p4 starts\n");
             p4inc++;
             break;
 
-        //case 2: print("second incarnation of p4 starts\n"); break;
-        case 2: klog_print("second incarnation of p4 starts\n"); break;
+        case 2: print("second incarnation of p4 starts\n"); break;
     }
 
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p4pid) {
-        //print("Inconsistent process id for p4!\n");
-        klog_print("Inconsistent process id for p4!\n");
+        print("Inconsistent process id for p4!\n");
         PANIC();
     }
 
@@ -533,16 +447,14 @@ void p4() {
 
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* wait for it       */
 
-    //print("p4 is OK\n");
-    klog_print("p4 is OK\n");
+    print("p4 is OK\n");
 
     SYSCALL(VERHOGEN, (int)&sem_endp4, 0, 0); /* V(sem_endp4)          */
 
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p4      */
 
     /* just did a SYS2, so should not get to this point */
-    //print("error: p4 didn't terminate\n");
-    klog_print("error: p4 didn't terminate\n");
+    print("error: p4 didn't terminate\n");
     PANIC(); /* PANIC            */
 }
 
@@ -554,15 +466,13 @@ void p5gen() {
     exeCode              = (exeCode & CAUSEMASK) >> 2;
     switch (exeCode) {
         case BUSERROR:
-            //print("Bus Error (as expected): Access non-existent memory\n");
-            klog_print("Bus Error (as expected): Access non-existent memory\n");
+            print("Bus Error (as expected): Access non-existent memory\n");
             pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5a; /* Continue with p5a() */
             pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5a; /* Continue with p5a() */
             break;
 
         case RESVINSTR:
-            //print("privileged instruction\n");
-            klog_print("privileged instruction\n");
+            print("privileged instruction\n");
             /* return in kernel mode */
             pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b; /* Continue with p5b() */
             pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b; /* Continue with p5b() */
@@ -571,8 +481,7 @@ void p5gen() {
             break;
 
         case ADDRERROR:
-            //print("Address Error (as expected): non-kuseg access w/KU=1\n");
-            klog_print("Address Error (as expected): non-kuseg access w/KU=1\n");
+            print("Address Error (as expected): non-kuseg access w/KU=1\n");
             /* return in kernel mode */
             pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc = (memaddr)p5b; /* Continue with p5b() */
             pFiveSupport.sup_exceptState[GENERALEXCEPT].reg_t9 = (memaddr)p5b; /* Continue with p5b() */
@@ -582,8 +491,7 @@ void p5gen() {
 
         case SYSCALLEXCPT: p5sys(); break;
 
-        //default: print("other program trap\n");
-        default: klog_print("other program trap\n");
+        default: print("other program trap\n");
     }
 
     LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
@@ -591,16 +499,13 @@ void p5gen() {
 
 /* p5's memory management trap handler */
 void p5mm() {
-    //print("memory management trap\n");
-    klog_print("memory management trap\n");
+    print("memory management trap\n");
 
     support_t *pFiveSupAddr = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     if ((pFiveSupAddr) != &(pFiveSupport)) {
-        //print("Support Structure Address Error\n");
-        klog_print("Support Structure Address Error\n");
+        print("Support Structure Address Error\n");
     } else {
-        //print("Correct Support Structure Address\n");
-        klog_print("Correct Support Structure Address\n");
+        print("Correct Support Structure Address\n");
     }
 
     pFiveSupport.sup_exceptState[PGFAULTEXCEPT].status =
@@ -616,11 +521,9 @@ void p5sys() {
     unsigned int p5status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status;
     p5status              = (p5status << 28) >> 31;
     switch (p5status) {
-        //case ON: print("High level SYS call from user mode process\n"); break;
-        case ON: klog_print("High level SYS call from user mode process\n"); break;
+        case ON: print("High level SYS call from user mode process\n"); break;
 
-        //case OFF: print("High level SYS call from kernel mode process\n"); break;
-        case OFF: klog_print("High level SYS call from kernel mode process\n"); break;
+        case OFF: print("High level SYS call from kernel mode process\n"); break;
     }
     pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc =
         pFiveSupport.sup_exceptState[GENERALEXCEPT].pc_epc + 4; /*	 to avoid SYS looping */
@@ -629,8 +532,7 @@ void p5sys() {
 
 /* p5 -- SYS5 test process */
 void p5() {
-    //print("p5 starts\n");
-    klog_print("p5 starts\n");
+    print("p5 starts\n");
 
     /* cause a pgm trap access some non-existent memory */
     *p5MemLocation = *p5MemLocation + 1; /* Should cause a program trap */
@@ -672,35 +574,30 @@ void p5b() {
     SYSCALL(TERMPROCESS, 0, 0, 0);
 
     /* should have terminated, so should not get to this point */
-    //print("error: p5 didn't terminate\n");
-    klog_print("error: p5 didn't terminate\n");
+    print("error: p5 didn't terminate\n");
     PANIC(); /* PANIC            */
 }
 
 
 /*p6 -- high level syscall without initializing passup vector */
 void p6() {
-    //print("p6 starts\n");
-    klog_print("p6 starts\n");
+    print("p6 starts\n");
 
     SYSCALL(1, 0, 0, 0); /* should cause termination because p6 has no
            trap vector */
 
-    //print("error: p6 alive after SYS9() with no trap vector\n");
-    klog_print("error: p6 alive after SYS9() with no trap vector\n");
+    print("error: p6 alive after SYS9() with no trap vector\n");
 
     PANIC();
 }
 
 /*p7 -- program trap without initializing passup vector */
 void p7() {
-    klog_print("p7 starts\n");
-    //print("p7 starts\n");
+    print("p7 starts\n");
 
     *((memaddr *)BADADDR) = 0;
 
-    //print("error: p7 alive after program trap with no trap vector\n");
-    klog_print("error: p7 alive after program trap with no trap vector\n");
+    print("error: p7 alive after program trap with no trap vector\n");
     PANIC();
 }
 
@@ -711,8 +608,7 @@ void p7() {
 void p8root() {
     int grandchild;
 
-    //print("p8root starts\n");
-    klog_print("p8root starts\n");
+    print("p8root starts\n");
 
     SYSCALL(CREATEPROCESS, (int)&child1state, PROCESS_PRIO_LOW, (int)NULL);
 
@@ -730,13 +626,11 @@ void p8root() {
 /*child1 & child2 -- create two sub-processes each*/
 
 void child1() {
-    //print("child1 starts\n");
-    klog_print("child1 starts\n");
+    print("child1 starts\n");
 
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
     if (ppid != p8pid) {
-        //print("Inconsistent (parent) process id for p8's first child\n");
-        klog_print("Inconsistent (parent) process id for p8's first child\n");
+        print("Inconsistent (parent) process id for p8's first child\n");
         PANIC();
     }
 
@@ -748,13 +642,11 @@ void child1() {
 }
 
 void child2() {
-    //print("child2 starts\n");
-    klog_print("child2 starts\n");
+    print("child2 starts\n");
 
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
     if (ppid != p8pid) {
-        //print("Inconsistent (parent) process id for p8's first child\n");
-        klog_print("Inconsistent (parent) process id for p8's first child\n");
+        print("Inconsistent (parent) process id for p8's first child\n");
         PANIC();
     }
 
@@ -768,89 +660,77 @@ void child2() {
 /*p8leaf -- code for leaf processes*/
 
 void p8leaf1() {
-    //print("leaf process (1) starts\n");
-    klog_print("leaf process (1) starts\n");
+    print("leaf process (1) starts\n");
     SYSCALL(VERHOGEN, (int)&sem_endcreate[0], 0, 0);
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
 
 void p8leaf2() {
-    //print("leaf process (2) starts\n");
-    klog_print("leaf process (2) starts\n");
+    print("leaf process (2) starts\n");
     SYSCALL(VERHOGEN, (int)&sem_endcreate[1], 0, 0);
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
 
 void p8leaf3() {
-    klog_print("leaf process (3) starts\n");
-    //print("leaf process (3) starts\n");
+    print("leaf process (3) starts\n");
     SYSCALL(VERHOGEN, (int)&sem_endcreate[2], 0, 0);
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
 
 void p8leaf4() {
-    klog_print("leaf process (4) starts\n");
-    //print("leaf process (4) starts\n");
+    print("leaf process (4) starts\n");
     SYSCALL(VERHOGEN, (int)&sem_endcreate[3], 0, 0);
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
 
 void p9() {
-    klog_print("p9 starts\n");
-    //print("p9 starts\n");
+    print("p9 starts\n");
     SYSCALL(CREATEPROCESS, (int)&p10state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
     SYSCALL(PASSEREN, (int)&sem_blkp9, 0, 0);
 }
 
 
 void p10() {
-    klog_print("p10 starts\n");
-    //print("p10 starts\n");
+    print("p10 starts\n");
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
 
     if (ppid != p9pid) {
-        klog_print("Inconsistent process id for p9!\n");
-        //print("Inconsistent process id for p9!\n");
+        print("Inconsistent process id for p9!\n");
         PANIC();
     }
 
     SYSCALL(TERMPROCESS, ppid, 0, 0);
 
-    //print("Error: p10 didn't die with its parent!\n");
-    klog_print("Error: p10 didn't die with its parent!\n");
+    print("Error: p10 didn't die with its parent!\n");
     PANIC();
 }
 
 
 void hp_p1() {
-    //print("hp_p1 starts\n");
-    klog_print("hp_p1 starts\n");
+    print("hp_p1 starts\n");
 
     for (int i = 0; i < 100; i++) {
         SYSCALL(YIELD, 0, 0, 0);
     }
 
     SYSCALL(TERMPROCESS, 0, 0, 0);
-    //print("Error: hp_p1 didn't die!\n");
-    klog_print("Error: hp_p1 didn't die!\n");
+    print("Error: hp_p1 didn't die!\n");
     PANIC();
 }
 
 
 void hp_p2() {
-    //print("hp_p2 starts\n");
-    klog_print("hp_p2 starts\n");
+    print("hp_p2 starts\n");
 
     for (int i = 0; i < 10; i++) {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
 
     SYSCALL(TERMPROCESS, 0, 0, 0);
-    //print("Error: hp_p2 didn't die!\n");
-    klog_print("Error: hp_p2 didn't die!\n");
+    print("Error: hp_p2 didn't die!\n");
     PANIC();
 }

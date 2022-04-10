@@ -33,8 +33,6 @@ void scheduler() {
         LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        //klog_print("\n\nscheduler: ho caricato proc a bassa priorita' con ID -> ");
-        //klog_print_dec(p->p_pid);   
         currentActiveProc = p;
         setTIMER(TIMESLICE);    //Load 5 milliseconds on the PLT
         STCK(startTime);

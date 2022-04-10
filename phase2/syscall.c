@@ -131,10 +131,9 @@ int terminateProcess(int pid) {
     pcb_PTR p;
     if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
-        klog_print("sto per perminare il processo corrente");
+        klog_print("\n\nsto per perminare il processo corrente");
         term_proc_and_child(currentActiveProc);
-        klog_print("ho terminato");
-        scheduler();
+        klog_print("\n\nho terminato");
         return TRUE;
     } else {
         p = findPcb(pid);
@@ -194,21 +193,16 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
             devSemaphore = &semTerminalDeviceWriting[i];
             //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
             interruptLine = 7;
-            klog_print("\n\ndoio: terminale di scrittura numero -> ");
-            klog_print_dec(i);
             break;
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
             //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
             interruptLine = 7;
-            klog_print("\n\ndoio: terminale di lettura numero -> ");
-            klog_print_dec(i);
             break;
         }else{
             for(int j = 0; j < 4; j++){
                 if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                    klog_print("\n\ndoio: trovato un dispositivo diverso da terminale");
                     //returnStatus = deviceRegs->devreg[j][i].dtp.status;
                     if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
                     else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
@@ -237,8 +231,6 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
 */
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
-
-    klog_print("\n\ndoio: eseguita.");
 }
 
 

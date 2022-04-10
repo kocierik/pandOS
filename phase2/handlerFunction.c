@@ -89,7 +89,6 @@ int getDevice(int interLine){
 }
 
 void device_handler(int interLine, state_t *excState) {
-    klog_print("\n\ndeviceIntHandler: chiamato");
     //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
     int devNumber = getDevice(interLine);
     dtpreg_t *devRegAddr = (dtpreg_t *) ( (0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
@@ -117,7 +116,6 @@ void device_handler(int interLine, state_t *excState) {
 
 
 void terminal_handler(state_t *excState) {
-    klog_print("\n\nterminalHandler: chiamato");
     int devNumber = getDevice(IL_TERMINAL);
     termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
     
@@ -153,7 +151,7 @@ void terminal_handler(state_t *excState) {
 void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
-            klog_print("\n\n Termino il processo corrente");
+            klog_print("\n\n Termino il processo corrente dal passup");
             terminateProcess(0);
             scheduler();
         } else {
@@ -165,7 +163,7 @@ void pass_up_or_die(int pageFault, state_t *excState) {
             LDCXT(stackPtr, status, pc);
         }
     } else {
-        klog_print("currentProc e' null");
+        klog_print("\n\ncurrentProc e' null");
     }
 }
 
@@ -178,6 +176,8 @@ void syscall_handler(state_t *callerProcState) {
     void * a2 = (void *) (*callerProcState).reg_a2;
     void * a3 = (void *) (*callerProcState).reg_a3;
 
+    callerProcState->pc_epc += 4;
+    
     switch(syscode) {
         case CREATEPROCESS:
             (*callerProcState).reg_v0 = createProcess(a1, (int)a2, a3);
@@ -193,8 +193,6 @@ void syscall_handler(state_t *callerProcState) {
             break;
         case DOIO:
             doIOdevice((int*)a1, (int)a2);
-            LDST(callerProcState);
-            blockingCall = FALSE;
             break;
         case GETTIME:
             getCpuTime(callerProcState);
@@ -217,11 +215,11 @@ void syscall_handler(state_t *callerProcState) {
             break;
     }
 
-    callerProcState->pc_epc += 4;
+
+    update_curr_proc_time();
 
     if(blockingCall) {
         copy_state(callerProcState, &currentActiveProc->p_s);
-        update_curr_proc_time();
         scheduler();
     } else {
         LDST(callerProcState);
