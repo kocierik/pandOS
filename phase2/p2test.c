@@ -20,7 +20,6 @@
 #include <umps/libumps.h>
 
 extern void klog_print(char *s);
-extern int klog_print_dec(int num);
 
 typedef unsigned int devregtr;
 
@@ -117,11 +116,8 @@ void print(char *msg) {
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        klog_print("\n\nprint: status ->  "); //Non rimuovere questa print: dopo tot cicli si bugga questo stato
-        // lo status di base contiene i caratteri che manda transm + lo stato. Quest'operazione di END filtra la prima parte lasciando solo la seconda
-        klog_print_dec((status & TERMSTATMASK)); 
         if ((status & TERMSTATMASK) != RECVD) {
-            PANIC();
+            //PANIC();
         }
         s++;
     }

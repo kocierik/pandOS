@@ -13,14 +13,18 @@ pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo
 cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
-  
+/* 
+    * Consideriamo ogni coppia di semafori dei terminali come segue: 
+    * Primo semaforo dedicato alle operazioni di scrittura (transm)
+    * Secondo semaforo dedicato alle operazioni di lettura (recv)
+*/  
 int semIntervalTimer;
 int semDiskDevice[8];
 int semFlashDevice[8];
 int semNetworkDevice[8];
 int semPrinterDevice[8];
-int semTerminalDeviceReading[8]; //Recv operation
-int semTerminalDeviceWriting[8]; //Transm 
+int semTerminalDeviceReading[8]; 
+int semTerminalDeviceWriting[8];
 
 
 #endif

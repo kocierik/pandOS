@@ -1,23 +1,12 @@
 #include "headers/exceptionHandler.h"
 #include "klog.c"
 
-/* Funzione custom che permette di copiare lo stato di un processo 
- TODO: da spostare in opportuno file
- */
-static inline void pandos_memcpy(void *dest, void *src, size_t len){ 
-    char *s = (char *)src;
-    char *d = (char *)dest;
-    for (size_t i = 0; i < len; ++i)
-        d[i] = s[i];
-}
-
 
 void exception_handler() {
-
     update_curr_proc_time();    //aggiorno il cronometro del processo
+
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
-    pandos_memcpy(&currentActiveProc->p_s, exceptionState, sizeof(state_t)); //Aggiornamento forzato dello stato del processo correntemente attivo. 
 
     switch(causeCode){
         case IOINTERRUPTS:                      // Interrupt

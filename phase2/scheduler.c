@@ -11,6 +11,7 @@ extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
 
+
 void scheduler() {
     pcb_PTR p;
     if((p = removeProcQ(&queueHighProc)) != NULL) {
