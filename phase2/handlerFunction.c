@@ -5,6 +5,7 @@ extern void klog_print_dec(int n);
 extern void klog_print_hex(unsigned int num);
 extern void scheduler();
 extern void yield(state_t *s);
+#define TERMSTATMASK 0xFF
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
 extern void copy_state(state_t *s, state_t *p);
@@ -149,13 +150,25 @@ void terminal_handler(state_t *excState) {
     
     unsigned int statusCode;
     int *deviceSemaphore;
-    int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
 
-    if (!readingMode) {
+    int readingMode = devRegAddr->recv_status == TRUE;
+    /*
+    klog_print("\n\nterminalHandler: recv_status: ");
+    klog_print_dec(devRegAddr->recv_status);
+
+    klog_print("\n\nterminalHandler: transm_status: ");
+    klog_print_dec(devRegAddr->transm_status);
+
+    int statusXX = (devRegAddr->transm_status & TERMSTATMASK);
+    klog_print("\n\nstatusXX: ");
+    klog_print_dec(statusXX);
+    */
+    if (readingMode && FALSE) { //TODO forzo l'entrata nell'else perchè calcolo male readingMode: da risolvere.
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
     } else {
+        klog_print("\n\nterminalHandler: sono nell'else");
         statusCode = devRegAddr->transm_status;
         devRegAddr->transm_command = ACK;
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
@@ -163,6 +176,8 @@ void terminal_handler(state_t *excState) {
 
     /* Eseguo una custom V-Operation */ 
     pcb_PTR process = removeBlocked(deviceSemaphore);
+    klog_print("\n\nterminHandler: process ID: ");
+    klog_print_dec(process->p_pid);
     if (process != NULL){
         process->p_s.reg_v0 = statusCode;
         --blockedProc;
@@ -198,9 +213,7 @@ void pass_up_or_die(int pageFault, state_t *excState) {
 void syscall_handler(state_t *callerProcState) {
     
     int syscode = (*callerProcState).reg_a0;
-
     callerProcState->pc_epc += 4;
-    
     switch(syscode) {
         case CREATEPROCESS:
             create_process(callerProcState);
