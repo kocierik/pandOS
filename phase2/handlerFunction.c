@@ -41,7 +41,7 @@ int getBlockedSem(int bitAddress) {
 
 void plt_time_handler(state_t *excState) {
     setTIMER(-2);
-    copyState(excState, &currentActiveProc->p_s);
+    copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso
     scheduler();
