@@ -19,8 +19,9 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
+extern cpu_t startTime;
 
-int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
+int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
 
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
@@ -28,6 +29,12 @@ int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tr
 * restituisce 1 quando un dispositivo è attivo. 
 * //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
 */
+
+void loadState(state_t *s) {
+    STCK(startTime);
+    LDST(s);
+}
+
 
 int getBlockedSem(int bitAddress) {
     int deviceNumber = 0; 
@@ -41,22 +48,32 @@ int getBlockedSem(int bitAddress) {
 
 
 void plt_time_handler(state_t *excState) {
+    klog_print("\n\nplt interrupt");
     setTIMER(-2);
     yield(excState);
 }
 
 
 void intervall_timer_handler(state_t *excState) {
+    klog_print("\n\nIntervall Timer");
     LDIT(100000);
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
+
+        klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
+        klog_print("\n\nrimesso in readyqueue");
+
     }
+
     semIntervalTimer = 0;
-    if (currentActiveProc == NULL)
+
+    if (currentActiveProc == NULL) {
+        klog_print("\n\nchiamo lo schiduler");
         scheduler();
-    LDST(excState);
+    }
+    loadState(excState);
 }
 
 /*
@@ -120,7 +137,7 @@ void device_handler(int interLine, state_t *excState) {
     else klog_print("\n\ndeviceIntHandler: Possibile errore");
     
     if (currentActiveProc == NULL) scheduler();
-    else LDST(excState); 
+    loadState(excState);
 
     //Leggere Important Point 
 }
@@ -155,7 +172,7 @@ void terminal_handler(state_t *excState) {
     else klog_print("\n\nterminalHandler: Possibile errore");
 
     if (currentActiveProc == NULL) scheduler();
-    else LDST(excState);
+    loadState(excState);
 }
 
 
@@ -220,5 +237,5 @@ void syscall_handler(state_t *callerProcState) {
             break;
     }
 
-    LDST(callerProcState);
+    loadState(callerProcState);
 }

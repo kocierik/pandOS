@@ -8,6 +8,7 @@
 
 
 int getBlockedSem(int bitAddress);
+void loadState(state_t *s);
 
 /* Interrupt handler functions */
 void plt_time_handler(state_t *excState);

@@ -40,29 +40,24 @@ void copy_state(state_t *new, state_t *old) {
 
 
 /* funzione iterativa che elimina i figli e il processo stesso */
-int term_proc_and_child(pcb_PTR parent) {
-    int ret = FALSE;
+void term_proc_and_child(pcb_PTR parent) {
     pcb_PTR p;
     while(!isPcbFree(parent->p_pid)) {
         p = parent;
         while(!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
         
-        ret = term_single_proc(p); // termino p
+        term_single_proc(p); // termino p
     }
-    return ret;
 }
 
 
-int term_single_proc(pcb_PTR p) {
-    int ret = FALSE;
+void term_single_proc(pcb_PTR p) {
     // gestisco variabili globali e semaforo
     if (p->p_semAdd == NULL) {
         list_del(&p->p_list);   // lo tolgo da qualsiasi lista
-        if (p == currentActiveProc) {
-            //currentActiveProc = NULL;
-            ret = TRUE;
-        }
+        if (p == currentActiveProc)
+            currentActiveProc = NULL;
         --activeProc;
     } else {
         --blockedProc;
@@ -71,7 +66,6 @@ int term_single_proc(pcb_PTR p) {
     
     outChild(p); // tolgo p come figlio così va avanti
     freePcb(p);
-    return ret;
 }
 
 
@@ -79,8 +73,6 @@ pcb_PTR find_pcb(int pid) {
     
     struct list_head *pos;
     pcb_PTR p;
-    if (pid == currentActiveProc->p_pid)
-        return currentActiveProc;
 
     list_for_each(pos, &queueHighProc) {
         if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
@@ -91,6 +83,7 @@ pcb_PTR find_pcb(int pid) {
         if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
             return p;
     }
+    
     p = isPcbBlocked(pid);
     return p;
 }
@@ -135,6 +128,7 @@ void create_process(state_t *excState) {
     else {
         insertChild(currentActiveProc, p);
         copy_state(a1, &p->p_s);
+        klog_print_dec(a2);
         insert_ready_queue(a2, p);
         p->p_supportStruct = a3;
         if (a3 == 0)
@@ -161,6 +155,8 @@ void terminate_process(state_t *excState) {
         klog_print("\n\nprocesso trovato! Lo termino");
         term_proc_and_child(p);
     }
+    if(currentActiveProc == NULL) scheduler();
+    loadState(excState);
 }
 
 
@@ -186,6 +182,11 @@ void P(int *semaddr, state_t *excState) {
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
+    V(semaddr, excState);
+}
+
+
+void V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
     if(*semaddr == 1) {

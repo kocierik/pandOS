@@ -7,5 +7,6 @@
 #include "syscall.h"
 
 void scheduler();
+void scheduler_empty_queues();
 
 #endif

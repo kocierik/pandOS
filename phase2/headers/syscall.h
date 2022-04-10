@@ -9,17 +9,19 @@
 #include "umps/libumps.h"
 #include "umps/cp0.h"
 #include "scheduler.h"
+#include "handlerFunction.h"
 
 
 /* Funzioni di aiuto per syscall */
 void copy_state(state_t *new, state_t *old);
-int term_single_proc(pcb_PTR p);
-int term_proc_and_child(pcb_PTR rootPtr);
+void term_single_proc(pcb_PTR p);
+void term_proc_and_child(pcb_PTR rootPtr);
 pcb_PTR find_pcb(int pid);
 void update_curr_proc_time();
 void block_curr_proc(state_t *excState, int *semaddr);
 void free_process(int *semaddr);
 void P(int *semaddr, state_t *excState);
+void V(int *semaddr, state_t *excState);
 
 
 void create_process(state_t *excState);
