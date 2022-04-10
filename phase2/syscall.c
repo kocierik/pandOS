@@ -205,37 +205,40 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
             klog_print("\n\ndoio: terminale di lettura numero -> ");
             klog_print_dec(i);
             break;
-        }
-        for(int j = 0; j < 4; j++){
-            if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                //returnStatus = deviceRegs->devreg[j][i].dtp.status;
-                if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
-                else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
-                else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
-                else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+        }else{
+            for(int j = 0; j < 4; j++){
+                if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
+                    klog_print("\n\ndoio: trovato un dispositivo diverso da terminale");
+                    //returnStatus = deviceRegs->devreg[j][i].dtp.status;
+                    if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
+                    else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
+                    else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
+                    else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+                }
+                break;
             }
-            break;
         }
     }
 
 
 
     //Eseguo la P del processo attualmente in esecuzione.
+    //passeren(&semTerminalDeviceWriting[1]); for debug purpose
     passeren(devSemaphore);
-
-    klog_print("\n\ndoio: semaforo syscall -> ");
-    klog_print_hex((memaddr *)devSemaphore);
 
     //setSTATUS(IEPON);
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-
-
+/*
+    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((interruptLine - 3) * 0x80) + (deviceNumber * 0x10));
+    klog_print("\n\ntrovato da me: ");
+    klog_print_dec((memaddr*) &devRegAddr->transm_command); 
+    klog_print("\n\npreso da lui: ");
+    klog_print_dec((memaddr*) (cmdAddr));
+*/
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
 
     klog_print("\n\ndoio: eseguita.");
-    //Ritorno lo stato del dispositivo che ha eseguit I/O
-    //return returnStatus;
 }
 
 

@@ -109,7 +109,8 @@ void device_handler(int interLine, state_t *excState) {
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\ndeviceIntHandler: Possibile errore");
     
-    LDST(excState); 
+    if (currentActiveProc == NULL) scheduler();
+    else LDST(excState); 
 
     //Leggere Important Point 
 }
@@ -117,7 +118,6 @@ void device_handler(int interLine, state_t *excState) {
 
 void terminal_handler(state_t *excState) {
     klog_print("\n\nterminalHandler: chiamato");
-    //memaddr *interruptLineAddr = (0x10000054 + (IL_TERMINAL - 3)); 
     int devNumber = getDevice(IL_TERMINAL);
     termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
     
@@ -125,7 +125,7 @@ void terminal_handler(state_t *excState) {
     int *deviceSemaphore;
     int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
 
-    if (readingMode) {
+    if (!readingMode) {
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -137,11 +137,6 @@ void terminal_handler(state_t *excState) {
 
     /* Eseguo una custom V-Operation */ 
     pcb_PTR process = removeBlocked(deviceSemaphore);
-
-    klog_print("\n\nterminalHandler: semaforo eccezione-> ");
-    klog_print_hex((memaddr *)deviceSemaphore);
-    klog_print("\n\nterminalHandler: deviceNumber -> ");
-    klog_print_dec(devNumber);
     if (process != NULL){
         process->p_s.reg_v0 = statusCode;
         --blockedProc;
@@ -150,9 +145,8 @@ void terminal_handler(state_t *excState) {
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\nterminalHandler: Possibile errore");
 
-    if (currentActiveProc == NULL)
-        scheduler();
-    LDST(excState);
+    if (currentActiveProc == NULL) scheduler();
+    else LDST(excState);
 }
 
 
