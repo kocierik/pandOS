@@ -149,9 +149,9 @@ void terminal_handler(state_t *excState) {
     
     unsigned int statusCode;
     int *deviceSemaphore;
-    int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
+    int readingMode = (devRegAddr->recv_status == 5); //TODO: is it correct?
 
-    if (!readingMode) {
+    if (readingMode && FALSE) { //TODO
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -172,7 +172,7 @@ void terminal_handler(state_t *excState) {
     else klog_print("\n\nterminalHandler: Possibile errore");
 
     if (currentActiveProc == NULL) scheduler();
-    loadState(excState);
+    loadState(&currentActiveProc->p_s);
 }
 
 

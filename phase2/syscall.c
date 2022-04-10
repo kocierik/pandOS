@@ -167,7 +167,7 @@ void passeren(state_t *excState) {
 }
 
 
-void P(int *semaddr, state_t *excState) {
+void P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
     pcb_PTR pid = headBlocked(semaddr);
 
     if(*semaddr == 0) {

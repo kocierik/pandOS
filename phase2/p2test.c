@@ -117,7 +117,7 @@ void print(char *msg) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            //PANIC();
+            PANIC();
         }
         s++;
     }
