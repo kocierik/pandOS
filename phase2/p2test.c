@@ -19,6 +19,8 @@
 #include "../generic_headers/pandos_types.h"
 #include <umps/libumps.h>
 
+extern void klog_print(char *s);
+
 typedef unsigned int devregtr;
 
 /* hardware constants */
@@ -126,11 +128,9 @@ void print(char *msg) {
 /* TLB-Refill Handler */
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler() {
-
     setENTRYHI(0x80000000);
     setENTRYLO(0x00000000);
     TLBWR();
-
     LDST((state_t *)0x0FFFF000);
 }
 

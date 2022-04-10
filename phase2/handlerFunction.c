@@ -4,6 +4,7 @@ extern void klog_print(char *s);
 extern void klog_print_dec(int n);
 extern void klog_print_hex(unsigned int num);
 extern void scheduler();
+extern void yield(state_t *s);
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
 extern void copy_state(state_t *s, state_t *p);
@@ -41,12 +42,8 @@ int getBlockedSem(int bitAddress) {
 
 void plt_time_handler(state_t *excState) {
     setTIMER(-2);
-    copy_state(excState, &currentActiveProc->p_s);
-    insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-    --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso
-    scheduler();
+    yield(excState);
 }
-
 
 
 void intervall_timer_handler(state_t *excState) {
@@ -166,8 +163,7 @@ void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
             klog_print("\n\n Termino il processo corrente dal passup");
-            terminateProcess(0);
-            scheduler();
+            terminate_process(0);
         } else {
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
@@ -183,59 +179,46 @@ void pass_up_or_die(int pageFault, state_t *excState) {
 
 
 void syscall_handler(state_t *callerProcState) {
-    int blockingCall = FALSE;
     
     int syscode = (*callerProcState).reg_a0;
-    void * a1 = (void *) (*callerProcState).reg_a1;
-    void * a2 = (void *) (*callerProcState).reg_a2;
-    void * a3 = (void *) (*callerProcState).reg_a3;
 
     callerProcState->pc_epc += 4;
     
     switch(syscode) {
         case CREATEPROCESS:
-            (*callerProcState).reg_v0 = createProcess(a1, (int)a2, a3);
+            create_process(callerProcState);
             break;
         case TERMPROCESS:
-            blockingCall = terminateProcess((int)a1);
+            terminate_process(callerProcState);
             break;
         case PASSEREN:
-            blockingCall = passeren((int*)a1);
+            passeren(callerProcState);
             break;
         case VERHOGEN:
-            verhogen((int*)a1);
+            verhogen(callerProcState);
             break;
         case DOIO:
-            doIOdevice((int*)a1, (int)a2);
+            do_IO_device(callerProcState);
             break;
         case GETTIME:
             getCpuTime(callerProcState);
             break;
         case CLOCKWAIT:
-            waitForClock();
-            blockingCall = TRUE;
+            waitForClock(callerProcState);
             break;
         case GETSUPPORTPTR:
-            getSupportData();
+            getSupportData(callerProcState);
             break;
         case GETPROCESSID:
-            getIDprocess(callerProcState, (int)a1);
+            getIDprocess(callerProcState);
             break;
         case YIELD:
-            yield((int)a1);
+            yield(callerProcState);
             break;
         default:
             trap_handler(callerProcState);
             break;
     }
 
-
-    update_curr_proc_time();
-
-    if(blockingCall) {
-        copy_state(callerProcState, &currentActiveProc->p_s);
-        scheduler();
-    } else {
-        LDST(callerProcState);
-    }
+    LDST(callerProcState);
 }

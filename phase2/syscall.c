@@ -48,13 +48,13 @@ int term_proc_and_child(pcb_PTR parent) {
         while(!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
         
-        ret = __terminate_process(p); // termino p
+        ret = term_single_proc(p); // termino p
     }
     return ret;
 }
 
 
-int __terminate_process(pcb_PTR p) {
+int term_single_proc(pcb_PTR p) {
     int ret = FALSE;
     // gestisco variabili globali e semaforo
     if (p->p_semAdd == NULL) {
@@ -75,7 +75,7 @@ int __terminate_process(pcb_PTR p) {
 }
 
 
-pcb_PTR findPcb(int pid) {
+pcb_PTR find_pcb(int pid) {
     
     struct list_head *pos;
     pcb_PTR p;
@@ -104,81 +104,102 @@ void update_curr_proc_time() {
 }
 
 
+void block_curr_proc(state_t *excState, int *semaddr) {
+    ++blockedProc;
+    --activeProc;
+    copy_state(excState, &currentActiveProc->p_s);
+    insertBlocked(semaddr, currentActiveProc);
+    scheduler();
+}
+
+
+void free_process(int *semaddr) {
+    pcb_PTR pid = removeBlocked(semaddr);
+    --blockedProc;
+    insert_ready_queue(pid->p_prio, pid);
+}
+
+
 /* SYSCALL */
 
 
-int createProcess(state_t *a1, int a2, support_t *a3) {
+void create_process(state_t *excState) {
     pcb_PTR p = allocPcb();
+
+    state_t   *a1 = (state_t *)   (*excState).reg_a1;
+    int        a2 = (int)         (*excState).reg_a2;
+    support_t *a3 = (support_t *) (*excState).reg_a3;
     
     if(p == NULL)
-        return NOPROC;
+        (*excState).reg_v0 = NOPROC;
     else {
         insertChild(currentActiveProc, p);
         copy_state(a1, &p->p_s);
         insert_ready_queue(a2, p);
-        if(a3 != NULL || a3 != 0)
-            p->p_supportStruct = a3;
-        else
+        p->p_supportStruct = a3;
+        if (a3 == 0)
             p->p_supportStruct = NULL;
-        return p->p_pid;
+        (*excState).reg_v0 = p->p_pid;
     }
 }
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-int terminateProcess(int pid) {
-    int blocking_callerProc = FALSE;
+/* DA DEBUGGARE */
+void terminate_process(state_t *excState) {
     pcb_PTR p;
+    int pid = (int) (*excState).reg_a1;
+
     if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
         klog_print("\n\nsto per perminare il processo corrente");
         term_proc_and_child(currentActiveProc);
         klog_print("\n\nho terminato");
-        return TRUE;
     } else {
-        p = findPcb(pid);
-        blocking_callerProc = term_proc_and_child(p);
+        klog_print("\n\ndevo cercare il processo");
+        p = find_pcb(pid);
+        klog_print("\n\nprocesso trovato! Lo termino");
+        term_proc_and_child(p);
     }
-    return blocking_callerProc;
 }
 
 
 /* Porta il processo attualmente attivo in stato "Blocked" */
-int passeren(int *semaddr) {
-    if (*semaddr > 0)
+void passeren(state_t *excState) {
+    int *semaddr = (int*) (*excState).reg_a1;
+    P(semaddr, excState);
+}
+
+
+void P(int *semaddr, state_t *excState) {
+    pcb_PTR pid = headBlocked(semaddr);
+
+    if(*semaddr == 0) {
+        block_curr_proc(excState, semaddr);
+    } else if(pid != NULL) {
+        free_process(semaddr);
+    } else
         --(*semaddr);
-    else {
-        insertBlocked(semaddr, currentActiveProc);
-        --activeProc;
-        ++blockedProc;
-        //klog_print("\n\nP: Passeren eseguita su processo: ");
-        //klog_print_dec(currentActiveProc->p_pid);
-        return TRUE;
-    }
-    return FALSE;
 }
 
 
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
-void verhogen(int *semaddr) {
-    pcb_PTR pid = removeBlocked(semaddr);
+void verhogen(state_t *excState) {
+    int *semaddr = (int*) (*excState).reg_a1;
+    pcb_PTR pid = headBlocked(semaddr);
 
-    if (pid == NULL){
+    if(*semaddr == 1) {
+        block_curr_proc(excState, semaddr);
+    } else if(pid != NULL) {
+        free_process(semaddr);
+    } else
         ++(*semaddr);
-        //klog_print("\n\nV: non ho trovato nulla da mettere in Ready");
-    }
-    else {
-        //Proc rimosso dal semaforo, lo inserisco nella lista dei proc ready
-        --blockedProc;
-        insert_ready_queue(pid->p_prio, pid);
-        //klog_print("\n\nV: ho messo in ready state il processo numero ");
-        //klog_print_dec(pid->p_pid);
-    }
-    //klog_print("\n\nVerhogen eseguita con successo..."); 
 }
 
 
-void doIOdevice(int *cmdAddr, int cmdValue) {
+void do_IO_device(state_t *excState) {
+    int *cmdAddr = (int*) (*excState).reg_a1;
+    int cmdValue = (int)  (*excState).reg_a2;
     /*
     int deviceNumber;
     int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
@@ -218,7 +239,12 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
 
     //Eseguo la P del processo attualmente in esecuzione.
     //passeren(&semTerminalDeviceWriting[1]); for debug purpose
-    passeren(devSemaphore);
+    
+    //faccio una P()
+    insertBlocked(devSemaphore, currentActiveProc);
+    ++blockedProc;
+    --activeProc;
+    // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
     //setSTATUS(IEPON);
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
@@ -230,7 +256,7 @@ void doIOdevice(int *cmdAddr, int cmdValue) {
     klog_print_dec((memaddr*) (cmdAddr));
 */
     // Eseguo il comando richiesto.
-    *cmdAddr = cmdValue;
+    *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
 }
 
 
@@ -240,33 +266,31 @@ void getCpuTime(state_t *excState) {
 }
 
 
-void waitForClock() {
-    passeren(&semIntervalTimer);
-    insertBlocked(&semIntervalTimer, currentActiveProc);
-    --activeProc;
-    ++blockedProc;
+void waitForClock(state_t *excState) {
+    P(&semIntervalTimer, excState);
+    block_curr_proc(excState, &semIntervalTimer);
 }
 
 
-support_t* getSupportData() {
-    return (currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL;
+//TODO: sul libro non c'e' scritto esplicitamente di mettere il valore nel reg_v0, da controllare...
+void getSupportData(state_t *excState) {
+    (*excState).reg_v0 = (unsigned int) ((currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL);
 }
 
 
-void getIDprocess(state_t *callerProcess, int parent) {
-    if(parent==0)
-        (*callerProcess).reg_v0 = currentActiveProc->p_pid;
+void getIDprocess(state_t *excState) {
+    int parent = (int) (*excState).reg_a1;
+    if (parent == 0)
+        (*excState).reg_v0 = currentActiveProc->p_pid;
     else
-        (*callerProcess).reg_v0 = currentActiveProc->p_parent->p_pid;
+        (*excState).reg_v0 = currentActiveProc->p_parent->p_pid;
 }
 
 
 // inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
-void yield() {
-    list_del(&currentActiveProc->p_list);
-
-    if(currentActiveProc->p_prio == PROCESS_PRIO_LOW)
-        insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc); 
-    else                          
-        insert_ready_queue(PROCESS_PRIO_HIGH,currentActiveProc);
+void yield(state_t *excState) {
+    copy_state(excState, &currentActiveProc->p_s);
+    insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc); 
+    --activeProc; //NON TOCCARE: da fare visto che lo faccio a spropostito in insert_ready_queue
+    scheduler();
 }

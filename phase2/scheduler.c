@@ -11,11 +11,7 @@ extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
 
 
-
 void scheduler() {
-    
-    if(currentActiveProc != NULL)
-        update_curr_proc_time();
 
     pcb_PTR p;
     /*
@@ -29,13 +25,13 @@ void scheduler() {
         klog_print_dec(p->p_pid);
         currentActiveProc = p;
         //setSTATUS(ALLOFF); //suggerito da gian
-        STCK(startTime);
+        STCK(startTime);    // Inizio il cronometro del tempo in cpu
         LDST(&p->p_s);
 
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         currentActiveProc = p;
         setTIMER(TIMESLICE);    //Load 5 milliseconds on the PLT
-        STCK(startTime);
+        STCK(startTime);    // Inizio il cronometro del tempo in cpu
         LDST(&p->p_s);
 
     } else {

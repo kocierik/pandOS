@@ -3,6 +3,8 @@
 
 
 void exception_handler() {
+    update_curr_proc_time();    //aggiorno il cronometro del processo
+
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
 
@@ -29,7 +31,6 @@ void exception_handler() {
 
 
 void interrupt_handler(state_t *excState) {
-    //klog_print("\n\ninterrupt_handler: chiamato");
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
     if      CAUSE_IP_GET(cause, IL_IPI)         klog_print("interrupt_handler:Il_IPI"); // Ignora intterrupt
