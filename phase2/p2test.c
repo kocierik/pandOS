@@ -18,8 +18,7 @@
 #include "../generic_headers/pandos_const.h"
 #include "../generic_headers/pandos_types.h"
 #include <umps/libumps.h>
-extern void klog_print(char *s); //TODO rimuovi
-extern void klog_print_dec(int n); //TODO rimuovi
+
 typedef unsigned int devregtr;
 
 /* hardware constants */
@@ -67,7 +66,7 @@ int sem_term_mut = 1,              /* for mutual exclusion on terminal */
     s[MAXSEM + 1],                 /* semaphore array */
     sem_testsem             = 0,   /* for a simple test */
     sem_startp2             = 0,   /* used to start p2 */
-    sem_endp2               = 0,   /* used to signal p2's demise */
+    sem_endp2               = 1,   /* used to signal p2's demise (test binary blocking V on binary sem*/
     sem_endp3               = 0,   /* used to signal p3's demise */
     sem_blkp4               = 1,   /* used to block second incaration of p4 */
     sem_synp4               = 0,   /* used to allow p4 incarnations to synhronize */
@@ -105,16 +104,17 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
+
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
     devregtr  status;
+
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            //klog_print("\n\nSono nel PANIC della print");
             //PANIC();
         }
         s++;
@@ -126,9 +126,11 @@ void print(char *msg) {
 /* TLB-Refill Handler */
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler() {
+
     setENTRYHI(0x80000000);
     setENTRYLO(0x00000000);
     TLBWR();
+
     LDST((state_t *)0x0FFFF000);
 }
 
@@ -137,12 +139,13 @@ void uTLB_RefillHandler() {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
-
 void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
+
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
@@ -235,7 +238,7 @@ void test() {
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
@@ -305,7 +308,7 @@ void p2() {
 
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
-    print("c2 starts\n");
+    print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {
@@ -352,7 +355,7 @@ void p2() {
 
     p1p2synch = 1; /* p1 will check this */
 
-    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
+    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)    unblocking P ! */
 
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
 
