@@ -105,7 +105,6 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
-    klog_print("\n\nIngresso nella funzione di print");
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
@@ -113,12 +112,10 @@ void print(char *msg) {
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
-        klog_print("\n\nSto per usare la DOIO");
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        klog_print("\n\nDOIO usata");
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("\n\nSono nel PANIC della print");
-            PANIC();
+            //klog_print("\n\nSono nel PANIC della print");
+            //PANIC();
         }
         s++;
     }
@@ -141,65 +138,8 @@ void uTLB_RefillHandler() {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 
-
-int sem1 = 0;
-int sem2 = 0;
-
-
-
-void k2() {
-    klog_print("sono in k2");
-    int c = 0;
-    while(TRUE) {
-        SYSCALL(VERHOGEN, (int)&sem2, 0, 0);
-        klog_print("\n\nk2: ");
-        klog_print_dec(c);
-        c++;
-        SYSCALL(PASSEREN, (int)&sem1, 0, 0);
-    }
-}
-
-void k1() {
-    klog_print("sono in k1");
-    int c = 0;
-    while(TRUE) {
-        SYSCALL(VERHOGEN, (int)&sem1, 0, 0);
-        klog_print("\n\nk1: ");
-        klog_print_dec(c);
-        c++;
-        SYSCALL(PASSEREN, (int)&sem2, 0, 0);
-    }
-}
-
-void test1() {
-    int sem = 0;
-
-    STST(&p2state);
-    p2state.reg_sp = p2state.reg_sp - QPAGE;
-    p2state.pc_epc = p2state.reg_t9 = (memaddr)k1;
-    p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
-    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
-
-    STST(&p3state);
-    p3state.reg_sp = p2state.reg_sp - QPAGE;
-    p3state.pc_epc = p3state.reg_t9 = (memaddr)k2;
-    p3state.status                  = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-    
-    p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
-
-
-    klog_print("\n\nho creato p2");
-    SYSCALL(PASSEREN, (int)&sem, 0, 0);
-
-}
-
-
-
 void test() {
-    klog_print("\n\nIngresso nel file p2test.c ...");
-    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
-    //klog_print("\n\nProvo a printare qualcosa su terminale...");
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
@@ -288,13 +228,10 @@ void test() {
     p10state.pc_epc = p10state.reg_t9 = (memaddr)p10;
     p10state.status                   = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
-    klog_print("\n\nfatti tutti i storestate");
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
-    //print("p2 was started\n");
-    //klog_print("p2 iniziato\n\n");
+    print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
@@ -302,14 +239,12 @@ void test() {
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
-        klog_print("error: p1/p2 synchronization bad\n\n");
-        //print("error: p1/p2 synchronization bad\n");
+        print("error: p1/p2 synchronization bad\n");
     }
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
-    //print("p3 is started\n");
-    klog_print("p3 iniziato\n\n");
+    print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 

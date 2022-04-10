@@ -2,10 +2,11 @@
 
 extern void klog_print(char *s);
 extern void klog_print_dec(int n);
+extern void klog_print_hex(unsigned int num);
 extern void scheduler();
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
-extern void copyState(state_t *s, state_t *p);
+extern void copy_state(state_t *s, state_t *p);
 
 extern int activeProc;
 extern int blockedProc;
@@ -17,6 +18,8 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
+
+int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
 
 /*
 * La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
@@ -36,12 +39,8 @@ int getBlockedSem(int bitAddress) {
 }
 
 
-void pltTimerHandler(state_t *excState) {
-    //klog_print("\nSlice time finito di proc: ");
-    //klog_print_dec(currentActiveProc->p_pid);
-    // SETTARE IL PLT AD ----> CP0_Timer - 1; // vedi 4.1.4 pops MA DOVE LO TROVO?
-    
-    setTIMER(-2); // non bisogna decrementare di 1?
+void plt_time_handler(state_t *excState) {
+    setTIMER(-2);
     copyState(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     --activeProc; //faccio questo perche' quando faccio l'insert prima lo aumento a caso
@@ -49,8 +48,9 @@ void pltTimerHandler(state_t *excState) {
 }
 
 
-void intervallTimerHandler(state_t *excState) {
-    LDIT(1*TIMESCALEADDR); // (4.1.3 pops) non so se lasciare 100000 come costante
+
+void intervall_timer_handler(state_t *excState) {
+    LDIT(100000);
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
         --blockedProc;
@@ -62,7 +62,7 @@ void intervallTimerHandler(state_t *excState) {
     LDST(excState);
 }
 
-
+/*
 void deviceIntHandler(int cause) {
     int deviceNumber; 
     for (int i = 3; i < 7; i++) {
@@ -73,25 +73,103 @@ void deviceIntHandler(int cause) {
             addressReg->dtp.command = ACK;
             //verhogen(deviceNumber); bisogna chiamarla??
         }
+    return NULL;
+}
+*/
+
+/* La funzione mi permette di ottenere l'indirizzo del semaforo di un dispositivo generico (NON TERMINALE)
+ * Prendo in input l'interruptLine del dispositivo e il numero del dispositivo stesso (da 0 a 7)
+ */
+int *getDeviceSemaphore(int interruptLine, int devNumber){
+    switch (interruptLine){
+    case IL_DISK:       return &semDiskDevice[devNumber];
+    case IL_FLASH:      return &semFlashDevice[devNumber];
+    case IL_ETHERNET:   return &semNetworkDevice[devNumber];
+    case IL_PRINTER:    return &semPrinterDevice[devNumber];
+    
+    default:
+        klog_print("\n\ngetDeviceSemaphore: Errore Critico");
+        break;
     }
+    return NULL;
+}
+
+int getDevice(int interLine){
+    unsigned int bitmap = (interLine);
+    for(int i = 0; i < 8; i ++){
+        if (bitmap & powOf2[i]) return i;
+    }
+    return -1; // come codice errore
+}
+
+void device_handler(int interLine, state_t *excState) {
+    //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
+    int devNumber = getDevice(interLine);
+    dtpreg_t *devRegAddr = (dtpreg_t *) ( (0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
+    int *deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
+
+    unsigned int statusCode = devRegAddr->status; //Salvo lo status code 
+
+    devRegAddr->command = ACK; //Acknowledge the interrupt
+
+    /* Eseguo una custom V-Operation */
+    pcb_PTR process = removeBlocked(deviceSemaphore);
+    if (process != NULL){
+        process->p_s.reg_v0 = statusCode;
+        --blockedProc;
+        insert_ready_queue(process->p_prio, process);
+    }
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
+    else klog_print("\n\ndeviceIntHandler: Possibile errore");
+    
+    if (currentActiveProc == NULL) scheduler();
+    else LDST(excState); 
+
+    //Leggere Important Point 
 }
 
 
-void terminalHandler() {
-    int deviceNumber = getBlockedSem(IL_TERMINAL);
-    verhogen(&semTerminalDeviceWriting[deviceNumber]);
-    /* TODO: dobbiamo capire qua cosa fare e vedere se è giusto il codice  si*/
+void terminal_handler(state_t *excState) {
+    int devNumber = getDevice(IL_TERMINAL);
+    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
+    
+    unsigned int statusCode;
+    int *deviceSemaphore;
+    int readingMode = devRegAddr->recv_status == TRUE; //TODO: is it correct?
+
+    if (!readingMode) {
+        statusCode = devRegAddr->recv_status;
+        devRegAddr->recv_command = ACK;
+        deviceSemaphore = &semTerminalDeviceReading[devNumber];
+    } else {
+        statusCode = devRegAddr->transm_status;
+        devRegAddr->transm_command = ACK;
+        deviceSemaphore = &semTerminalDeviceWriting[devNumber];
+    }
+
+    /* Eseguo una custom V-Operation */ 
+    pcb_PTR process = removeBlocked(deviceSemaphore);
+    if (process != NULL){
+        process->p_s.reg_v0 = statusCode;
+        --blockedProc;
+        insert_ready_queue(process->p_prio, process);
+    }
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
+    else klog_print("\n\nterminalHandler: Possibile errore");
+
+    if (currentActiveProc == NULL) scheduler();
+    else LDST(excState);
 }
 
 
-void passOrDie(int pageFault, state_t *excState) {
+void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
-            klog_print("\n\n Termino il processo corrente");
+            klog_print("\n\n Termino il processo corrente dal passup");
             terminateProcess(0);
             scheduler();
         } else {
-            copyState(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
+            copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status   = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;
             int pc       = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].pc;
@@ -99,7 +177,7 @@ void passOrDie(int pageFault, state_t *excState) {
             LDCXT(stackPtr, status, pc);
         }
     } else {
-        klog_print("currentProc e' null");
+        klog_print("\n\ncurrentProc e' null");
     }
 }
 
@@ -112,6 +190,8 @@ void syscall_handler(state_t *callerProcState) {
     void * a2 = (void *) (*callerProcState).reg_a2;
     void * a3 = (void *) (*callerProcState).reg_a3;
 
+    callerProcState->pc_epc += 4;
+    
     switch(syscode) {
         case CREATEPROCESS:
             (*callerProcState).reg_v0 = createProcess(a1, (int)a2, a3);
@@ -126,8 +206,7 @@ void syscall_handler(state_t *callerProcState) {
             verhogen((int*)a1);
             break;
         case DOIO:
-            (*callerProcState).reg_v0 = doIOdevice((int*)a1, (int)a2);
-            blockingCall = TRUE;
+            doIOdevice((int*)a1, (int)a2);
             break;
         case GETTIME:
             getCpuTime(callerProcState);
@@ -150,11 +229,11 @@ void syscall_handler(state_t *callerProcState) {
             break;
     }
 
-    callerProcState->pc_epc += 4;
+
+    update_curr_proc_time();
 
     if(blockingCall) {
-        copyState(callerProcState, &currentActiveProc->p_s);
-        updateCurrProcTime();
+        copy_state(callerProcState, &currentActiveProc->p_s);
         scheduler();
     } else {
         LDST(callerProcState);

@@ -10,19 +10,19 @@
 #include "umps/cp0.h"
 
 
-/* Funzioni di aiuto */
-void copyState(state_t *new, state_t *old);
+/* Funzioni di aiuto per syscall */
+void copy_state(state_t *new, state_t *old);
 int __terminate_process(pcb_PTR p);
 int term_proc_and_child(pcb_PTR rootPtr);
 pcb_PTR findPcb(int pid);
-void updateCurrProcTime();
+void update_curr_proc_time();
 
 
 int createProcess(state_t *a1, int a2, support_t *a3);
 int terminateProcess(int pid);
 int passeren(int *semaddr);
 void verhogen(int *semaddr);
-int doIOdevice(int *cmdAddr, int cmdValue);
+void doIOdevice(int *cmdAddr, int cmdValue);
 void getCpuTime(state_t *callerProcState);
 void waitForClock();
 support_t* getSupportData();

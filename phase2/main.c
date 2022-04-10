@@ -8,14 +8,10 @@
 
 /* Extern functions */
 extern void test();
-extern void test1();
 extern void uTLB_RefillHandler();
 extern void exception_handler();
 extern void scheduler();
 
-// TEMPORARY
-extern void klog_print(char *s);
-extern void klog_print_dec(int n); 
 
 void init_global_var() {
     processId = 0;
@@ -36,7 +32,7 @@ void init_global_var() {
 }
 
 
-void initPassUpVector(passupvector_t *vector) {
+void init_passupvector(passupvector_t *vector) {
     vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     vector->tlb_refill_stackPtr = KERNELSTACK;
     vector->exception_handler = (memaddr) exception_handler;
@@ -48,24 +44,16 @@ void initPassUpVector(passupvector_t *vector) {
 void insert_ready_queue(int prio, pcb_PTR p) {
     p->p_prio = prio;
     ++activeProc;
-    if(prio == PROCESS_PRIO_HIGH) {
+    if(prio == PROCESS_PRIO_HIGH)
         insertProcQ(&queueHighProc, p);
-        klog_print("\n\nIPQ: aggiunti in alta priorita' proc numero -> ");
-        klog_print_dec(p->p_pid);
-    }
-    else {
+    else
         insertProcQ(&queueLowProc, p);
-        //klog_print("\n\nIPQ: aggiunto in bassa priorita' proc numero -> ");
-        //klog_print_dec(p->p_pid);
-    }
 }
 
 
 //funzione di aiuto che assegna un id unico a un processo 
-void assegnaPID(pcb_PTR p) {
+void set_pid(pcb_PTR p) {
     p->p_pid = ++processId;
-    //klog_print("\n\naP: assegnato ID -> ");
-    //klog_print_dec(p->p_pid);
 }
 
 
@@ -78,11 +66,11 @@ int main(int argc, int* argv[]){
 
     /* Pass Up Vector */
     passupvector_t *vector = (passupvector_t *)PASSUPVECTOR;
-    initPassUpVector(vector);
+    init_passupvector(vector);
 
     LDIT(100000); //imposto l'interval timer a 100 ms
 
-    /* Allocchiamo il primo processo a bassa priorita' e settiamo le cose giuste */
+    /* Allocco il primo processo a bassa priorita' e settiamo le cose giuste */
     pcb_PTR firstProc = allocPcb();
 
     insert_ready_queue(PROCESS_PRIO_LOW, firstProc);
@@ -90,7 +78,6 @@ int main(int argc, int* argv[]){
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 
-    klog_print("\n\nmain: chiamo lo scheduler");
     scheduler();
 
     return 0;

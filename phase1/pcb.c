@@ -2,7 +2,7 @@
 static pcb_t pcbFree_table[MAXPROC];    /* PCB array with maximum size 'MAXPROC' */
 static LIST_HEAD(pcbFree_h);            /* List of free PCBs                     */
 
-extern void assegnaPID(pcb_PTR p);
+extern void set_pid(pcb_PTR p);
 
 void initPcbs() {
     for(int i = 0; i < MAXPROC; i++){
@@ -30,7 +30,7 @@ pcb_t *allocPcb() {
 		INIT_LIST_HEAD(&newElem->p_sib);
 		newElem->p_time = 0;
 		newElem->p_semAdd = NULL;
-        assegnaPID(newElem);
+        set_pid(newElem);
 
         newElem->p_supportStruct = NULL;
 

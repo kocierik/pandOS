@@ -2,6 +2,7 @@
 
 extern void klog_print(char *s);
 extern void klog_print_dec(unsigned int num);
+extern void klog_print_hex(unsigned int num);
 
 /* Variabili globali esterne */
 extern int activeProc;
@@ -20,14 +21,13 @@ extern int semTerminalDeviceWriting[8];
 extern cpu_t startTime;
 
 /* Funzioni globali esterne */
-extern void assegnaPID(pcb_PTR p);
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
 
 /* FUNZIONI DI AIUTO */
 
 
-void copyState(state_t *new, state_t *old) {
+void copy_state(state_t *new, state_t *old) {
     old->cause = new->cause;
     old->entry_hi = new->entry_hi;
     for (int i = 0; i < STATE_GPR_LEN; i++)
@@ -96,7 +96,7 @@ pcb_PTR findPcb(int pid) {
 }
 
 
-void updateCurrProcTime() {
+void update_curr_proc_time() {
     cpu_t now;
     STCK(now);
     currentActiveProc->p_time += now - startTime;
@@ -114,7 +114,7 @@ int createProcess(state_t *a1, int a2, support_t *a3) {
         return NOPROC;
     else {
         insertChild(currentActiveProc, p);
-        copyState(a1, &p->p_s);
+        copy_state(a1, &p->p_s);
         insert_ready_queue(a2, p);
         if(a3 != NULL || a3 != 0)
             p->p_supportStruct = a3;
@@ -131,8 +131,10 @@ int terminateProcess(int pid) {
     pcb_PTR p;
     if (pid == 0) {
         // se il pid e' 0, allora termino il processo corrente
-        blocking_callerProc = TRUE;
+        klog_print("\n\nsto per perminare il processo corrente");
         term_proc_and_child(currentActiveProc);
+        klog_print("\n\nho terminato");
+        return TRUE;
     } else {
         p = findPcb(pid);
         blocking_callerProc = term_proc_and_child(p);
@@ -176,62 +178,64 @@ void verhogen(int *semaddr) {
 }
 
 
-int doIOdevice(int *cmdAddr, int cmdValue) {
-    
+void doIOdevice(int *cmdAddr, int cmdValue) {
+    /*
     int deviceNumber;
     int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
     devreg_t callingDevice;
+    */
     int *devSemaphore; //Indirizzo del semaforo 
-    int returnStatus;
     int interruptLine;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
     for (int i = 0; i < 8; i++){
-        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr){ //Terminal Devices Writing
+        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            returnStatus = deviceRegs->devreg[4][i].term.transm_status;
-            interruptLine = i;
-            klog_print("\n\ndoio: terminale di scrittura numero -> ");
-            klog_print_dec(i);
+            //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
+            interruptLine = 7;
             break;
         }
-        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr){ //Terminal Devices Reading
+        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            returnStatus = deviceRegs->devreg[4][i].term.recv_status;
-            interruptLine = i;
-            klog_print("\n\ndoio: terminale di lettura numero -> ");
-            klog_print_dec(i);
+            //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
+            interruptLine = 7;
             break;
-        }
-        for(int j = 0; j < 4; j++){
-            if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                returnStatus = deviceRegs->devreg[j][i].dtp.status;
-                if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
-                else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
-                else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
-                else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+        }else{
+            for(int j = 0; j < 4; j++){
+                if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
+                    //returnStatus = deviceRegs->devreg[j][i].dtp.status;
+                    if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
+                    else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
+                    else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
+                    else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+                }
+                break;
             }
-            break;
         }
     }
 
 
 
     //Eseguo la P del processo attualmente in esecuzione.
+    //passeren(&semTerminalDeviceWriting[1]); for debug purpose
     passeren(devSemaphore);
 
+    //setSTATUS(IEPON);
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-
+/*
+    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((interruptLine - 3) * 0x80) + (deviceNumber * 0x10));
+    klog_print("\n\ntrovato da me: ");
+    klog_print_dec((memaddr*) &devRegAddr->transm_command); 
+    klog_print("\n\npreso da lui: ");
+    klog_print_dec((memaddr*) (cmdAddr));
+*/
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue;
-
-    //Ritorno lo stato del dispositivo che ha eseguit I/O
-    return returnStatus;
 }
 
 
 void getCpuTime(state_t *excState) {
-    updateCurrProcTime();
+    update_curr_proc_time();
     excState->reg_v0 = currentActiveProc->p_time;
 }
 
