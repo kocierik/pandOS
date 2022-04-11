@@ -29,10 +29,10 @@ void P(int *semaddr, state_t *excState);
 void verhogen(state_t *excState);
 void V(int *semaddr, state_t *excState);
 void do_IO_device(state_t *excState);
-void getCpuTime(state_t *excState);
-void waitForClock(state_t *excState);
-void getSupportData(state_t *excState);
-void getIDprocess(state_t *excState);
+void get_cpu_time(state_t *excState);
+void wait_for_clock(state_t *excState);
+void get_support_data(state_t *excState);
+void get_ID_process(state_t *excState);
 void yield(state_t *excState);
 
 

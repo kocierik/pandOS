@@ -1,12 +1,15 @@
 #include "headers/exceptionHandler.h"
 #include "klog.c"
 
+extern pcb_PTR currentActiveProc;
+
 
 void exception_handler() {
     update_curr_proc_time();    //aggiorno il cronometro del processo
 
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
+    //copy_state(exceptionState, &currentActiveProc->p_s);
 
     switch(causeCode){
         case IOINTERRUPTS:                      // Interrupt

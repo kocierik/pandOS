@@ -150,6 +150,7 @@ void create_process(state_t *excState) {
             p->p_supportStruct = NULL;
         (*excState).reg_v0 = p->p_pid;
     }
+    load_or_scheduler(excState);
 }
 
 
@@ -157,6 +158,7 @@ void create_process(state_t *excState) {
 void terminate_process(state_t *excState) {
     int pid = (int) (*excState).reg_a1;
     term_proc(pid);
+    load_or_scheduler(excState);
 }
 
 
@@ -164,17 +166,18 @@ void terminate_process(state_t *excState) {
 void passeren(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
     P(semaddr, excState);
+    load_or_scheduler(excState);
 }
 
 
 void P(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
-    if(*semaddr == 0) {
+    if(*semaddr == 0)
         block_curr_proc(excState, semaddr);
-    } else if(pid != NULL) {
+    else if(pid != NULL)
         free_process(semaddr);
-    } else
+    else
         --(*semaddr);
 }
 
@@ -183,17 +186,18 @@ void P(int *semaddr, state_t *excState) {
 void verhogen(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
     V(semaddr, excState);
+    load_or_scheduler(excState);
 }
 
 
 void V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
-    if(*semaddr == 1) {
+    if(*semaddr == 1)
         block_curr_proc(excState, semaddr);
-    } else if(pid != NULL) {
+    else if(pid != NULL)
         free_process(semaddr);
-    } else
+    else
         ++(*semaddr);
 }
 
@@ -233,48 +237,55 @@ void do_IO_device(state_t *excState) {
     }
 
     //TODO: CAPIRE COSA FARE
-    currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
-    //(*excState).status |= STATUS_IM(interruptLine);  
+    //currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
+    (*excState).status |= STATUS_IM(interruptLine);  
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
-    //Eseguo P che blocca
-    P(devSemaphore, excState);
+    //Eseguo P custom che blocca
+    copy_state(excState, &currentActiveProc->p_s);
+    insertBlocked(devSemaphore, currentActiveProc);
+    ++blockedProc;
+    scheduler();
 }
 
 
-void getCpuTime(state_t *excState) {
+void get_cpu_time(state_t *excState) {
     update_curr_proc_time();
     excState->reg_v0 = currentActiveProc->p_time;
+    load_or_scheduler(excState);
 }
 
 
-void waitForClock(state_t *excState) {
+void wait_for_clock(state_t *excState) {
     klog_print("\n\nsono nel wait for clock ");
     klog_print_dec(semIntervalTimer);
     P(&semIntervalTimer, excState); // questa P dovrebbe essere sempre bloccante
-    //block_curr_proc(excState, &semIntervalTimer);
+    load_or_scheduler(excState); // just in case
 }
 
 
 //TODO: sul libro non c'e' scritto esplicitamente di mettere il valore nel reg_v0, da controllare...
-void getSupportData(state_t *excState) {
+void get_support_data(state_t *excState) {
     (*excState).reg_v0 = (unsigned int) ((currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL);
+    load_or_scheduler(excState);
 }
 
 
-void getIDprocess(state_t *excState) {
+void get_ID_process(state_t *excState) {
     int parent = (int) (*excState).reg_a1;
     if (parent == 0)
         (*excState).reg_v0 = currentActiveProc->p_pid;
     else
         (*excState).reg_v0 = currentActiveProc->p_parent->p_pid;
+
+    load_or_scheduler(excState);
 }
 
 
 // inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
-    insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc);
+    insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     scheduler();
 }

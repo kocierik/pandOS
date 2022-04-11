@@ -42,7 +42,7 @@ void load_state(state_t *s) {
 
 
 void scheduler_empty_queues() {
-    klog_print("\n\nCode dei processi in attesa vuote...");
+    //klog_print("\n\nCode dei processi in attesa vuote...");
     if(activeProc == 0)
         HALT(); //Il processore non deve fare niente quindi si ferma
         

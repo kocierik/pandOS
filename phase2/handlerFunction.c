@@ -101,7 +101,7 @@ void terminal_handler(state_t *excState) {
     int *deviceSemaphore;
     int readingMode = devRegAddr->recv_status;
 
-    if (!readingMode) {
+    if (!readingMode && FALSE) {
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -115,6 +115,7 @@ void terminal_handler(state_t *excState) {
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL){
         process->p_s.reg_v0 = statusCode;
+        --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
@@ -148,7 +149,7 @@ void syscall_handler(state_t *callerProcState) {
     
     int syscode = (*callerProcState).reg_a0;
 
-    callerProcState->pc_epc += 4;
+    callerProcState->pc_epc += WORDLEN;
     
     switch(syscode) {
         case CREATEPROCESS:
@@ -167,16 +168,16 @@ void syscall_handler(state_t *callerProcState) {
             do_IO_device(callerProcState);
             break;
         case GETTIME:
-            getCpuTime(callerProcState);
+            get_cpu_time(callerProcState);
             break;
         case CLOCKWAIT:
-            waitForClock(callerProcState);
+            wait_for_clock(callerProcState);
             break;
         case GETSUPPORTPTR:
-            getSupportData(callerProcState);
+            get_support_data(callerProcState);
             break;
         case GETPROCESSID:
-            getIDprocess(callerProcState);
+            get_ID_process(callerProcState);
             break;
         case YIELD:
             yield(callerProcState);
@@ -185,6 +186,4 @@ void syscall_handler(state_t *callerProcState) {
             trap_handler(callerProcState);
             break;
     }
-
-    load_state(callerProcState);
 }
