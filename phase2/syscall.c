@@ -40,47 +40,38 @@ void copy_state(state_t *new, state_t *old) {
 
 
 /* funzione iterativa che elimina i figli e il processo stesso */
-int term_proc_and_child(pcb_PTR parent) {
-    int ret = FALSE;
+void term_proc_and_child(pcb_PTR parent) {
     pcb_PTR p;
     while(!isPcbFree(parent->p_pid)) {
         p = parent;
         while(!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
         
-        ret = term_single_proc(p); // termino p
+        term_single_proc(p); // termino p
     }
-    return ret;
 }
 
 
-int term_single_proc(pcb_PTR p) {
-    int ret = FALSE;
+// TODO: CONTROLLARE SE E' GIUSTA
+void term_single_proc(pcb_PTR p) {
     // gestisco variabili globali e semaforo
-    if (p->p_semAdd == NULL) {
-        list_del(&p->p_list);   // lo tolgo da qualsiasi lista
-        if (p == currentActiveProc) {
-            //currentActiveProc = NULL;
-            ret = TRUE;
-        }
-        --activeProc;
-    } else {
+    if (p == currentActiveProc)
+        currentActiveProc = NULL;
+    --activeProc;
+    if (p->p_semAdd != NULL) {
         --blockedProc;
         outBlocked(p);
     }
     
+    list_del(&p->p_list);
     outChild(p); // tolgo p come figlio così va avanti
     freePcb(p);
-    return ret;
 }
 
 
 pcb_PTR find_pcb(int pid) {
-    
     struct list_head *pos;
     pcb_PTR p;
-    if (pid == currentActiveProc->p_pid)
-        return currentActiveProc;
 
     list_for_each(pos, &queueHighProc) {
         if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
@@ -91,6 +82,7 @@ pcb_PTR find_pcb(int pid) {
         if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
             return p;
     }
+
     p = isPcbBlocked(pid);
     return p;
 }
@@ -105,10 +97,9 @@ void update_curr_proc_time() {
 
 
 void block_curr_proc(state_t *excState, int *semaddr) {
-    ++blockedProc;
-    --activeProc;
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
+    ++blockedProc;
     scheduler();
 }
 
@@ -135,6 +126,7 @@ void create_process(state_t *excState) {
     else {
         insertChild(currentActiveProc, p);
         copy_state(a1, &p->p_s);
+        ++activeProc;
         insert_ready_queue(a2, p);
         p->p_supportStruct = a3;
         if (a3 == 0)
@@ -186,6 +178,11 @@ void P(int *semaddr, state_t *excState) {
 /* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
 void verhogen(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
+    V(semaddr, excState);
+}
+
+
+void V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
     if(*semaddr == 1) {
@@ -241,9 +238,6 @@ void do_IO_device(state_t *excState) {
     //passeren(&semTerminalDeviceWriting[1]); for debug purpose
     
     //faccio una P()
-    insertBlocked(devSemaphore, currentActiveProc);
-    ++blockedProc;
-    --activeProc;
     // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
     //setSTATUS(IEPON);
@@ -257,6 +251,7 @@ void do_IO_device(state_t *excState) {
 */
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
+    P(devSemaphore, excState);
 }
 
 
@@ -268,7 +263,7 @@ void getCpuTime(state_t *excState) {
 
 void waitForClock(state_t *excState) {
     P(&semIntervalTimer, excState);
-    block_curr_proc(excState, &semIntervalTimer);
+    //block_curr_proc(excState, &semIntervalTimer);
 }
 
 
@@ -290,7 +285,6 @@ void getIDprocess(state_t *excState) {
 // inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
-    insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc); 
-    --activeProc; //NON TOCCARE: da fare visto che lo faccio a spropostito in insert_ready_queue
+    insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc);
     scheduler();
 }

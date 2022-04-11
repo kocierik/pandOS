@@ -4,6 +4,7 @@
 #include <umps/libumps.h>
 #include <umps/arch.h>
 #include "syscall.h"
+#include "scheduler.h"
 #include "exceptionHandler.h"
 
 
