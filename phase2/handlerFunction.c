@@ -6,7 +6,6 @@ extern void klog_print_hex(unsigned int num);
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
-extern int activeProc;
 extern int blockedProc;
 extern pcb_t *currentActiveProc;
 extern int semIntervalTimer;
@@ -20,7 +19,6 @@ extern int semTerminalDeviceWriting[8];
 int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
 
 
-
 void plt_time_handler(state_t *excState) {
     setTIMER(-2); //ACK
     yield(excState);
@@ -28,7 +26,7 @@ void plt_time_handler(state_t *excState) {
 
 
 void intervall_timer_handler(state_t *excState) {
-    LDIT(100000);
+    LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
         --blockedProc;
@@ -40,11 +38,12 @@ void intervall_timer_handler(state_t *excState) {
 }
 
 
-/* La funzione mi permette di ottenere l'indirizzo del semaforo di un dispositivo generico (NON TERMINALE)
+/* 
+ * La funzione mi permette di ottenere l'indirizzo del semaforo di un dispositivo generico (NON TERMINALE)
  * Prendo in input l'interruptLine del dispositivo e il numero del dispositivo stesso (da 0 a 7)
  */
 int *getDeviceSemaphore(int interruptLine, int devNumber){
-    switch (interruptLine){
+    switch (interruptLine) {
         case IL_DISK:       return &semDiskDevice[devNumber];
         case IL_FLASH:      return &semFlashDevice[devNumber];
         case IL_ETHERNET:   return &semNetworkDevice[devNumber];
@@ -58,7 +57,7 @@ int *getDeviceSemaphore(int interruptLine, int devNumber){
 }
 
 
-int getDevice(int interLine){
+int getDevice(int interLine) {
     unsigned int bitmap = (interLine);
     for(int i = 0; i < 8; i ++){
         if (bitmap & powOf2[i]) return i;
@@ -119,7 +118,7 @@ void terminal_handler(state_t *excState) {
         insert_ready_queue(process->p_prio, process);
     }
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
-    else klog_print("\n\nterminalHandler: Possibile errore");
+    //else klog_print("\n\nterminalHandler: Possibile errore");
 
     load_or_scheduler(excState);
 }
@@ -129,7 +128,8 @@ void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
             klog_print("\n\n Termino il processo corrente dal passup");
-            terminate_process(0);
+            term_proc(0);
+            scheduler();
         } else {
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;

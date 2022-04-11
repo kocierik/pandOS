@@ -8,8 +8,6 @@
 #include "exceptionHandler.h"
 
 
-int getBlockedSem(int bitAddress);
-
 /* Interrupt handler functions */
 void plt_time_handler(state_t *excState);
 void intervall_timer_handler(state_t *excState);

@@ -63,8 +63,8 @@ void term_single_proc(pcb_PTR p) {
         outBlocked(p);
     }
     
-    list_del(&p->p_list);
     outChild(p); // tolgo p come figlio così va avanti
+    list_del(&p->p_list);
     freePcb(p);
 }
 
@@ -111,6 +111,23 @@ void free_process(int *semaddr) {
 }
 
 
+void term_proc(int pid) {
+    pcb_PTR p;
+
+    if (pid == 0) {
+        // se il pid e' 0, allora termino il processo corrente
+        klog_print("\n\nsto per perminare il processo corrente");
+        term_proc_and_child(currentActiveProc);
+        klog_print("\n\nho terminato");
+    } else {
+        klog_print("\n\ndevo cercare il processo");
+        p = find_pcb(pid);
+        klog_print("\n\nprocesso trovato! Lo termino");
+        term_proc_and_child(p);
+    }
+}
+
+
 /* SYSCALL */
 
 
@@ -137,22 +154,9 @@ void create_process(state_t *excState) {
 
 
 /* Ricerca il processo da terminare ed invoca la funzione che lo termina */
-/* DA DEBUGGARE */
 void terminate_process(state_t *excState) {
-    pcb_PTR p;
     int pid = (int) (*excState).reg_a1;
-
-    if (pid == 0) {
-        // se il pid e' 0, allora termino il processo corrente
-        klog_print("\n\nsto per perminare il processo corrente");
-        term_proc_and_child(currentActiveProc);
-        klog_print("\n\nho terminato");
-    } else {
-        klog_print("\n\ndevo cercare il processo");
-        p = find_pcb(pid);
-        klog_print("\n\nprocesso trovato! Lo termino");
-        term_proc_and_child(p);
-    }
+    term_proc(pid);
 }
 
 
@@ -197,11 +201,7 @@ void V(int *semaddr, state_t *excState) {
 void do_IO_device(state_t *excState) {
     int *cmdAddr = (int*) (*excState).reg_a1;
     int cmdValue = (int)  (*excState).reg_a2;
-    /*
-    int deviceNumber;
-    int is_terminal = 0; //Se 1 è terminal Writing, se 2 è terminal Reading, se 0 other devices.
-    devreg_t callingDevice;
-    */
+    
     int *devSemaphore; //Indirizzo del semaforo 
     int interruptLine;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
@@ -232,25 +232,13 @@ void do_IO_device(state_t *excState) {
         }
     }
 
+    //TODO: CAPIRE COSA FARE
+    currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
+    //(*excState).status |= STATUS_IM(interruptLine);  
 
-
-    //Eseguo la P del processo attualmente in esecuzione.
-    //passeren(&semTerminalDeviceWriting[1]); for debug purpose
-    
-    //faccio una P()
-    // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
-
-    //setSTATUS(IEPON);
-    currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-/*
-    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((interruptLine - 3) * 0x80) + (deviceNumber * 0x10));
-    klog_print("\n\ntrovato da me: ");
-    klog_print_dec((memaddr*) &devRegAddr->transm_command); 
-    klog_print("\n\npreso da lui: ");
-    klog_print_dec((memaddr*) (cmdAddr));
-*/
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
+    //Eseguo P che blocca
     P(devSemaphore, excState);
 }
 
@@ -262,7 +250,9 @@ void getCpuTime(state_t *excState) {
 
 
 void waitForClock(state_t *excState) {
-    P(&semIntervalTimer, excState);
+    klog_print("\n\nsono nel wait for clock ");
+    klog_print_dec(semIntervalTimer);
+    P(&semIntervalTimer, excState); // questa P dovrebbe essere sempre bloccante
     //block_curr_proc(excState, &semIntervalTimer);
 }
 

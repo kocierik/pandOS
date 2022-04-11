@@ -18,8 +18,8 @@ void scheduler() {
         currentActiveProc = p;
         load_state(&p->p_s);
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        klog_print("\n\n sto per caricare: ");
-        klog_print_dec(p->p_pid);
+        //klog_print("\n\n sto per caricare: ");
+        //klog_print_dec(p->p_pid);
 
         currentActiveProc = p;
         setTIMER(TIMESLICE);
