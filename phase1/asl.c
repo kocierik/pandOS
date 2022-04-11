@@ -26,10 +26,10 @@ semd_PTR findASL(int *semAdd) {
 pcb_PTR isPcbBlocked(int pid) {
     semd_PTR sem;
     struct list_head *pos;
-    struct list_head *tmp;
     pcb_PTR p;
     list_for_each(pos, &ASL_h) {                                /* Looking for Semaphore */
         sem = container_of(pos, semd_t, s_link);
+        struct list_head *tmp;
         list_for_each(tmp, &sem->s_procq) {                     /* Looking for Pcb */
             if((p = container_of(tmp, pcb_t, p_list))->p_pid == pid)
                 return p;

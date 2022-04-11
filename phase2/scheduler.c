@@ -2,6 +2,7 @@
 // TEMPORARY
 extern void klog_print(char *s);
 extern void klog_print_dec(unsigned int num);
+extern void loadState(state_t *s);
 
 extern int activeProc;
 extern int blockedProc;
@@ -10,6 +11,7 @@ extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
 extern int yieldHighProc;
+
 
 void scheduler() {
     pcb_PTR p;

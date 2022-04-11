@@ -6,7 +6,6 @@
 #include "umps/cp0.h"
 #include "handlerFunction.h"
 
-
 /* Funzione di gestione delle eccezioni */
 void exception_handler();
 

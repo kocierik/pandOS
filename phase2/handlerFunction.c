@@ -15,8 +15,9 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
+extern cpu_t startTime;
 
-int powOf2[] =  {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
+int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
 
 
 void plt_time_handler(state_t *excState) {
@@ -29,9 +30,14 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
+
+        klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
+        klog_print("\n\nrimesso in readyqueue");
+
     }
+
     semIntervalTimer = 0;
     
     load_or_scheduler(excState);
@@ -93,15 +99,17 @@ void device_handler(int interLine, state_t *excState) {
 }
 
 
+//TODO CAPIRE CHE CAZZO SUCCEDE QUA
 void terminal_handler(state_t *excState) {
+    //klog_print("\n\nsono nel terminal hadler");
     int devNumber = getDevice(IL_TERMINAL);
     termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
     
     unsigned int statusCode;
     int *deviceSemaphore;
-    int readingMode = devRegAddr->recv_status;
+    int readingMode = (devRegAddr->recv_status == 5); //TODO: is it correct?
 
-    if (!readingMode && FALSE) {
+    if (readingMode && FALSE) { //TODO
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -121,7 +129,7 @@ void terminal_handler(state_t *excState) {
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     //else klog_print("\n\nterminalHandler: Possibile errore");
 
-    load_or_scheduler(excState);
+    load_or_scheduler(excState); //TODO: FORSE BISOGNA FARE load_or_scheduler(&currentActiveProc->p_s) ??????
 }
 
 

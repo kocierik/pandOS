@@ -9,6 +9,7 @@
 #include "umps/libumps.h"
 #include "umps/cp0.h"
 #include "scheduler.h"
+#include "handlerFunction.h"
 
 
 /* Funzioni di aiuto per syscall */

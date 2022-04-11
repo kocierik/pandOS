@@ -83,7 +83,6 @@ pcb_PTR find_pcb(int pid) {
         if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
             return p;
     }
-
     p = isPcbBlocked(pid);
     return p;
 }
@@ -115,15 +114,10 @@ void free_process(int *semaddr) {
 void term_proc(int pid) {
     pcb_PTR p;
 
-    if (pid == 0) {
-        // se il pid e' 0, allora termino il processo corrente
-        klog_print("\n\nsto per perminare il processo corrente");
+    if (pid == 0)
         term_proc_and_child(currentActiveProc);
-        klog_print("\n\nho terminato");
-    } else {
-        klog_print("\n\ndevo cercare il processo");
+    else {
         p = find_pcb(pid);
-        klog_print("\n\nprocesso trovato! Lo termino");
         term_proc_and_child(p);
     }
 }
@@ -171,7 +165,7 @@ void passeren(state_t *excState) {
 }
 
 
-void P(int *semaddr, state_t *excState) {
+void P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
     pcb_PTR pid = headBlocked(semaddr);
 
     if(*semaddr == 0)
@@ -237,17 +231,17 @@ void do_IO_device(state_t *excState) {
         }
     }
 
-    //TODO: CAPIRE COSA FARE
-    //currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
-    (*excState).status |= STATUS_IM(interruptLine);  
 
-    // Eseguo il comando richiesto.
-    *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
-    //Eseguo P custom che blocca
+    (*excState).status |= STATUS_IM(interruptLine);
+
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
-    scheduler();
+
+    *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
+    //TODO: CAPIRE CHE CAZZO FARE QUA
+    // CHIAMO LO SCHEDULER O FACCIO LDST DI QUALCOSA?????
+    // COSA FA ADESO CHE NON C'E' NIENTE
 }
 
 
