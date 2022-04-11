@@ -151,7 +151,7 @@ void syscall_handler(state_t *callerProcState) {
     callerProcState->pc_epc += WORDLEN;
     
     if(((callerProcState->status & STATUS_KUp) != ALLOFF) && (syscode > 0) && (syscode < 9)){
-        callerProcState->cause |= (10<<CAUSESHIFT);
+        callerProcState->cause |= (EXC_RI<<CAUSESHIFT);
         pass_up_or_die(GENERALEXCEPT, callerProcState);
     }
 
