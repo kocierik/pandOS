@@ -148,9 +148,13 @@ void pass_up_or_die(int pageFault, state_t *excState) {
 void syscall_handler(state_t *callerProcState) {
     
     int syscode = (*callerProcState).reg_a0;
-
     callerProcState->pc_epc += WORDLEN;
     
+    if(((callerProcState->status & STATUS_KUp) != ALLOFF) && (syscode > 0) && (syscode < 9)){
+        callerProcState->cause |= (10<<CAUSESHIFT);
+        pass_up_or_die(GENERALEXCEPT, callerProcState);
+    }
+
     switch(syscode) {
         case CREATEPROCESS:
             create_process(callerProcState);
