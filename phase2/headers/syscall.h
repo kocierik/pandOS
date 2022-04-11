@@ -20,19 +20,20 @@ pcb_PTR find_pcb(int pid);
 void update_curr_proc_time();
 void block_curr_proc(state_t *excState, int *semaddr);
 void free_process(int *semaddr);
-void P(int *semaddr, state_t *excState);
-void V(int *semaddr, state_t *excState);
+void term_proc(int pid);
 
 
 void create_process(state_t *excState);
 void terminate_process(state_t *excState);
 void passeren(state_t *excState);
+void P(int *semaddr, state_t *excState);
 void verhogen(state_t *excState);
+void V(int *semaddr, state_t *excState);
 void do_IO_device(state_t *excState);
-void getCpuTime(state_t *excState);
-void waitForClock(state_t *excState);
-void getSupportData(state_t *excState);
-void getIDprocess(state_t *excState);
+void get_cpu_time(state_t *excState);
+void wait_for_clock(state_t *excState);
+void get_support_data(state_t *excState);
+void get_ID_process(state_t *excState);
 void yield(state_t *excState);
 
 

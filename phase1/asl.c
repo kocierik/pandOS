@@ -21,11 +21,13 @@ semd_PTR findASL(int *semAdd) {
     return NULL;
 }
 
+
+/* Funzione che cerca un pcb bloccato dato il pid nella lista delle dei semafori attivi  */
 pcb_PTR isPcbBlocked(int pid) {
     semd_PTR sem;
     struct list_head *pos;
     pcb_PTR p;
-    list_for_each(pos, &ASL_h) {                     /* Looking for Semaphore */
+    list_for_each(pos, &ASL_h) {                                /* Looking for Semaphore */
         sem = container_of(pos, semd_t, s_link);
         struct list_head *tmp;
         list_for_each(tmp, &sem->s_procq) {                     /* Looking for Pcb */

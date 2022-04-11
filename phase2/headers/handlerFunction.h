@@ -4,11 +4,9 @@
 #include <umps/libumps.h>
 #include <umps/arch.h>
 #include "syscall.h"
+#include "scheduler.h"
 #include "exceptionHandler.h"
 
-
-int getBlockedSem(int bitAddress);
-void loadState(state_t *s);
 
 /* Interrupt handler functions */
 void plt_time_handler(state_t *excState);

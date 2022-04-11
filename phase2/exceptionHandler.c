@@ -9,7 +9,7 @@ void exception_handler() {
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
 
-    copy_state(exceptionState, &currentActiveProc->p_s); //Aggiornamento forzato dello stato del processo correntemente attivo. 
+    //copy_state(exceptionState, &currentActiveProc->p_s); //Aggiornamento forzato dello stato del processo correntemente attivo. 
 
     switch(causeCode){
         case IOINTERRUPTS:                      // Interrupt

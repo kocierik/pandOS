@@ -20,6 +20,7 @@ void init_global_var() {
     mkEmptyProcQ(&queueLowProc);
     mkEmptyProcQ(&queueHighProc);
     currentActiveProc = NULL;
+    yieldHighProc = FALSE;
     semIntervalTimer = 0;
     for (int i = 0; i < 8; i++) {
         semDiskDevice[i] = 0;
@@ -43,7 +44,6 @@ void init_passupvector(passupvector_t *vector) {
 // inserisco un processo nella giusta coda e assegno la priorità al processo
 void insert_ready_queue(int prio, pcb_PTR p) {
     p->p_prio = prio;
-    ++activeProc;
     if(prio == PROCESS_PRIO_HIGH)
         insertProcQ(&queueHighProc, p);
     else
@@ -73,8 +73,9 @@ int main(int argc, int* argv[]){
     /* Allocco il primo processo a bassa priorita' e settiamo le cose giuste */
     pcb_PTR firstProc = allocPcb();
 
+    ++activeProc;
     insert_ready_queue(PROCESS_PRIO_LOW, firstProc);
-    firstProc->p_s.status = IEPON | IMON | TEBITON;
+    firstProc->p_s.status = ALLOFF | IEPON | IMON | TEBITON;
     firstProc->p_s.pc_epc = firstProc->p_s.reg_t9 = (memaddr) test;
     RAMTOP(firstProc->p_s.reg_sp);
 

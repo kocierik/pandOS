@@ -11,6 +11,7 @@ struct list_head queueLowProc;  // Coda dei processi a bassa priorità
 struct list_head queueHighProc; // Coda dei processi a alta priorità
 pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
 cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
+int yieldHighProc;              // Variabile booleana usata per fare yield su processi ad alta priorita'
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
 /* 

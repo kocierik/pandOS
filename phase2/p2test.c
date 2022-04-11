@@ -117,7 +117,7 @@ void print(char *msg) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            PANIC();
+            //PANIC();
         }
         s++;
     }
@@ -300,6 +300,10 @@ void test() {
 }
 
 
+void bp() {
+
+}
+
 /* p2 -- semaphore and cputime-SYS test process */
 void p2() {
     int   i;              /* just to waste time  */
@@ -309,25 +313,28 @@ void p2() {
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
     print("p2 starts\n");
-
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {
         print("Inconsistent process id for p2!\n");
         PANIC();
     }
 
+
     /* initialize all semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
         s[i] = 0;
     }
 
+
     /* V, then P, all of the semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
+        bp();
         SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */
         SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */
         if (s[i] != 0)
             print("error: p2 bad v/p pairs\n");
     }
+
 
     print("p2 v's successfully\n");
 
