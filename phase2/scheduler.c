@@ -9,17 +9,18 @@ extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
 extern cpu_t startTime;
-
+extern int yieldHighProc;
 
 void scheduler() {
     pcb_PTR p;
 
-    if((p = removeProcQ(&queueHighProc)) != NULL) {
+    if((p = removeProcQ(&queueHighProc)) != NULL && yieldHighProc) {
         currentActiveProc = p;
         load_state(&p->p_s);
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
         //klog_print("\n\n sto per caricare: ");
         //klog_print_dec(p->p_pid);
+        if (yieldHighProc) yieldHighProc = FALSE;
 
         currentActiveProc = p;
         setTIMER(TIMESLICE);

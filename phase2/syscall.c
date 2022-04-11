@@ -11,6 +11,7 @@ extern int processId;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
+extern int yieldHighProc;
 extern int semIntervalTimer;
 extern int semDiskDevice[8];
 extern int semFlashDevice[8];
@@ -287,5 +288,6 @@ void get_ID_process(state_t *excState) {
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
+    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH) yieldHighProc = TRUE;
     scheduler();
 }
