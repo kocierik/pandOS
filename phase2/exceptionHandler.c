@@ -10,6 +10,12 @@ void exception_handler() {
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
     //copy_state(exceptionState, &currentActiveProc->p_s);
+    
+    if(((exceptionState->status & STATUS_KUp) != ALLOFF) && (causeCode > 0) && (causeCode < 9))
+    {
+        exceptionState->cause |= (10<<CAUSESHIFT);
+        pass_up_or_die(GENERALEXCEPT, exceptionState);
+    }
 
     switch(causeCode){
         case IOINTERRUPTS:                      // Interrupt
