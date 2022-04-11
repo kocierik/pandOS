@@ -1,6 +1,7 @@
 #include "headers/exceptionHandler.h"
 #include "klog.c"
 
+extern pcb_PTR currentActiveProc;
 
 void exception_handler() {
     update_curr_proc_time();    //aggiorno il cronometro del processo
