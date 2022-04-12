@@ -65,7 +65,6 @@ void term_single_proc(pcb_PTR p) {
     }
     
     outChild(p); // tolgo p come figlio così va avanti
-    list_del(&p->p_list);
     freePcb(p);
 }
 

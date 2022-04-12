@@ -30,12 +30,10 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
-
-        klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
         klog_print("\n\nrimesso in readyqueue");
-
+        klog_print_dec(p->p_pid);
     }
 
     semIntervalTimer = 0;
@@ -198,4 +196,5 @@ void syscall_handler(state_t *callerProcState) {
             trap_handler(callerProcState);
             break;
     }
+    load_or_scheduler(callerProcState);
 }

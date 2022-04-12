@@ -51,7 +51,7 @@ void scheduler_empty_queues() {
         
     if(activeProc > 0 && blockedProc > 0) {
         //Enabling interrupts and disable PLT.
-        unsigned int status = IEPON | IMON;
+        unsigned int status = IECON | IMON;
         setSTATUS(status);
         WAIT(); //twiddling its thumbs
     }
