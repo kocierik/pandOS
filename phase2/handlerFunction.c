@@ -156,45 +156,46 @@ void syscall_handler(state_t *callerProcState) {
     int syscode = (*callerProcState).reg_a0;
     callerProcState->pc_epc += WORDLEN;
     
-    if(((callerProcState->status & STATUS_KUp) != ALLOFF) && (syscode > 0) && (syscode < 9)){
+    if(((callerProcState->status << 28) >> 31)){
         callerProcState->cause |= (EXC_RI<<CAUSESHIFT);
         pass_up_or_die(GENERALEXCEPT, callerProcState);
     }
-
-    switch(syscode) {
-        case CREATEPROCESS:
-            create_process(callerProcState);
-            break;
-        case TERMPROCESS:
-            terminate_process(callerProcState);
-            break;
-        case PASSEREN:
-            passeren(callerProcState);
-            break;
-        case VERHOGEN:
-            verhogen(callerProcState);
-            break;
-        case DOIO:
-            do_IO_device(callerProcState);
-            break;
-        case GETTIME:
-            get_cpu_time(callerProcState);
-            break;
-        case CLOCKWAIT:
-            wait_for_clock(callerProcState);
-            break;
-        case GETSUPPORTPTR:
-            get_support_data(callerProcState);
-            break;
-        case GETPROCESSID:
-            get_ID_process(callerProcState);
-            break;
-        case YIELD:
-            yield(callerProcState);
-            break;
-        default:
-            trap_handler(callerProcState);
-            break;
+    else{
+        switch(syscode) {
+            case CREATEPROCESS:
+                create_process(callerProcState);
+                break;
+            case TERMPROCESS:
+                terminate_process(callerProcState);
+                break;
+            case PASSEREN:
+                passeren(callerProcState);
+                break;
+            case VERHOGEN:
+                verhogen(callerProcState);
+                break;
+            case DOIO:
+                do_IO_device(callerProcState);
+                break;
+            case GETTIME:
+                get_cpu_time(callerProcState);
+                break;
+            case CLOCKWAIT:
+                wait_for_clock(callerProcState);
+                break;
+            case GETSUPPORTPTR:
+                get_support_data(callerProcState);
+                break;
+            case GETPROCESSID:
+                get_ID_process(callerProcState);
+                break;
+            case YIELD:
+                yield(callerProcState);
+                break;
+            default:
+                trap_handler(callerProcState);
+                break;
+        }
     }
     load_or_scheduler(callerProcState);
 }
