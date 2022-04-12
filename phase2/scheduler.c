@@ -2,7 +2,6 @@
 // TEMPORARY
 extern void klog_print(char *s);
 extern void klog_print_dec(unsigned int num);
-extern void loadState(state_t *s);
 
 extern int activeProc;
 extern int blockedProc;
@@ -52,6 +51,7 @@ void scheduler_empty_queues() {
     if(activeProc > 0 && blockedProc > 0) {
         //Enabling interrupts and disable PLT.
         unsigned int status = IECON | IMON;
+        klog_print("sono nella wait");
         setSTATUS(status);
         WAIT(); //twiddling its thumbs
     }

@@ -19,6 +19,13 @@ extern cpu_t startTime;
 
 int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra bit.
 
+/*
+* La funzione chiama l'opportuno interrupt in base al primo device che trova in funzione.
+* Per vedere se un device è in funzione utilizziamo la macro CAUSE_IP_GET che legge gli opportuni bit di CAUSE e
+* restituisce 1 quando un dispositivo è attivo. 
+* //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
+*/
+
 
 void plt_time_handler(state_t *excState) {
     setTIMER(-2); //ACK
@@ -30,14 +37,12 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
+        klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
-        klog_print("\n\nrimesso in readyqueue");
-        klog_print_dec(p->p_pid);
     }
 
     semIntervalTimer = 0;
-    
     load_or_scheduler(excState);
 }
 
@@ -117,17 +122,17 @@ void terminal_handler(state_t *excState) {
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
 
-    /* Eseguo una custom V-Operation */ 
+    (*excState).reg_v0 = statusCode;
+    /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL){
-        process->p_s.reg_v0 = statusCode;
         --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
+    else klog_print("\n\nterminalHandler: Possibile errore");
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
-    //else klog_print("\n\nterminalHandler: Possibile errore");
 
-    load_or_scheduler(excState); //TODO: FORSE BISOGNA FARE load_or_scheduler(&currentActiveProc->p_s) ??????
+    load_or_scheduler(excState);
 }
 
 

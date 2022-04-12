@@ -6,8 +6,7 @@ extern void klog_print_hex(unsigned int num);
 
 /* Variabili globali esterne */
 extern int activeProc;
-extern int blockedProc; 
-extern int processId;
+extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
@@ -56,13 +55,14 @@ void term_proc_and_child(pcb_PTR parent) {
 // TODO: CONTROLLARE SE E' GIUSTA
 void term_single_proc(pcb_PTR p) {
     // gestisco variabili globali e semaforo
-    if (p == currentActiveProc)
-        currentActiveProc = NULL;
     --activeProc;
     if (p->p_semAdd != NULL) {
         --blockedProc;
         outBlocked(p);
     }
+    
+    if (p == currentActiveProc)
+        currentActiveProc = NULL;
     
     outChild(p); // tolgo p come figlio così va avanti
     freePcb(p);
@@ -207,19 +207,16 @@ void do_IO_device(state_t *excState) {
     for (int i = 0; i < 8; i++){
         if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
             interruptLine = 7;
             break;
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
             interruptLine = 7;
             break;
         }else{
             for(int j = 0; j < 4; j++){
                 if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                    //returnStatus = deviceRegs->devreg[j][i].dtp.status;
                     if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
                     else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
                     else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
@@ -230,13 +227,17 @@ void do_IO_device(state_t *excState) {
         }
     }
 
-
-    (*excState).status |= STATUS_IM(interruptLine);
-
-    copy_state(excState, &currentActiveProc->p_s);
+    //faccio una P()
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
+    // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
+    copy_state(excState, &currentActiveProc->p_s);
+
+    currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
+    //(*excState).status |= STATUS_IM(interruptLine);
+
+    // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
     //TODO: CAPIRE CHE CAZZO FARE QUA
     // CHIAMO LO SCHEDULER O FACCIO LDST DI QUALCOSA?????
