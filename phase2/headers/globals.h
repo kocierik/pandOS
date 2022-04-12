@@ -4,7 +4,7 @@
 #include "../../phase1/headers/pcb.h"
 
 /* Global Variables */
-static int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
+int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
 int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
 int blockedProc;                // Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
 struct list_head queueLowProc;  // Coda dei processi a bassa priorità

@@ -7,6 +7,8 @@
 #include "syscall.h"
 
 void scheduler();
+void load_state(state_t *s);
+void load_or_scheduler(state_t *s);
 void scheduler_empty_queues();
 
 #endif

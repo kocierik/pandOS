@@ -6,8 +6,7 @@ extern void klog_print_hex(unsigned int num);
 
 /* Variabili globali esterne */
 extern int activeProc;
-extern int blockedProc; 
-extern int processId;
+extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
 extern pcb_t *currentActiveProc;
@@ -54,15 +53,14 @@ void term_proc_and_child(pcb_PTR parent) {
 
 void term_single_proc(pcb_PTR p) {
     // gestisco variabili globali e semaforo
-    if (p->p_semAdd == NULL) {
-        list_del(&p->p_list);   // lo tolgo da qualsiasi lista
-        if (p == currentActiveProc)
-            currentActiveProc = NULL;
-        --activeProc;
-    } else {
+    --activeProc;
+    if (p->p_semAdd != NULL) {
         --blockedProc;
         outBlocked(p);
     }
+    
+    if (p == currentActiveProc)
+        currentActiveProc = NULL;
     
     outChild(p); // tolgo p come figlio così va avanti
     freePcb(p);
@@ -99,7 +97,6 @@ void update_curr_proc_time() {
 
 void block_curr_proc(state_t *excState, int *semaddr) {
     ++blockedProc;
-    --activeProc;
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
     scheduler();
@@ -128,7 +125,7 @@ void create_process(state_t *excState) {
     else {
         insertChild(currentActiveProc, p);
         copy_state(a1, &p->p_s);
-        klog_print_dec(a2);
+        ++activeProc;
         insert_ready_queue(a2, p);
         p->p_supportStruct = a3;
         if (a3 == 0)
@@ -155,8 +152,6 @@ void terminate_process(state_t *excState) {
         klog_print("\n\nprocesso trovato! Lo termino");
         term_proc_and_child(p);
     }
-    if(currentActiveProc == NULL) scheduler();
-    loadState(excState);
 }
 
 
@@ -213,19 +208,16 @@ void do_IO_device(state_t *excState) {
     for (int i = 0; i < 8; i++){
         if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            //returnStatus = deviceRegs->devreg[4][i].term.transm_status;
             interruptLine = 7;
             break;
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            //returnStatus = deviceRegs->devreg[4][i].term.recv_status;
             interruptLine = 7;
             break;
         }else{
             for(int j = 0; j < 4; j++){
                 if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                    //returnStatus = deviceRegs->devreg[j][i].dtp.status;
                     if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
                     else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
                     else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
@@ -236,26 +228,15 @@ void do_IO_device(state_t *excState) {
         }
     }
 
-
-
-    //Eseguo la P del processo attualmente in esecuzione.
-    //passeren(&semTerminalDeviceWriting[1]); for debug purpose
-    
     //faccio una P()
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
-    --activeProc;
     // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
-    //setSTATUS(IEPON);
+    copy_state(excState, &currentActiveProc->p_s);
+
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-/*
-    termreg_t *devRegAddr = (termreg_t *) (0x10000054 + ((interruptLine - 3) * 0x80) + (deviceNumber * 0x10));
-    klog_print("\n\ntrovato da me: ");
-    klog_print_dec((memaddr*) &devRegAddr->transm_command); 
-    klog_print("\n\npreso da lui: ");
-    klog_print_dec((memaddr*) (cmdAddr));
-*/
+
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
 }
@@ -292,6 +273,5 @@ void getIDprocess(state_t *excState) {
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(PROCESS_PRIO_LOW, currentActiveProc); 
-    --activeProc; //NON TOCCARE: da fare visto che lo faccio a spropostito in insert_ready_queue
     scheduler();
 }

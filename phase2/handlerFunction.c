@@ -3,8 +3,6 @@
 extern void klog_print(char *s);
 extern void klog_print_dec(int n);
 extern void klog_print_hex(unsigned int num);
-extern void scheduler();
-extern void yield(state_t *s);
 
 extern void insert_ready_queue(int prio, pcb_PTR p);
 extern void copy_state(state_t *s, state_t *p);
@@ -30,22 +28,6 @@ int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra
 * //N.B. La funzione CAUSE_GET_IP è ben commentata dov'è definita.
 */
 
-void loadState(state_t *s) {
-    STCK(startTime);
-    LDST(s);
-}
-
-
-int getBlockedSem(int bitAddress) {
-    int deviceNumber = 0; 
-    unsigned int devBitMap = CDEV_BITMAP_ADDR(bitAddress);
-    while(devBitMap != 0){
-        ++deviceNumber;
-        devBitMap = devBitMap >> 1;
-    }
-    return deviceNumber;
-}
-
 
 void plt_time_handler(state_t *excState) {
     klog_print("\n\nplt interrupt");
@@ -59,37 +41,15 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000);
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
-
         klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
-        klog_print("\n\nrimesso in readyqueue");
-
     }
 
     semIntervalTimer = 0;
-
-    if (currentActiveProc == NULL) {
-        klog_print("\n\nchiamo lo schiduler");
-        scheduler();
-    }
-    loadState(excState);
+    load_or_scheduler(excState);
 }
 
-/*
-void deviceIntHandler(int cause) {
-    int deviceNumber; 
-    for (int i = 3; i < 7; i++) {
-        if(CAUSE_IP_GET(cause, i)) {
-            deviceNumber = getBlockedSem(i); // non sono sicuro se devo utilizzare il deviceNumber o i
-            devreg_t* addressReg = (devreg_t*) CAUSE_IP_GET(cause,i);
-            int statusCode = addressReg->dtp.status;
-            addressReg->dtp.command = ACK;
-            //verhogen(deviceNumber); bisogna chiamarla??
-        }
-    return NULL;
-}
-*/
 
 /* La funzione mi permette di ottenere l'indirizzo del semaforo di un dispositivo generico (NON TERMINALE)
  * Prendo in input l'interruptLine del dispositivo e il numero del dispositivo stesso (da 0 a 7)
@@ -108,6 +68,7 @@ int *getDeviceSemaphore(int interruptLine, int devNumber){
     return NULL;
 }
 
+
 int getDevice(int interLine){
     unsigned int bitmap = (interLine);
     for(int i = 0; i < 8; i ++){
@@ -115,6 +76,7 @@ int getDevice(int interLine){
     }
     return -1; // come codice errore
 }
+
 
 void device_handler(int interLine, state_t *excState) {
     //memaddr *interruptLineAddr = (memaddr*) (0x10000054 + (interLine - 3)); 
@@ -136,8 +98,7 @@ void device_handler(int interLine, state_t *excState) {
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\ndeviceIntHandler: Possibile errore");
     
-    if (currentActiveProc == NULL) scheduler();
-    loadState(excState);
+    load_or_scheduler(excState);
 
     //Leggere Important Point 
 }
@@ -161,18 +122,17 @@ void terminal_handler(state_t *excState) {
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
 
-    /* Eseguo una custom V-Operation */ 
+    (*excState).reg_v0 = statusCode;
+    /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL){
-        process->p_s.reg_v0 = statusCode;
         --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
-    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\nterminalHandler: Possibile errore");
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
 
-    if (currentActiveProc == NULL) scheduler();
-    loadState(&currentActiveProc->p_s);
+    load_or_scheduler(excState);
 }
 
 
@@ -200,7 +160,6 @@ void syscall_handler(state_t *callerProcState) {
     int syscode = (*callerProcState).reg_a0;
 
     callerProcState->pc_epc += 4;
-    
     switch(syscode) {
         case CREATEPROCESS:
             create_process(callerProcState);
@@ -236,6 +195,5 @@ void syscall_handler(state_t *callerProcState) {
             trap_handler(callerProcState);
             break;
     }
-
-    loadState(callerProcState);
+    load_or_scheduler(callerProcState);
 }
