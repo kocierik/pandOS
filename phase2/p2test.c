@@ -117,7 +117,7 @@ void print(char *msg) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            //PANIC();
+            PANIC();
         }
         s++;
     }
@@ -351,7 +351,7 @@ void p2() {
     STCK(now2);                         /* time of day  */
 
     if (((now2 - now1) >= (cpu_t2 - cpu_t1)) && ((cpu_t2 - cpu_t1) >= (MINLOOPTIME / (*((cpu_t *)TIMESCALEADDR))))) {
-        print("p2 is OK\n");
+        //print("p2 is OK\n");
     } else {
         if ((now2 - now1) < (cpu_t2 - cpu_t1))
             print("error: more cpu time than real time\n");
@@ -384,7 +384,9 @@ void p3() {
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {
         STCK(time1); /* time of day     */
+        klog_print("eseguo clock");
         SYSCALL(CLOCKWAIT, 0, 0, 0);
+        klog_print("fatto");
         STCK(time2); /* new time of day */
     }
 

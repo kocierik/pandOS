@@ -228,11 +228,11 @@ void do_IO_device(state_t *excState) {
     }
 
     //faccio una P()
+    copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
     // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
-    copy_state(excState, &currentActiveProc->p_s);
 
     currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
     //(*excState).status |= STATUS_IM(interruptLine);
