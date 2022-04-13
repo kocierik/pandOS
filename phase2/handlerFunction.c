@@ -150,7 +150,7 @@ void terminal_handler(state_t *excState) {
 void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
-            klog_print("\n\n Termino il processo corrente dal passup");
+            //klog_print("\n\n Termino il processo corrente dal passup");
             term_proc(0);
             scheduler();
         } else {
@@ -158,7 +158,7 @@ void pass_up_or_die(int pageFault, state_t *excState) {
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status   = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;
             int pc       = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].pc;
-            klog_print("\n\n Fatto il pass up");
+            //klog_print("\n\n Fatto il pass up");
             LDCXT(stackPtr, status, pc);
         }
     } else {

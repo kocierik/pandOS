@@ -48,12 +48,12 @@ void interrupt_handler(state_t *excState) {
 
 
 void tlb_handler(state_t *excState) {
-    klog_print("\n\ntlbhandler");
+    //klog_print("\n\ntlbhandler");
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
 
 void trap_handler(state_t *excState) {
-    klog_print("\n\ntraphandler");
+    //klog_print("\n\ntraphandler");
     pass_up_or_die(GENERALEXCEPT, excState);
 }

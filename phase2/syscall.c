@@ -243,8 +243,8 @@ void get_cpu_time(state_t *excState) {
 
 
 void wait_for_clock(state_t *excState) {
-    klog_print("\n\nsono nel wait for clock ");
-    klog_print_dec(semIntervalTimer);
+    //klog_print("\n\nsono nel wait for clock ");
+    //klog_print_dec(semIntervalTimer);
     P(&semIntervalTimer, excState); // questa P dovrebbe essere sempre bloccante
     load_or_scheduler(excState); // just in case
 }
