@@ -252,6 +252,8 @@ void test() {
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
+    klog_print("\n\ninizializzo processi ad alta priorita'");
+
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
     SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
 
@@ -407,11 +409,15 @@ void p3() {
         print("p3 - CPU time correctly maintained\n");
     }
 
+    klog_print("\n\nsono arrivato qua");
+
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p3pid) {
         print("Inconsistent process id for p3!\n");
         PANIC();
     }
+
+    klog_print("\n\nid process 3 giusto");
 
     SYSCALL(VERHOGEN, (int)&sem_endp3, 0, 0); /* V(sem_endp3)        */
 

@@ -65,6 +65,7 @@ void term_single_proc(pcb_PTR p) {
         currentActiveProc = NULL;
     
     outChild(p); // tolgo p come figlio così va avanti
+    //list_del(&p->p_list);  // TODO : capire se serve togliere un processo dalla lista di quelli ready
     freePcb(p);
 }
 
@@ -87,15 +88,10 @@ pcb_PTR find_pcb(int pid) {
 }
 
 
-void update_curr_proc_time() {
-    cpu_t now;
-    STCK(now);   // fermo il cronometro
-    currentActiveProc->p_time += now - startTime;
-    STCK(startTime);
-}
 
 
 void block_curr_proc(state_t *excState, int *semaddr) {
+    update_curr_proc_time();
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
     ++blockedProc;

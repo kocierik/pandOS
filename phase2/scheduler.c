@@ -13,8 +13,12 @@ extern int yieldHighProc;
 
 
 void scheduler() {
+
+    if (currentActiveProc != NULL)
+        update_curr_proc_time();
+
     pcb_PTR p;
-    
+
     if((p = removeProcQ(&queueHighProc)) != NULL && yieldHighProc) {
         currentActiveProc = p;
         load_state(&p->p_s);
@@ -43,6 +47,14 @@ void load_state(state_t *s) {
 }
 
 
+void update_curr_proc_time() {
+    cpu_t now;
+    STCK(now);   // fermo il cronometro
+    currentActiveProc->p_time += now - startTime;
+    STCK(startTime); // in teoria e' inutile ma non bisogna toglierlo
+}
+
+
 void scheduler_empty_queues() {
     //klog_print("\n\nCode dei processi in attesa vuote...");
     if(activeProc == 0)
@@ -51,7 +63,7 @@ void scheduler_empty_queues() {
     if(activeProc > 0 && blockedProc > 0) {
         //Enabling interrupts and disable PLT.
         setTIMER(-2);
-        unsigned int status = IECON | IMON;
+        unsigned int status = IECON | IMON ;
         //klog_print("sono nella wait");
         setSTATUS(status);
         WAIT(); //twiddling its thumbs

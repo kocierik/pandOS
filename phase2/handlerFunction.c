@@ -111,7 +111,7 @@ void terminal_handler(state_t *excState) {
     //Verifico se il recv_status è ready e dunque se è in utilizzo il terminale in lettura.
     int readingMode = (devRegAddr->recv_status == 5); 
 
-    if (readingMode) { //TODO
+    if (readingMode) {
         klog_print("\n\n terminalHandler: terminale in reading mode.");
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
@@ -122,16 +122,18 @@ void terminal_handler(state_t *excState) {
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
 
-    //(*excState).reg_v0 = statusCode;
+
+    currentActiveProc->p_s.reg_v0 = statusCode;
     /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
-    if (process != NULL){
+    if (process != NULL) {
         process->p_s.reg_v0 = statusCode;
         --blockedProc;
         if(currentActiveProc != process) // sia lodato nikolas
             insert_ready_queue(process->p_prio, process);
+    } else {
+        klog_print("\n\nterminalHandler: Possibile errore");
     }
-    else klog_print("\n\nterminalHandler: Possibile errore");
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
 
     load_or_scheduler(&currentActiveProc->p_s);

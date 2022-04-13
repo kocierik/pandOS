@@ -17,7 +17,6 @@ void copy_state(state_t *new, state_t *old);
 void term_single_proc(pcb_PTR p);
 void term_proc_and_child(pcb_PTR rootPtr);
 pcb_PTR find_pcb(int pid);
-void update_curr_proc_time();
 void block_curr_proc(state_t *excState, int *semaddr);
 void free_process(int *semaddr);
 void term_proc(int pid);
