@@ -21,6 +21,7 @@ void update_curr_proc_time();
 void block_curr_proc(state_t *excState, int *semaddr);
 void free_process(int *semaddr);
 void term_proc(int pid);
+int lenQ(struct list_head *l);
 
 
 void create_process(state_t *excState);

@@ -14,7 +14,7 @@ extern int yieldHighProc;
 
 void scheduler() {
     pcb_PTR p;
-
+    
     if((p = removeProcQ(&queueHighProc)) != NULL && yieldHighProc) {
         currentActiveProc = p;
         load_state(&p->p_s);
@@ -24,7 +24,7 @@ void scheduler() {
         if (yieldHighProc) yieldHighProc = FALSE;
 
         currentActiveProc = p;
-        setTIMER(TIMESLICE);
+        setTIMER(TIMESLICE); // PLT di 5 ms
         load_state(&p->p_s);
     } else
         scheduler_empty_queues();
@@ -38,7 +38,7 @@ void load_or_scheduler(state_t *s) {
 
 
 void load_state(state_t *s) {
-    STCK(startTime);
+    STCK(startTime); // faccio partire il cronometro
     LDST(s);
 }
 
@@ -50,12 +50,15 @@ void scheduler_empty_queues() {
         
     if(activeProc > 0 && blockedProc > 0) {
         //Enabling interrupts and disable PLT.
+        setTIMER(-2);
         unsigned int status = IECON | IMON;
-        klog_print("sono nella wait");
+        //klog_print("sono nella wait");
         setSTATUS(status);
         WAIT(); //twiddling its thumbs
     }
 
-    if(activeProc > 0 && blockedProc == 0)
+    if(activeProc > 0 && blockedProc == 0) {
+        klog_print("Deadlock");
         PANIC();        //DEADLOCK
+    }
 }

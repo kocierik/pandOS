@@ -29,7 +29,10 @@ int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra
 
 void plt_time_handler(state_t *excState) {
     setTIMER(-2); //ACK
-    yield(excState);
+    //yield(excState);
+    copy_state(excState, &currentActiveProc->p_s);
+    insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
+    scheduler();
 }
 
 
@@ -37,11 +40,10 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
-        klog_print("\n\nho sbloccato qualcosa");
+        //klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
     }
-
     semIntervalTimer = 0;
     load_or_scheduler(excState);
 }
@@ -92,17 +94,13 @@ void device_handler(int interLine, state_t *excState) {
         --blockedProc;
         insert_ready_queue(process->p_prio, process);
     }
-    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     else klog_print("\n\ndeviceIntHandler: Possibile errore");
-    
+    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
     
     load_or_scheduler(excState);
-
-    //Leggere Important Point 
 }
 
 
-//TODO CAPIRE CHE CAZZO SUCCEDE QUA
 void terminal_handler(state_t *excState) {
     //klog_print("\n\nsono nel terminal hadler");
     int devNumber = getDevice(IL_TERMINAL);
@@ -110,9 +108,11 @@ void terminal_handler(state_t *excState) {
     
     unsigned int statusCode;
     int *deviceSemaphore;
-    int readingMode = (devRegAddr->recv_status == 5); //TODO: is it correct?
+    //Verifico se il recv_status è ready e dunque se è in utilizzo il terminale in lettura.
+    int readingMode = (devRegAddr->recv_status == 5); 
 
-    if (readingMode && FALSE) { //TODO
+    if (readingMode) { //TODO
+        klog_print("\n\n terminalHandler: terminale in reading mode.");
         statusCode = devRegAddr->recv_status;
         devRegAddr->recv_command = ACK;
         deviceSemaphore = &semTerminalDeviceReading[devNumber];
@@ -122,17 +122,19 @@ void terminal_handler(state_t *excState) {
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
 
-    (*excState).reg_v0 = statusCode;
+    //(*excState).reg_v0 = statusCode;
     /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL){
+        process->p_s.reg_v0 = statusCode;
         --blockedProc;
-        insert_ready_queue(process->p_prio, process);
+        if(currentActiveProc != process) // sia lodato nikolas
+            insert_ready_queue(process->p_prio, process);
     }
     else klog_print("\n\nterminalHandler: Possibile errore");
     /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
 
-    load_or_scheduler(excState);
+    load_or_scheduler(&currentActiveProc->p_s);
 }
 
 
@@ -164,8 +166,7 @@ void syscall_handler(state_t *callerProcState) {
     if(((callerProcState->status << 28) >> 31)){
         callerProcState->cause |= (EXC_RI<<CAUSESHIFT);
         pass_up_or_die(GENERALEXCEPT, callerProcState);
-    }
-    else{
+    } else {
         switch(syscode) {
             case CREATEPROCESS:
                 create_process(callerProcState);
@@ -202,5 +203,6 @@ void syscall_handler(state_t *callerProcState) {
                 break;
         }
     }
+    klog_print("Non dovrei mai arrivare qua, alla fine del syscall handler");
     load_or_scheduler(callerProcState);
 }

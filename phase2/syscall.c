@@ -89,7 +89,7 @@ pcb_PTR find_pcb(int pid) {
 
 void update_curr_proc_time() {
     cpu_t now;
-    STCK(now);
+    STCK(now);   // fermo il cronometro
     currentActiveProc->p_time += now - startTime;
     STCK(startTime);
 }
@@ -167,7 +167,7 @@ void passeren(state_t *excState) {
 void P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
     pcb_PTR pid = headBlocked(semaddr);
 
-    if(*semaddr == 0)
+    if((*semaddr) == 0)
         block_curr_proc(excState, semaddr);
     else if(pid != NULL)
         free_process(semaddr);
@@ -187,7 +187,7 @@ void verhogen(state_t *excState) {
 void V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
-    if(*semaddr == 1)
+    if((*semaddr) == 1)
         block_curr_proc(excState, semaddr);
     else if(pid != NULL)
         free_process(semaddr);
@@ -231,17 +231,13 @@ void do_IO_device(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(devSemaphore, currentActiveProc);
     ++blockedProc;
-    // al posto della p faccio così perché ho cambiato un po' di cose e quindi meglio fare così
 
-
-    currentActiveProc->p_s.status |= STATUS_IM(interruptLine); 
-    //(*excState).status |= STATUS_IM(interruptLine);
+    //currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
+    (*excState).status |= STATUS_IM(interruptLine);
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
-    //TODO: CAPIRE CHE CAZZO FARE QUA
-    // CHIAMO LO SCHEDULER O FACCIO LDST DI QUALCOSA?????
-    // COSA FA ADESO CHE NON C'E' NIENTE
+    scheduler();
 }
 
 
@@ -282,6 +278,16 @@ void get_ID_process(state_t *excState) {
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH) yieldHighProc = TRUE;
+    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH && lenQ(&queueHighProc) > 1) yieldHighProc = TRUE;
     scheduler();
+}
+
+
+int lenQ(struct list_head *l) {
+    int c = 0;
+    struct list_head * tmp;
+    list_for_each(tmp, l) {
+        ++c;
+    }
+    return c;
 }
