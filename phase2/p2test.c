@@ -140,6 +140,9 @@ void uTLB_RefillHandler() {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
+
+void bp() {}
+
 void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
@@ -248,7 +251,11 @@ void test() {
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
+    bp();
+
     print("p3 is started\n");
+
+    bp();
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
@@ -303,7 +310,6 @@ void test() {
 }
 
 
-void bp() {}
 
 /* p2 -- semaphore and cputime-SYS test process */
 void p2() {
@@ -329,7 +335,6 @@ void p2() {
 
     /* V, then P, all of the semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
-        bp();
         SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */
         SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */
         if (s[i] != 0)
@@ -375,12 +380,15 @@ void p2() {
 
 /* p3 -- clock semaphore test process */
 void p3() {
+
     cpu_t time1, time2;
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int   i;
 
     time1 = 0;
     time2 = 0;
+
+    bp();
 
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {

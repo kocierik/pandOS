@@ -119,7 +119,7 @@ void terminal_handler(state_t *excState) {
         devRegAddr->transm_command = ACK;
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
-/*
+
     pcb_PTR p = V(deviceSemaphore, NULL);
     
     if(p == NULL || p == currentActiveProc) {
@@ -130,8 +130,8 @@ void terminal_handler(state_t *excState) {
         p->p_s.reg_v0 = statusCode;
         load_or_scheduler(excState);
     }
-    */
-
+    
+/*
     currentActiveProc->p_s.reg_v0 = statusCode;
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL) {
@@ -143,7 +143,7 @@ void terminal_handler(state_t *excState) {
         klog_print("\n\nterminalHandler: Possibile errore");
     }
 
-    load_or_scheduler(&currentActiveProc->p_s);
+    load_or_scheduler(&currentActiveProc->p_s);*/
 }
 
 
