@@ -88,8 +88,6 @@ pcb_PTR find_pcb(int pid) {
 }
 
 
-
-
 void block_curr_proc(state_t *excState, int *semaddr) {
     update_curr_proc_time();
     copy_state(excState, &currentActiveProc->p_s);
@@ -99,10 +97,11 @@ void block_curr_proc(state_t *excState, int *semaddr) {
 }
 
 
-void free_process(int *semaddr) {
+pcb_PTR free_process(int *semaddr) {
     pcb_PTR pid = removeBlocked(semaddr);
     --blockedProc;
     insert_ready_queue(pid->p_prio, pid);
+    return pid;
 }
 
 
@@ -160,15 +159,16 @@ void passeren(state_t *excState) {
 }
 
 
-void P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
+pcb_PTR P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
     pcb_PTR pid = headBlocked(semaddr);
 
     if((*semaddr) == 0)
         block_curr_proc(excState, semaddr);
     else if(pid != NULL)
-        free_process(semaddr);
+        return free_process(semaddr);
     else
         --(*semaddr);
+    return NULL;
 }
 
 
@@ -180,15 +180,16 @@ void verhogen(state_t *excState) {
 }
 
 
-void V(int *semaddr, state_t *excState) {
+pcb_PTR V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
     if((*semaddr) == 1)
         block_curr_proc(excState, semaddr);
     else if(pid != NULL)
-        free_process(semaddr);
+        return free_process(semaddr);
     else
         ++(*semaddr);
+    return NULL;
 }
 
 
@@ -223,17 +224,14 @@ void do_IO_device(state_t *excState) {
         }
     }
 
-    //faccio una P()
-    copy_state(excState, &currentActiveProc->p_s);
-    insertBlocked(devSemaphore, currentActiveProc);
-    ++blockedProc;
-
     //currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
-    (*excState).status |= STATUS_IM(interruptLine);
+    //(*excState).status |= STATUS_IM(interruptLine);
 
     // Eseguo il comando richiesto.
     *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
-    scheduler();
+    P(devSemaphore, excState);
+    klog_print("\n\nerrore: doio non bloccante");
+    load_or_scheduler(excState); //just in case, non ci dovrebbe arrivare;
 }
 
 

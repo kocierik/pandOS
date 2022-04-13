@@ -11,7 +11,7 @@
 
 /* Number of semaphore's device */
 #define SEMDEVLEN 49
-
+#define RECVD    5
 
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/

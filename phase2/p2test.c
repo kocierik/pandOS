@@ -385,9 +385,7 @@ void p3() {
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {
         STCK(time1); /* time of day     */
-        klog_print("\n\neseguo clock");
         SYSCALL(CLOCKWAIT, 0, 0, 0);
-        klog_print("\n\nfattono");
         STCK(time2); /* new time of day */
     }
 
@@ -409,15 +407,12 @@ void p3() {
         print("p3 - CPU time correctly maintained\n");
     }
 
-    klog_print("\n\nsono arrivato qua");
-
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p3pid) {
         print("Inconsistent process id for p3!\n");
         PANIC();
     }
 
-    klog_print("\n\nid process 3 giusto");
 
     SYSCALL(VERHOGEN, (int)&sem_endp3, 0, 0); /* V(sem_endp3)        */
 

@@ -29,7 +29,6 @@ int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; //Vettore utile per l'AND tra
 
 void plt_time_handler(state_t *excState) {
     setTIMER(-2); //ACK
-    //yield(excState);
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
     scheduler();
@@ -40,7 +39,6 @@ void intervall_timer_handler(state_t *excState) {
     LDIT(100000); //ACK
     pcb_PTR p;
     while((p = removeBlocked(&semIntervalTimer)) != NULL) {
-        //klog_print("\n\nho sbloccato qualcosa");
         --blockedProc;
         insert_ready_queue(p->p_prio, p);
     }
@@ -109,7 +107,7 @@ void terminal_handler(state_t *excState) {
     unsigned int statusCode;
     int *deviceSemaphore;
     //Verifico se il recv_status è ready e dunque se è in utilizzo il terminale in lettura.
-    int readingMode = (devRegAddr->recv_status == 5); 
+    int readingMode = (devRegAddr->recv_status == RECVD); 
 
     if (readingMode) {
         klog_print("\n\n terminalHandler: terminale in reading mode.");
@@ -121,10 +119,20 @@ void terminal_handler(state_t *excState) {
         devRegAddr->transm_command = ACK;
         deviceSemaphore = &semTerminalDeviceWriting[devNumber];
     }
-
+/*
+    pcb_PTR p = V(deviceSemaphore, NULL);
+    
+    if(p == NULL || p == currentActiveProc) {
+        currentActiveProc->p_s.reg_v0 = statusCode;
+        insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
+        scheduler();
+    } else {
+        p->p_s.reg_v0 = statusCode;
+        load_or_scheduler(excState);
+    }
+    */
 
     currentActiveProc->p_s.reg_v0 = statusCode;
-    /* Eseguo una custom V-Operation */
     pcb_PTR process = removeBlocked(deviceSemaphore);
     if (process != NULL) {
         process->p_s.reg_v0 = statusCode;
@@ -134,7 +142,6 @@ void terminal_handler(state_t *excState) {
     } else {
         klog_print("\n\nterminalHandler: Possibile errore");
     }
-    /* In caso di questo errore controlla Important Point N.2 di 3.6.1, pag 19 */
 
     load_or_scheduler(&currentActiveProc->p_s);
 }
