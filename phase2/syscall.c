@@ -1,10 +1,6 @@
 #include "headers/syscall.h"
 
-extern void klog_print(char *s);
-extern void klog_print_dec(unsigned int num);
-extern void klog_print_hex(unsigned int num);
-
-/* Variabili globali esterne */
+/* Exsternal variable */
 extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
@@ -20,12 +16,11 @@ extern int semTerminalDeviceReading[8];
 extern int semTerminalDeviceWriting[8];
 extern cpu_t startTime;
 
-/* Funzioni globali esterne */
+/* Exsternal function */
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
 
-/* FUNZIONI DI AIUTO */
-
+/* HELPER FUNCTION */
 
 void copy_state(state_t *new, state_t *old) {
     old->cause = new->cause;
@@ -39,7 +34,7 @@ void copy_state(state_t *new, state_t *old) {
 }
 
 
-/* funzione iterativa che elimina i figli e il processo stesso */
+// remove child process
 void term_proc_and_child(pcb_PTR parent) {
     pcb_PTR p;
     while(!isPcbFree(parent->p_pid)) {
@@ -52,24 +47,20 @@ void term_proc_and_child(pcb_PTR parent) {
 }
 
 
-// TODO: CONTROLLARE SE E' GIUSTA
 void term_single_proc(pcb_PTR p) {
-    // gestisco variabili globali e semaforo
     --activeProc;
     if (p->p_semAdd != NULL) {
         --blockedProc;
         outBlocked(p);
-    }
-    
+    }    
     if (p == currentActiveProc)
         currentActiveProc = NULL;
     
-    outChild(p); // tolgo p come figlio così va avanti
-    //list_del(&p->p_list);  // TODO : capire se serve togliere un processo dalla lista di quelli ready
+    outChild(p); // take away p as son so it goes on
     freePcb(p);
 }
 
-
+// find the blocking pcb in the two queues
 pcb_PTR find_pcb(int pid) {
     struct list_head *pos;
     pcb_PTR p;
@@ -96,7 +87,7 @@ void block_curr_proc(state_t *excState, int *semaddr) {
     scheduler();
 }
 
-
+// unblock process
 pcb_PTR free_process(int *semaddr) {
     pcb_PTR pid = removeBlocked(semaddr);
     --blockedProc;
@@ -104,7 +95,7 @@ pcb_PTR free_process(int *semaddr) {
     return pid;
 }
 
-
+// terminate child process
 void term_proc(int pid) {
     pcb_PTR p;
 
@@ -116,10 +107,19 @@ void term_proc(int pid) {
     }
 }
 
+// return list length
+int lenQ(struct list_head *l) {
+    int c = 0;
+    struct list_head * tmp;
+    list_for_each(tmp, l) {
+        ++c;
+    }
+    return c;
+}
 
 /* SYSCALL */
 
-
+// SYSCALL CREATEPROCESS
 void create_process(state_t *excState) {
     pcb_PTR p = allocPcb();
 
@@ -142,8 +142,7 @@ void create_process(state_t *excState) {
     load_or_scheduler(excState);
 }
 
-
-/* Ricerca il processo da terminare ed invoca la funzione che lo termina */
+// SYSCALL TERMPROCESS
 void terminate_process(state_t *excState) {
     int pid = (int) (*excState).reg_a1;
     term_proc(pid);
@@ -151,15 +150,14 @@ void terminate_process(state_t *excState) {
 }
 
 
-/* Porta il processo attualmente attivo in stato "Blocked" */
+// SYSCALL PASSEREN
 void passeren(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
     P(semaddr, excState);
     load_or_scheduler(excState);
 }
 
-
-pcb_PTR P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come secondo parametro dato che ha lo stato già aggiornato.
+pcb_PTR P(int *semaddr, state_t *excState) { 
     pcb_PTR pid = headBlocked(semaddr);
 
     if((*semaddr) == 0)
@@ -172,7 +170,7 @@ pcb_PTR P(int *semaddr, state_t *excState) { //TODO passa direttametne PCB come 
 }
 
 
-/* Porta il primo processo disponibile di un semaforo dallo stato "Blocked" in "Ready" */
+// SYSCALL VERHOGEN
 void verhogen(state_t *excState) {
     int *semaddr = (int*) (*excState).reg_a1;
     V(semaddr, excState);
@@ -192,12 +190,12 @@ pcb_PTR V(int *semaddr, state_t *excState) {
     return NULL;
 }
 
-
+// SYCALL DOIO
 void do_IO_device(state_t *excState) {
     int *cmdAddr = (int*) (*excState).reg_a1;
     int cmdValue = (int)  (*excState).reg_a2;
     
-    int *devSemaphore; //Indirizzo del semaforo 
+    int *devSemaphore; // semaphore address
     int interruptLine;
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
@@ -223,40 +221,32 @@ void do_IO_device(state_t *excState) {
             }
         }
     }
-
-    //currentActiveProc->p_s.status |= STATUS_IM(interruptLine);
-    //(*excState).status |= STATUS_IM(interruptLine);
-
-    // Eseguo il comando richiesto.
-    *cmdAddr = cmdValue; //appena il controllo arriva al processo corrente, dovrebbe alzarsi una interrupt
+    // Execute request command
+    *cmdAddr = cmdValue; 
     P(devSemaphore, excState);
-    klog_print("\n\nerrore: doio non bloccante");
-    load_or_scheduler(excState); //just in case, non ci dovrebbe arrivare;
+    load_or_scheduler(excState); //just in case
 }
 
-
+// SYSCALL GETTIME
 void get_cpu_time(state_t *excState) {
     update_curr_proc_time();
     excState->reg_v0 = currentActiveProc->p_time;
     load_or_scheduler(excState);
 }
 
-
+// SYSCALL CLOCKWAIT
 void wait_for_clock(state_t *excState) {
-    //klog_print("\n\nsono nel wait for clock ");
-    //klog_print_dec(semIntervalTimer);
-    P(&semIntervalTimer, excState); // questa P dovrebbe essere sempre bloccante
+    P(&semIntervalTimer, excState); // blocked P
     load_or_scheduler(excState); // just in case
 }
 
-
-//TODO: sul libro non c'e' scritto esplicitamente di mettere il valore nel reg_v0, da controllare...
+// SYSCALL GETSUPPORTPTR
 void get_support_data(state_t *excState) {
     (*excState).reg_v0 = (unsigned int) ((currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL);
     load_or_scheduler(excState);
 }
 
-
+// SYSCALL GETPROCESSID
 void get_ID_process(state_t *excState) {
     int parent = (int) (*excState).reg_a1;
     if (parent == 0)
@@ -268,7 +258,7 @@ void get_ID_process(state_t *excState) {
 }
 
 
-// inserisce il processo chiamante al termine della coda della rispettiva coda dei processi
+// SYSCALL YIELD
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
@@ -276,12 +266,3 @@ void yield(state_t *excState) {
     scheduler();
 }
 
-
-int lenQ(struct list_head *l) {
-    int c = 0;
-    struct list_head * tmp;
-    list_for_each(tmp, l) {
-        ++c;
-    }
-    return c;
-}

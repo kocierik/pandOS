@@ -3,7 +3,6 @@
 
 
 void exception_handler() {
-
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
 
@@ -22,13 +21,10 @@ void exception_handler() {
             syscall_handler(exceptionState);
             break;
         default:
-            klog_print("\n\nexception_handler error: unknown cause code ");
-            klog_print_dec(causeCode);
             PANIC();
     }
 }
-
-
+// case 0 exception_handler() 
 void interrupt_handler(state_t *excState) {
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
@@ -41,19 +37,15 @@ void interrupt_handler(state_t *excState) {
     else if CAUSE_IP_GET(cause, IL_PRINTER)     device_handler(IL_PRINTER, excState);
     else if CAUSE_IP_GET(cause, IL_TERMINAL)    terminal_handler();
 
-    klog_print("\n\ninterrupt_handler error: unknown cause code ");
-    klog_print_dec(cause);
     PANIC();
 }
 
-
+// case 1 ... 3 exception_handler()
 void tlb_handler(state_t *excState) {
-    //klog_print("\n\ntlbhandler");
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
-
+// case 4 ... 7 | 9 ... 12 exception_handler()
 void trap_handler(state_t *excState) {
-    //klog_print("\n\ntraphandler");
     pass_up_or_die(GENERALEXCEPT, excState);
 }

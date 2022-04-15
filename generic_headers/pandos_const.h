@@ -166,16 +166,16 @@
 #define RAMTOP(T) ((T) = ((*((int *)RAMBASEADDR)) + (*((int *)RAMBASESIZE))))
 
 /*
- * NOTA BENE: Funzione proveniente da un progetto 2012
+ * NOTE: Function coming from a 2012 project
  
- * Questa funzione prende il registro CAUSE (3.3 di pops) e va a leggere i Bit corrispondenti a IP
- * Il parametro "il_no" rappresenta tutti i possibili device che abbiamo. (file /umps3/umps/arch.h line 68)
- * Dunque la funzione ci permette di andare a verificare per ogni dispositivo quale di essi è in funzione.
- * Se uno dispositivo è in funzione CAUSE_IP_GET ci restituisce 1, 0 in caso contrario.
- * Come ci viene richieste da capitolo 3.4 exception 0 chiamiamo l'interrupt del primo dispositivo
- *  che troviamo "acceso"/"in esecuzione"/"del quale otteniamo 1 da questa funzione"
+* This function takes the CAUSE register (3.3 of pops) and reads the bits corresponding to IP
+ * The "il_no" parameter represents all the possible devices we have. (file /umps3/umps/arch.h line 68)
+ * So the function allows us to go and check for each device which of them is working.
+ * If a device is running CAUSE_IP_GET returns 1, 0 otherwise.
+ * As requested by chapter 3.4 exception 0 we call the interrupt of the first device
+ * that we find "on" / "running" / "of which we get 1 from this function"
 */
-#define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8))) // esegue uno shift dei bit in base ai parametri
+#define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8))) // performs a bit shift based on the parameters
 
 #define DISKBACK     1
 #define FLASHBACK    0

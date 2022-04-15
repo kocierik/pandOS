@@ -117,7 +117,6 @@ void print(char *msg) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            klog_print("\n\npanico paura");
             PANIC();
         }
         s++;
@@ -258,8 +257,6 @@ void test() {
     bp();
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
-
-    klog_print("\n\ninizializzo processi ad alta priorita'");
 
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
     SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);

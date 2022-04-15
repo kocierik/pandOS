@@ -41,7 +41,7 @@ void init_passupvector(passupvector_t *vector) {
 }
 
 
-// inserisco un processo nella giusta coda e assegno la priorità al processo
+// insert process in the right queue and prioritize the process
 void insert_ready_queue(int prio, pcb_PTR p) {
     p->p_prio = prio;
     if(prio == PROCESS_PRIO_HIGH)
@@ -51,7 +51,7 @@ void insert_ready_queue(int prio, pcb_PTR p) {
 }
 
 
-//funzione di aiuto che assegna un id unico a un processo 
+// assign a unique id to a process
 void set_pid(pcb_PTR p) {
     p->p_pid = ++processId;
 }
@@ -59,7 +59,7 @@ void set_pid(pcb_PTR p) {
 
 int main(int argc, int* argv[]){
 
-    /* Inizializzazione variabili */
+    /* Variable initialization */
     initPcbs();
     initASL();
     init_global_var();
@@ -68,9 +68,9 @@ int main(int argc, int* argv[]){
     passupvector_t *vector = (passupvector_t *)PASSUPVECTOR;
     init_passupvector(vector);
 
-    LDIT(100000); //imposto l'interval timer a 100 ms
+    LDIT(100000); //set interval timer to 100ms
 
-    /* Allocco il primo processo a bassa priorita' e settiamo le cose giuste */
+    /* insert first low priority process' */
     pcb_PTR firstProc = allocPcb();
 
     ++activeProc;

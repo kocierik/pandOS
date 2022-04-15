@@ -1,7 +1,4 @@
 #include "headers/scheduler.h"
-// TEMPORARY
-extern void klog_print(char *s);
-extern void klog_print_dec(unsigned int num);
 
 extern int activeProc;
 extern int blockedProc;
@@ -13,22 +10,19 @@ extern int yieldHighProc;
 
 
 void scheduler() {
+    pcb_PTR p;
 
     if (currentActiveProc != NULL)
         update_curr_proc_time();
-
-    pcb_PTR p;
 
     if((p = removeProcQ(&queueHighProc)) != NULL && yieldHighProc) {
         currentActiveProc = p;
         load_state(&p->p_s);
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
-        //klog_print("\n\n sto per caricare: ");
-        //klog_print_dec(p->p_pid);
         if (yieldHighProc) yieldHighProc = FALSE;
 
         currentActiveProc = p;
-        setTIMER(TIMESLICE); // PLT di 5 ms
+        setTIMER(TIMESLICE); // PLT 5 ms
         load_state(&p->p_s);
     } else
         scheduler_empty_queues();
@@ -42,36 +36,33 @@ void load_or_scheduler(state_t *s) {
 
 
 void load_state(state_t *s) {
-    STCK(startTime); // faccio partire il cronometro
+    STCK(startTime); // start timer
     LDST(s);
 }
 
 
 void update_curr_proc_time() {
     cpu_t now;
-    STCK(now);   // fermo il cronometro
+    STCK(now);   // stop timer
     currentActiveProc->p_time += now - startTime;
-    STCK(startTime); // in teoria e' inutile ma non bisogna toglierlo
+    STCK(startTime); 
 }
 
 
 void scheduler_empty_queues() {
-    //klog_print("\n\nCode dei processi in attesa vuote...");
     if(activeProc == 0)
-        HALT(); //Il processore non deve fare niente quindi si ferma
+        HALT(); // halt processor
         
     if(activeProc > 0 && blockedProc > 0) {
         //Enabling interrupts and disable PLT.
         setTIMER(-2);
         unsigned int status = IECON | IMON;
-        //klog_print("sono nella wait");
         currentActiveProc = NULL;
         setSTATUS(status);
         WAIT(); //twiddling its thumbs
     }
 
     if(activeProc > 0 && blockedProc == 0) {
-        klog_print("Deadlock");
         PANIC();        //DEADLOCK
     }
 }
