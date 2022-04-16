@@ -33,8 +33,10 @@ void klog_print(char *str) {
         }
     }
 }
-/* Funzione per la stampa di numeri nei registri di memoria usati per il debugging.
-*  N.B. La funzione stampa numeri in un intervallo compreso tra 0 e 99
+
+/* 
+*   Funzione per la stampa di numeri nei registri di memoria usati per il debugging.
+*   N.B. La funzione stampa numeri in un intervallo compreso tra 0 e 99
 */
 void klog_print_dec(unsigned int num) {
     const char digits[] = "0123456789";
