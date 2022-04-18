@@ -128,9 +128,11 @@ void print(char *msg) {
 /* TLB-Refill Handler */
 /* One can place debug calls here, but not calls to print */
 void uTLB_RefillHandler() {
+
     setENTRYHI(0x80000000);
     setENTRYLO(0x00000000);
     TLBWR();
+
     LDST((state_t *)0x0FFFF000);
 }
 
@@ -139,9 +141,6 @@ void uTLB_RefillHandler() {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
-
-void bp() {}
-
 void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
@@ -250,11 +249,7 @@ void test() {
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
-    bp();
-
     print("p3 is started\n");
-
-    bp();
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
@@ -307,7 +302,6 @@ void test() {
 }
 
 
-
 /* p2 -- semaphore and cputime-SYS test process */
 void p2() {
     int   i;              /* just to waste time  */
@@ -317,18 +311,17 @@ void p2() {
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
 
     print("p2 starts\n");
+
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p2pid) {
         print("Inconsistent process id for p2!\n");
         PANIC();
     }
 
-
     /* initialize all semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
         s[i] = 0;
     }
-
 
     /* V, then P, all of the semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
@@ -337,7 +330,6 @@ void p2() {
         if (s[i] != 0)
             print("error: p2 bad v/p pairs\n");
     }
-
 
     print("p2 v's successfully\n");
 
@@ -377,15 +369,12 @@ void p2() {
 
 /* p3 -- clock semaphore test process */
 void p3() {
-
     cpu_t time1, time2;
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int   i;
 
     time1 = 0;
     time2 = 0;
-
-    bp();
 
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {
@@ -417,7 +406,6 @@ void p3() {
         print("Inconsistent process id for p3!\n");
         PANIC();
     }
-
 
     SYSCALL(VERHOGEN, (int)&sem_endp3, 0, 0); /* V(sem_endp3)        */
 
@@ -728,6 +716,7 @@ void p10() {
 
 
 void hp_p1() {
+    klog_print("OK");
     print("hp_p1 starts\n");
 
     for (int i = 0; i < 100; i++) {
@@ -741,6 +730,8 @@ void hp_p1() {
 
 
 void hp_p2() {
+    klog_print("OK");
+
     print("hp_p2 starts\n");
 
     for (int i = 0; i < 10; i++) {

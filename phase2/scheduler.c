@@ -15,7 +15,7 @@ void scheduler() {
     if (currentActiveProc != NULL)
         update_curr_proc_time();
 
-    if((p = removeProcQ(&queueHighProc)) != NULL && yieldHighProc) {
+    if((p = removeProcQ(&queueHighProc)) != NULL) {
         currentActiveProc = p;
         load_state(&p->p_s);
     } else if ((p = removeProcQ(&queueLowProc)) != NULL) {
