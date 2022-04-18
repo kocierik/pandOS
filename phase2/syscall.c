@@ -262,7 +262,8 @@ void get_ID_process(state_t *excState) {
 void yield(state_t *excState) {
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH && lenQ(&queueHighProc) > 1) yieldHighProc = TRUE;
+    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH && lenQ(&queueHighProc) == 1 && activeProc - blockedProc <= 1) //TODO : CONTROLLARE
+        yieldHighProc = TRUE;  // se il processo e' ad alta priorita' e ci sono altri processi attivi, faccio lo yield in modo particolare
     scheduler();
 }
 
