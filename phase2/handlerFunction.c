@@ -11,7 +11,6 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
-extern cpu_t startTime;
 
 // vector for Bitwise operation
 int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; 

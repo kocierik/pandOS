@@ -1,6 +1,6 @@
 #include "headers/syscall.h"
 
-/* Exsternal variable */
+/* External variables */
 extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
@@ -14,7 +14,6 @@ extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8]; 
 extern int semTerminalDeviceWriting[8];
-extern cpu_t startTime;
 
 /* Exsternal function */
 extern void insert_ready_queue(int prio, pcb_PTR p);

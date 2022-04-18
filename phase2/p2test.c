@@ -716,13 +716,12 @@ void p10() {
 
 
 void hp_p1() {
-    klog_print("OK");
     print("hp_p1 starts\n");
 
     for (int i = 0; i < 100; i++) {
         SYSCALL(YIELD, 0, 0, 0);
     }
-    
+
     print("hp_p1 finished\n");
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p1 didn't die!\n");
@@ -731,8 +730,6 @@ void hp_p1() {
 
 
 void hp_p2() {
-    klog_print("OK");
-
     print("hp_p2 starts\n");
 
     for (int i = 0; i < 10; i++) {

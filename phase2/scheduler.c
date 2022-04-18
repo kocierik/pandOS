@@ -42,6 +42,7 @@ void load_state(state_t *s) {
 
 
 void update_curr_proc_time() {
+    if (yieldHighProc) yieldHighProc = FALSE;
     cpu_t now;
     STCK(now);   // stop timer
     currentActiveProc->p_time += now - startTime;

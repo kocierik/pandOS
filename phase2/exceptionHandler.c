@@ -1,5 +1,4 @@
 #include "headers/exceptionHandler.h"
-#include "klog.c"
 
 
 void exception_handler() {
@@ -24,12 +23,12 @@ void exception_handler() {
             PANIC();
     }
 }
+
 // case 0 exception_handler() 
 void interrupt_handler(state_t *excState) {
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
-    if      CAUSE_IP_GET(cause, IL_IPI)         klog_print("interrupt_handler:Il_IPI"); // Ignora intterrupt
-    else if CAUSE_IP_GET(cause, IL_CPUTIMER)    plt_time_handler(excState);
+    if      CAUSE_IP_GET(cause, IL_CPUTIMER)    plt_time_handler(excState);
     else if CAUSE_IP_GET(cause, IL_TIMER)       intervall_timer_handler(excState);
     else if CAUSE_IP_GET(cause, IL_DISK)        device_handler(IL_DISK, excState);
     else if CAUSE_IP_GET(cause, IL_FLASH)       device_handler(IL_FLASH, excState);
