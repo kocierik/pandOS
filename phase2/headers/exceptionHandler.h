@@ -17,8 +17,9 @@ void exception_handler();
 */
 void interrupt_handler(state_t *excState);
 
-/* Funzioni per la gestione delle eccezioni trap e tlb */
+/* Funzioni per la gestione delle eccezioni trap, tlb e syscall */
 void tlb_handler(state_t *callerProc);
 void trap_handler(state_t *callerProc);
+void syscall_handler(state_t *callerProc);
 
 #endif

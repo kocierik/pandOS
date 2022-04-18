@@ -157,15 +157,14 @@ void passeren(state_t *excState) {
     load_or_scheduler(excState);
 }
 
+
 pcb_PTR P(int *semaddr, state_t *excState) { 
     pcb_PTR pid = headBlocked(semaddr);
 
-    if((*semaddr) == 0)
-        block_curr_proc(excState, semaddr);
-    else if(pid != NULL)
-        return free_process(semaddr);
-    else
-        --(*semaddr);
+    if((*semaddr) == 0)     block_curr_proc(excState, semaddr);
+    else if(pid != NULL)    return free_process(semaddr);
+    else                    --(*semaddr);
+
     return NULL;
 }
 
@@ -181,12 +180,9 @@ void verhogen(state_t *excState) {
 pcb_PTR V(int *semaddr, state_t *excState) {
     pcb_PTR pid = headBlocked(semaddr);
 
-    if((*semaddr) == 1)
-        block_curr_proc(excState, semaddr);
-    else if(pid != NULL)
-        return free_process(semaddr);
-    else
-        ++(*semaddr);
+    if((*semaddr) == 1)     block_curr_proc(excState, semaddr);
+    else if(pid != NULL)    return free_process(semaddr);
+    else                    ++(*semaddr);
     return NULL;
 }
 
@@ -195,36 +191,35 @@ void do_IO_device(state_t *excState) {
     int *cmdAddr = (int*) (*excState).reg_a1;
     int cmdValue = (int)  (*excState).reg_a2;
     
-    int *devSemaphore; // semaphore address
-    int interruptLine;
+    int *devSemaphore; // Semaphore address
     devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
 
+    /* Searching which device is running looking first for terminal then for generic devices */
     for (int i = 0; i < 8; i++){
         if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            interruptLine = 7;
             break;
         }
         else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            interruptLine = 7;
             break;
         }else{
             for(int j = 0; j < 4; j++){
                 if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                    if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
-                    else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
-                    else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
-                    else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+                    if (j == 0)       devSemaphore = &semDiskDevice[i];
+                    else if (j == 1)  devSemaphore = &semFlashDevice[i];  
+                    else if (j == 2)  devSemaphore = &semNetworkDevice[i];
+                    else              devSemaphore = &semPrinterDevice[i];
                 }
                 break;
             }
         }
     }
-    // Execute request command
-    *cmdAddr = cmdValue; 
-    P(devSemaphore, excState);
-    load_or_scheduler(excState); //just in case
+
+    
+    *cmdAddr = cmdValue; // Execute request command
+    P(devSemaphore, excState); // Call a P on the semaphore found
+    load_or_scheduler(excState); // Just in case
 }
 
 // SYSCALL GETTIME
@@ -237,7 +232,7 @@ void get_cpu_time(state_t *excState) {
 // SYSCALL CLOCKWAIT
 void wait_for_clock(state_t *excState) {
     P(&semIntervalTimer, excState); // blocked P
-    load_or_scheduler(excState); // just in case
+    load_or_scheduler(excState); // Just in case
 }
 
 // SYSCALL GETSUPPORTPTR

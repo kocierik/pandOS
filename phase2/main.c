@@ -68,9 +68,10 @@ int main(int argc, int* argv[]){
     passupvector_t *vector = (passupvector_t *)PASSUPVECTOR;
     init_passupvector(vector);
 
-    LDIT(100000); //set interval timer to 100ms
+    /* Set interval timer to 100ms */
+    LDIT(100000); 
 
-    /* insert first low priority process' */
+    /* Insert first low priority process */
     pcb_PTR firstProc = allocPcb();
 
     ++activeProc;
