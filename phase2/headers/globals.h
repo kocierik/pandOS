@@ -2,6 +2,7 @@
 #define GLOBALS_H_INCLUDED
 
 #include "../../phase1/headers/pcb.h"
+#include "../../phase1/headers/listx.h"
 
 /* Global Variables */
 int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
