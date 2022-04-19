@@ -114,8 +114,8 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-        int *deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
-        unsigned int statusCode = devRegAddr->status; // Save status code
+        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
+        statusCode = devRegAddr->status; // Save status code
         devRegAddr->command = ACK;                    // Acknowledge the interrupt
     }
 
