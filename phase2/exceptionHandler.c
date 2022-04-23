@@ -21,15 +21,14 @@ void exception_handler() {
             syscall_handler(exceptionState);
             break;
         default:
-            PANIC();                            // Not expected situation
+            PANIC();
     }
 }
-
-/* IO_INTERRUPT CASE */
+// case 0 exception_handler() 
 void interrupt_handler(state_t *excState) {
-    int cause = getCAUSE(); // Get CAUSE register
+    int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
-    if      CAUSE_IP_GET(cause, IL_IPI)         ; /* To ignore, nothing to do */
+    if      CAUSE_IP_GET(cause, IL_IPI)         klog_print("interrupt_handler:Il_IPI"); // Ignora intterrupt
     else if CAUSE_IP_GET(cause, IL_CPUTIMER)    plt_time_handler(excState);
     else if CAUSE_IP_GET(cause, IL_TIMER)       intervall_timer_handler(excState);
     else if CAUSE_IP_GET(cause, IL_DISK)        device_handler(IL_DISK, excState);
@@ -41,60 +40,12 @@ void interrupt_handler(state_t *excState) {
     PANIC();
 }
 
-/* TLB Exception case */
+// case 1 ... 3 exception_handler()
 void tlb_handler(state_t *excState) {
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
-/* TRAP case */
+// case 4 ... 7 | 9 ... 12 exception_handler()
 void trap_handler(state_t *excState) {
     pass_up_or_die(GENERALEXCEPT, excState);
-}
-
-/* SYSCALL case */
-void syscall_handler(state_t *callerProcState) {
-    int syscode = (*callerProcState).reg_a0;
-    callerProcState->pc_epc += WORDLEN;
-    
-    if(((callerProcState->status << 28) >> 31)){
-        callerProcState->cause |= (EXC_RI << CAUSESHIFT);
-        pass_up_or_die(GENERALEXCEPT, callerProcState);
-    } else {
-        switch(syscode) {
-            case CREATEPROCESS:
-                create_process(callerProcState);
-                break;
-            case TERMPROCESS:
-                terminate_process(callerProcState);
-                break;
-            case PASSEREN:
-                passeren(callerProcState);
-                break;
-            case VERHOGEN:
-                verhogen(callerProcState);
-                break;
-            case DOIO:
-                do_IO_device(callerProcState);
-                break;
-            case GETTIME:
-                get_cpu_time(callerProcState);
-                break;
-            case CLOCKWAIT:
-                wait_for_clock(callerProcState);
-                break;
-            case GETSUPPORTPTR:
-                get_support_data(callerProcState);
-                break;
-            case GETPROCESSID:
-                get_ID_process(callerProcState);
-                break;
-            case YIELD:
-                yield(callerProcState);
-                break;
-            default:
-                trap_handler(callerProcState);
-                break;
-        }
-    }
-    load_or_scheduler(callerProcState);
 }

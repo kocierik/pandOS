@@ -3,13 +3,10 @@
 
 #include <umps/libumps.h>
 #include <umps/arch.h>
-#include "syscallUsefulFun.h"
 #include "syscall.h"
 #include "scheduler.h"
 #include "exceptionHandler.h"
-#include "globals.h"
 
-extern void insert_ready_queue(int prio, pcb_PTR p);
 
 /* Interrupt handler functions */
 void plt_time_handler(state_t *excState);

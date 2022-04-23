@@ -1,6 +1,19 @@
 #include "headers/handlerFunction.h"
 
-// Vector useful for Bitwise operation
+extern void insert_ready_queue(int prio, pcb_PTR p);
+
+extern int blockedProc;
+extern pcb_t *currentActiveProc;
+extern int semIntervalTimer;
+extern int semDiskDevice[8];
+extern int semFlashDevice[8];
+extern int semNetworkDevice[8];
+extern int semPrinterDevice[8];
+extern int semTerminalDeviceReading[8]; 
+extern int semTerminalDeviceWriting[8];
+extern cpu_t startTime;
+
+// vector for Bitwise operation
 int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; 
 
 /* INTERRUPT HANDLER FUNCTION */
@@ -29,8 +42,7 @@ void intervall_timer_handler(state_t *excState) {
 /* 
  * obtain the semaphore address of a generic device (NON TERMINAL)
  * Take the device's interrupt line and the device number as input (from 0 to 7)
- * and return semaphore's address
-*/
+ */
 int *getDeviceSemaphore(int interruptLine, int devNumber){
     switch (interruptLine) {
         case IL_DISK:       return &semDiskDevice[devNumber];
@@ -41,7 +53,7 @@ int *getDeviceSemaphore(int interruptLine, int devNumber){
     return NULL;
 }
 
-/* Get active device number using bitMap */
+// get active device with bitMap
 int getDevice(int interLine) {
     unsigned int bitmap = (interLine);
     for(int i = 0; i < 8; i ++){
@@ -56,7 +68,7 @@ void device_handler(int interLine, state_t *excState) {
     dtpreg_t *devRegAddr = (dtpreg_t *) ( (0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
     int *deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
 
-    unsigned int statusCode = devRegAddr->status; // Save status code 
+    unsigned int statusCode = devRegAddr->status; // save status code 
     devRegAddr->command = ACK; //Acknowledge the interrupt
 
     /* V-Operation */
@@ -91,7 +103,7 @@ void terminal_handler(state_t *excState) {
 
     pcb_PTR p = V(deviceSemaphore, NULL);
     
-    if (p == NULL || p == currentActiveProc) {
+    if(p == NULL || p == currentActiveProc) {
         currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
@@ -101,7 +113,7 @@ void terminal_handler(state_t *excState) {
     }
 }
 
-// Handler TLB | TRAP
+// handler TLB | TRAP
 void pass_up_or_die(int pageFault, state_t *excState) {
     if (currentActiveProc != NULL) {
         if (currentActiveProc->p_supportStruct == NULL) {
@@ -115,4 +127,52 @@ void pass_up_or_die(int pageFault, state_t *excState) {
             LDCXT(stackPtr, status, pc);
         }
     }
+}
+
+// case 8 case exception_handler()
+void syscall_handler(state_t *callerProcState) {
+    int syscode = (*callerProcState).reg_a0;
+    callerProcState->pc_epc += WORDLEN;
+    
+    if(((callerProcState->status << 28) >> 31)){
+        callerProcState->cause |= (EXC_RI<<CAUSESHIFT);
+        pass_up_or_die(GENERALEXCEPT, callerProcState);
+    } else {
+        switch(syscode) {
+            case CREATEPROCESS:
+                create_process(callerProcState);
+                break;
+            case TERMPROCESS:
+                terminate_process(callerProcState);
+                break;
+            case PASSEREN:
+                passeren(callerProcState);
+                break;
+            case VERHOGEN:
+                verhogen(callerProcState);
+                break;
+            case DOIO:
+                do_IO_device(callerProcState);
+                break;
+            case GETTIME:
+                get_cpu_time(callerProcState);
+                break;
+            case CLOCKWAIT:
+                wait_for_clock(callerProcState);
+                break;
+            case GETSUPPORTPTR:
+                get_support_data(callerProcState);
+                break;
+            case GETPROCESSID:
+                get_ID_process(callerProcState);
+                break;
+            case YIELD:
+                yield(callerProcState);
+                break;
+            default:
+                trap_handler(callerProcState);
+                break;
+        }
+    }
+    load_or_scheduler(callerProcState);
 }
