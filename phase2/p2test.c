@@ -19,8 +19,6 @@
 #include "../generic_headers/pandos_types.h"
 #include <umps/libumps.h>
 
-extern void klog_print(char *s);
-
 typedef unsigned int devregtr;
 
 /* hardware constants */
@@ -722,7 +720,6 @@ void hp_p1() {
         SYSCALL(YIELD, 0, 0, 0);
     }
 
-    print("hp_p1 finished\n");
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p1 didn't die!\n");
     PANIC();
@@ -736,7 +733,6 @@ void hp_p2() {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
 
-    print("hp_p2 finished\n");
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p2 didn't die!\n");
     PANIC();

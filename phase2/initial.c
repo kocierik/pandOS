@@ -23,7 +23,7 @@ void init_global_var()
     mkEmptyProcQ(&queueLowProc);
     mkEmptyProcQ(&queueHighProc);
     currentActiveProc = NULL;
-    yieldHighProc = FALSE;
+    yieldHighProc = NULL;
     semIntervalTimer = 0;
     for (int i = 0; i < 8; i++)
     {

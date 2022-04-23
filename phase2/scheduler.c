@@ -5,10 +5,11 @@ extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
-extern pcb_t *currentActiveProc;
+extern pcb_PTR currentActiveProc;
 extern cpu_t startTime;
-extern int yieldHighProc;
+extern pcb_PTR yieldHighProc;
 
+extern void insert_ready_queue(int prio, pcb_PTR p);
 
 /**
  * If there are processes in the high priority queue, remove the first one and load its state;
@@ -22,18 +23,19 @@ void scheduler()
     if (currentActiveProc != NULL)
         update_curr_proc_time();
 
-    if ((p = removeProcQ(&queueHighProc)) != NULL && !yieldHighProc)
+    if ((p = removeProcQ(&queueHighProc)) != NULL)
     {
+        freeYieldHP();
+
         currentActiveProc = p;
         load_state(&p->p_s);
     }
     else if ((p = removeProcQ(&queueLowProc)) != NULL)
     {
-        if (yieldHighProc)
-            yieldHighProc = FALSE;
+        freeYieldHP();
 
         currentActiveProc = p;
-        setTIMER(TIMESLICE); // PLT 5 ms
+        setTIMER(TIMESLICE * (*((cpu_t *)TIMESCALEADDR))); // PLT 5 ms
         load_state(&p->p_s);
     }
     else
@@ -41,9 +43,22 @@ void scheduler()
 }
 
 /**
+ * It inserts the process that was previously yielded to the high priority queue back into the ready
+ * queue
+ */
+void freeYieldHP()
+{
+    if (yieldHighProc != NULL)
+    {
+        insert_ready_queue(yieldHighProc->p_prio, yieldHighProc);
+        yieldHighProc = NULL;
+    }
+}
+
+/**
  * It loads the state of the current active process, or if there is no current active process, it calls
  * the scheduler
- * 
+ *
  * @param s the state to load
  */
 void load_or_scheduler(state_t *s)
@@ -55,7 +70,7 @@ void load_or_scheduler(state_t *s)
 
 /**
  * It loads the state from the stack into the registers
- * 
+ *
  * @param s the state to load
  */
 void load_state(state_t *s)
@@ -73,7 +88,6 @@ void update_curr_proc_time()
     cpu_t now;
     STCK(now); // stop timer
     currentActiveProc->p_time += now - startTime;
-    STCK(startTime);
 }
 
 /**
@@ -89,10 +103,8 @@ void scheduler_empty_queues()
     if (activeProc > 0 && blockedProc > 0)
     {
         // Enabling interrupts and disable PLT.
-        setTIMER(-2);
-        unsigned int status = IECON | IMON;
         currentActiveProc = NULL;
-        setSTATUS(status);
+        setSTATUS(IECON | IMON);
         WAIT(); // twiddling its thumbs
     }
 

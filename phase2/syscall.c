@@ -5,8 +5,8 @@ extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
-extern pcb_t *currentActiveProc;
-extern int yieldHighProc;
+extern pcb_PTR currentActiveProc;
+extern pcb_PTR yieldHighProc;
 extern int semIntervalTimer;
 extern int semDiskDevice[8];
 extern int semFlashDevice[8];
@@ -310,7 +310,7 @@ void do_IO_device(state_t *excState)
     }
 
     *cmdAddr = cmdValue;         // Execute request command
-    P(devSemaphore, excState);   // Call a P on the semaphore found
+    P(devSemaphore, excState);   // Call a P on the semaphore found, should be blocking
     load_or_scheduler(excState); // Just in case
 }
 
@@ -325,7 +325,7 @@ void get_cpu_time(state_t *excState)
 // SYSCALL CLOCKWAIT
 void wait_for_clock(state_t *excState)
 {
-    P(&semIntervalTimer, excState); // blocked P
+    P(&semIntervalTimer, excState); // should be blocking
     load_or_scheduler(excState);    // Just in case
 }
 
@@ -352,8 +352,10 @@ void get_ID_process(state_t *excState)
 void yield(state_t *excState)
 {
     copy_state(excState, &currentActiveProc->p_s);
-    insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-    if (currentActiveProc->p_prio == PROCESS_PRIO_HIGH && lenQ(&queueHighProc) == 1 && activeProc - blockedProc <= 1) // TODO : CONTROLLARE
-        yieldHighProc = TRUE;                                                                                         // se il processo e' ad alta priorita' e ci sono altri processi attivi, faccio lo yield in modo particolare
+    if (currentActiveProc->p_prio == PROCESS_PRIO_HIGH)
+        yieldHighProc = currentActiveProc;
+    else
+        insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
+
     scheduler();
 }
