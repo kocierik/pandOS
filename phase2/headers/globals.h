@@ -2,6 +2,7 @@
 #define GLOBALS_H_INCLUDED
 
 #include "../../phase1/headers/pcb.h"
+#include "../../phase1/headers/listx.h"
 
 /* Global Variables */
 int processId;           // Variabile globale utilizzata per assegnare un id unico ai processi creati
@@ -11,7 +12,7 @@ struct list_head queueLowProc;  // Coda dei processi a bassa priorità
 struct list_head queueHighProc; // Coda dei processi a alta priorità
 pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
 cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
-int yieldHighProc;              // Variabile booleana usata per fare yield su processi ad alta priorita'
+pcb_PTR yieldHighProc;              // Variabile booleana usata per fare yield su processi ad alta priorita'
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
 /* 

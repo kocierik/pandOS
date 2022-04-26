@@ -1,28 +1,33 @@
 #include "headers/syscall.h"
 
-/* Exsternal variable */
+/* External variables */
 extern int activeProc;
 extern int blockedProc;
 extern struct list_head queueLowProc;
 extern struct list_head queueHighProc;
-extern pcb_t *currentActiveProc;
-extern int yieldHighProc;
+extern pcb_PTR currentActiveProc;
+extern pcb_PTR yieldHighProc;
 extern int semIntervalTimer;
 extern int semDiskDevice[8];
 extern int semFlashDevice[8];
 extern int semNetworkDevice[8];
 extern int semPrinterDevice[8];
-extern int semTerminalDeviceReading[8]; 
+extern int semTerminalDeviceReading[8];
 extern int semTerminalDeviceWriting[8];
-extern cpu_t startTime;
 
-/* Exsternal function */
+/* External function */
 extern void insert_ready_queue(int prio, pcb_PTR p);
-
 
 /* HELPER FUNCTION */
 
-void copy_state(state_t *new, state_t *old) {
+/**
+ * It copies the contents of the new state into the old state
+ *
+ * @param new The new state that we want to copy
+ * @param old The state that we want to copy to
+ */
+void copy_state(state_t *new, state_t *old)
+{
     old->cause = new->cause;
     old->entry_hi = new->entry_hi;
     for (int i = 0; i < STATE_GPR_LEN; i++)
@@ -33,53 +38,82 @@ void copy_state(state_t *new, state_t *old) {
     old->status = new->status;
 }
 
-
-// remove child process
-void term_proc_and_child(pcb_PTR parent) {
+/**
+ * It terminates all the children of a process, and then the process itself
+ *
+ * @param proc  the process to be terminated
+ */
+void term_proc_and_child(pcb_PTR proc)
+{
     pcb_PTR p;
-    while(!isPcbFree(parent->p_pid)) {
-        p = parent;
-        while(!emptyChild(p))
+    while (!isPcbFree(proc->p_pid))
+    {
+        p = proc;
+        while (!emptyChild(p))
             p = container_of(p->p_child.next, pcb_t, p_sib);
-        
+
         term_single_proc(p); // termino p
     }
 }
 
-
-void term_single_proc(pcb_PTR p) {
+/**
+ * It removes the process from the active process list, and if it's blocked, it removes it from the
+ * blocked process list
+ *
+ * @param p the process to be terminated
+ */
+void term_single_proc(pcb_PTR p)
+{
     --activeProc;
-    if (p->p_semAdd != NULL) {
+    if (p->p_semAdd != NULL)
+    {
         --blockedProc;
         outBlocked(p);
-    }    
+    }
     if (p == currentActiveProc)
         currentActiveProc = NULL;
-    
+
     outChild(p); // take away p as son so it goes on
     freePcb(p);
 }
 
-// find the blocking pcb in the two queues
-pcb_PTR find_pcb(int pid) {
+/**
+ * It searches through the list of active processes, through the list of blocked processes
+ * then and returns the process with the given id.
+ *
+ * @param pid the process id of the process to be found
+ *
+ * @return The pcb_PTR of the process with the given pid.
+ */
+pcb_PTR find_pcb(int pid)
+{
     struct list_head *pos;
     pcb_PTR p;
 
-    list_for_each(pos, &queueHighProc) {
-        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+    list_for_each(pos, &queueHighProc)
+    {
+        if ((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
             return p;
     }
-    
-    list_for_each(pos, &queueLowProc) {
-        if((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
+
+    list_for_each(pos, &queueLowProc)
+    {
+        if ((p = container_of(pos, pcb_t, p_list))->p_pid == pid)
             return p;
     }
     p = isPcbBlocked(pid);
     return p;
 }
 
-
-void block_curr_proc(state_t *excState, int *semaddr) {
+/**
+ * It updates the current time process, saves the current process state, inserts the process
+ * in the blocked queue, and calls the scheduler
+ *
+ * @param excState the state of the process that rised the exception
+ * @param semaddr the address of the semaphore
+ */
+void block_curr_proc(state_t *excState, int *semaddr)
+{
     update_curr_proc_time();
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
@@ -87,31 +121,52 @@ void block_curr_proc(state_t *excState, int *semaddr) {
     scheduler();
 }
 
-// unblock process
-pcb_PTR free_process(int *semaddr) {
+/**
+ * It removes a process from the blocked queue and inserts it into the ready queue
+ *
+ * @param semaddr the address of the semaphore
+ *
+ * @return The process that was removed from the blocked queue.
+ */
+pcb_PTR free_process(int *semaddr)
+{
     pcb_PTR pid = removeBlocked(semaddr);
     --blockedProc;
     insert_ready_queue(pid->p_prio, pid);
     return pid;
 }
 
-// terminate child process
-void term_proc(int pid) {
+/**
+ * It terminates the process with the given pid and all of its children
+ *
+ * @param pid the process id of the process to be terminated.
+ */
+void term_proc(int pid)
+{
     pcb_PTR p;
 
     if (pid == 0)
         term_proc_and_child(currentActiveProc);
-    else {
+    else
+    {
         p = find_pcb(pid);
         term_proc_and_child(p);
     }
 }
 
-// return list length
-int lenQ(struct list_head *l) {
+/**
+ * Calculate the length of a given list
+ *
+ * @param l the list_head pointer to the list you want to count
+ *
+ * @return The number of elements in the list.
+ */
+int lenQ(struct list_head *l)
+{
     int c = 0;
-    struct list_head * tmp;
-    list_for_each(tmp, l) {
+    struct list_head *tmp;
+    list_for_each(tmp, l)
+    {
         ++c;
     }
     return c;
@@ -120,16 +175,18 @@ int lenQ(struct list_head *l) {
 /* SYSCALL */
 
 // SYSCALL CREATEPROCESS
-void create_process(state_t *excState) {
+void create_process(state_t *excState)
+{
     pcb_PTR p = allocPcb();
 
-    state_t   *a1 = (state_t *)   (*excState).reg_a1;
-    int        a2 = (int)         (*excState).reg_a2;
-    support_t *a3 = (support_t *) (*excState).reg_a3;
-    
-    if(p == NULL)
+    state_t *a1 = (state_t *)(*excState).reg_a1;
+    int a2 = (int)(*excState).reg_a2;
+    support_t *a3 = (support_t *)(*excState).reg_a3;
+
+    if (p == NULL)
         (*excState).reg_v0 = NOPROC;
-    else {
+    else
+    {
         insertChild(currentActiveProc, p);
         copy_state(a1, &p->p_s);
         ++activeProc;
@@ -143,47 +200,67 @@ void create_process(state_t *excState) {
 }
 
 // SYSCALL TERMPROCESS
-void terminate_process(state_t *excState) {
-    int pid = (int) (*excState).reg_a1;
+void terminate_process(state_t *excState)
+{
+    int pid = (int)(*excState).reg_a1;
     term_proc(pid);
     load_or_scheduler(excState);
 }
 
-
 // SYSCALL PASSEREN
-void passeren(state_t *excState) {
-    int *semaddr = (int*) (*excState).reg_a1;
+void passeren(state_t *excState)
+{
+    int *semaddr = (int *)(*excState).reg_a1;
     P(semaddr, excState);
     load_or_scheduler(excState);
 }
 
-pcb_PTR P(int *semaddr, state_t *excState) { 
+/**
+ * If the semaphore is available, decrement it and return NULL; otherwise, if there are processes
+ * waiting on the semaphore, return the first one; otherwise, block the current process and return NULL
+ *
+ * @param semaddr the address of the semaphore
+ * @param excState the state of the process that is calling P
+ *
+ * @return The process that is being unblocked.
+ */
+pcb_PTR P(int *semaddr, state_t *excState)
+{
     pcb_PTR pid = headBlocked(semaddr);
 
-    if((*semaddr) == 0)
+    if ((*semaddr) == 0)
         block_curr_proc(excState, semaddr);
-    else if(pid != NULL)
+    else if (pid != NULL)
         return free_process(semaddr);
     else
         --(*semaddr);
+
     return NULL;
 }
 
-
 // SYSCALL VERHOGEN
-void verhogen(state_t *excState) {
-    int *semaddr = (int*) (*excState).reg_a1;
+void verhogen(state_t *excState)
+{
+    int *semaddr = (int *)(*excState).reg_a1;
     V(semaddr, excState);
     load_or_scheduler(excState);
 }
 
-
-pcb_PTR V(int *semaddr, state_t *excState) {
+/**
+ * If the semaphore is available, take it; otherwise, block the current process
+ *
+ * @param semaddr the address of the semaphore
+ * @param excState the state of the process that is calling the V function
+ *
+ * @return The process that is being unblocked.
+ */
+pcb_PTR V(int *semaddr, state_t *excState)
+{
     pcb_PTR pid = headBlocked(semaddr);
 
-    if((*semaddr) == 1)
+    if ((*semaddr) == 1)
         block_curr_proc(excState, semaddr);
-    else if(pid != NULL)
+    else if (pid != NULL)
         return free_process(semaddr);
     else
         ++(*semaddr);
@@ -191,64 +268,78 @@ pcb_PTR V(int *semaddr, state_t *excState) {
 }
 
 // SYCALL DOIO
-void do_IO_device(state_t *excState) {
-    int *cmdAddr = (int*) (*excState).reg_a1;
-    int cmdValue = (int)  (*excState).reg_a2;
-    
-    int *devSemaphore; // semaphore address
-    int interruptLine;
-    devregarea_t *deviceRegs = (devregarea_t*) RAMBASEADDR;
+void do_IO_device(state_t *excState)
+{
+    int *cmdAddr = (int *)(*excState).reg_a1;
+    int cmdValue = (int)(*excState).reg_a2;
 
-    for (int i = 0; i < 8; i++){
-        if (& (deviceRegs->devreg[4][i].term.transm_command) == (memaddr*) cmdAddr) { //Terminal Devices Writing
+    int *devSemaphore; // Semaphore address
+    devregarea_t *deviceRegs = (devregarea_t *)RAMBASEADDR;
+
+    /* Searching which device is running looking first for terminal then for generic devices */
+    for (int i = 0; i < 8; i++)
+    {
+        if (&(deviceRegs->devreg[4][i].term.transm_command) == (memaddr *)cmdAddr)
+        { // Terminal Devices Writing
             devSemaphore = &semTerminalDeviceWriting[i];
-            interruptLine = 7;
             break;
         }
-        else if (& (deviceRegs->devreg[4][i].term.recv_command) == (memaddr*) cmdAddr) { //Terminal Devices Reading
+        else if (&(deviceRegs->devreg[4][i].term.recv_command) == (memaddr *)cmdAddr)
+        { // Terminal Devices Reading
             devSemaphore = &semTerminalDeviceReading[i];
-            interruptLine = 7;
             break;
-        }else{
-            for(int j = 0; j < 4; j++){
-                if (& (deviceRegs->devreg[j][i].dtp.command) == (memaddr*) cmdAddr ){
-                    if (j == 0)      { devSemaphore = &semDiskDevice[i];      interruptLine = j; }
-                    else if (j == 1) { devSemaphore = &semFlashDevice[i];     interruptLine = j; }  
-                    else if (j == 2) { devSemaphore = &semNetworkDevice[i];   interruptLine = j; }
-                    else             { devSemaphore = &semPrinterDevice[i];   interruptLine = j; }
+        }
+        else
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                if (&(deviceRegs->devreg[j][i].dtp.command) == (memaddr *)cmdAddr)
+                {
+                    if (j == 0)
+                        devSemaphore = &semDiskDevice[i];
+                    else if (j == 1)
+                        devSemaphore = &semFlashDevice[i];
+                    else if (j == 2)
+                        devSemaphore = &semNetworkDevice[i];
+                    else
+                        devSemaphore = &semPrinterDevice[i];
                 }
                 break;
             }
         }
     }
-    // Execute request command
-    *cmdAddr = cmdValue; 
-    P(devSemaphore, excState);
-    load_or_scheduler(excState); //just in case
+
+    *cmdAddr = cmdValue;         // Execute request command
+    P(devSemaphore, excState);   // Call a P on the semaphore found, should be blocking
+    load_or_scheduler(excState); // Just in case
 }
 
 // SYSCALL GETTIME
-void get_cpu_time(state_t *excState) {
+void get_cpu_time(state_t *excState)
+{
     update_curr_proc_time();
     excState->reg_v0 = currentActiveProc->p_time;
     load_or_scheduler(excState);
 }
 
 // SYSCALL CLOCKWAIT
-void wait_for_clock(state_t *excState) {
-    P(&semIntervalTimer, excState); // blocked P
-    load_or_scheduler(excState); // just in case
+void wait_for_clock(state_t *excState)
+{
+    P(&semIntervalTimer, excState); // should be blocking
+    load_or_scheduler(excState);    // Just in case
 }
 
 // SYSCALL GETSUPPORTPTR
-void get_support_data(state_t *excState) {
-    (*excState).reg_v0 = (unsigned int) ((currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL);
+void get_support_data(state_t *excState)
+{
+    (*excState).reg_v0 = (unsigned int)((currentActiveProc->p_supportStruct != NULL) ? currentActiveProc->p_supportStruct : NULL);
     load_or_scheduler(excState);
 }
 
 // SYSCALL GETPROCESSID
-void get_ID_process(state_t *excState) {
-    int parent = (int) (*excState).reg_a1;
+void get_ID_process(state_t *excState)
+{
+    int parent = (int)(*excState).reg_a1;
     if (parent == 0)
         (*excState).reg_v0 = currentActiveProc->p_pid;
     else
@@ -257,12 +348,14 @@ void get_ID_process(state_t *excState) {
     load_or_scheduler(excState);
 }
 
-
 // SYSCALL YIELD
-void yield(state_t *excState) {
+void yield(state_t *excState)
+{
     copy_state(excState, &currentActiveProc->p_s);
-    insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-    if(currentActiveProc->p_prio == PROCESS_PRIO_HIGH && lenQ(&queueHighProc) > 1) yieldHighProc = TRUE;
+    if (currentActiveProc->p_prio == PROCESS_PRIO_HIGH)
+        yieldHighProc = currentActiveProc;
+    else
+        insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
+
     scheduler();
 }
-
