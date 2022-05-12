@@ -34,7 +34,7 @@ void interrupt_handler(state_t *excState) {
     else if CAUSE_IP_GET(cause, IL_FLASH)       device_handler(IL_FLASH, excState);
     else if CAUSE_IP_GET(cause, IL_ETHERNET)    device_handler(IL_ETHERNET, excState);
     else if CAUSE_IP_GET(cause, IL_PRINTER)     device_handler(IL_PRINTER, excState);
-    else if CAUSE_IP_GET(cause, IL_TERMINAL)    terminal_handler();
+    else if CAUSE_IP_GET(cause, IL_TERMINAL)    device_handler(IL_TERMINAL, excState);
 
     PANIC();
 }

@@ -91,15 +91,12 @@ void device_handler(int interLine, state_t *excState)
     unsigned int statusCode;
     int *deviceSemaphore;
     int devNumber = getDevice(interLine);
-    dtpreg_t *devRegAddr = (dtpreg_t *)((0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
 
     if (interLine == IL_TERMINAL)
     {
-        termreg_t *devRegAddr = (termreg_t *)devRegAddr;
+        termreg_t *devRegAddr = (termreg_t *)(0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
 
-        int readingMode = (devRegAddr->recv_status == RECVD);
-
-        if (readingMode)
+        if (devRegAddr->recv_status == RECVD)
         {
             statusCode = devRegAddr->recv_status;
             devRegAddr->recv_command = ACK;
@@ -114,51 +111,13 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
+        dtpreg_t *devRegAddr = (dtpreg_t *)((0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
         deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
         statusCode = devRegAddr->status; // Save status code
-        devRegAddr->command = ACK;                    // Acknowledge the interrupt
+        devRegAddr->command = ACK;       // Acknowledge the interrupt
     }
 
     /* V-Operation */
-    pcb_PTR p = V(deviceSemaphore, NULL);
-
-    if (p == NULL || p == currentActiveProc)
-    {
-        currentActiveProc->p_s.reg_v0 = statusCode;
-        insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
-        scheduler();
-    }
-    else
-    {
-        p->p_s.reg_v0 = statusCode;
-        load_or_scheduler(excState);
-    }
-}
-
-// handler IL_TERMINAL
-void terminal_handler(state_t *excState)
-{
-    int devNumber = getDevice(IL_TERMINAL);
-    termreg_t *devRegAddr = (termreg_t *)(0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
-    unsigned int statusCode;
-    int *deviceSemaphore;
-
-    // Check if the recv_status is ready and therefore if the reading terminal is in use
-    int readingMode = (devRegAddr->recv_status == RECVD);
-
-    if (readingMode)
-    {
-        statusCode = devRegAddr->recv_status;
-        devRegAddr->recv_command = ACK;
-        deviceSemaphore = &semTerminalDeviceReading[devNumber];
-    }
-    else
-    {
-        statusCode = devRegAddr->transm_status;
-        devRegAddr->transm_command = ACK;
-        deviceSemaphore = &semTerminalDeviceWriting[devNumber];
-    }
-
     pcb_PTR p = V(deviceSemaphore, NULL);
 
     if (p == NULL || p == currentActiveProc)
