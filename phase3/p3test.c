@@ -3,9 +3,10 @@
 #include <umps/libumps.h>
 #include "./headers/VMSupport.h"
 
-
-static support_t sd_table[UPROCMAX];    // table of usable support descriptor
-static list_head sd_free;               // list of free support descriptor
+// table of usable support descriptor
+static support_t sd_table[UPROCMAX];
+// list of free support descriptor
+static list_head sd_free;
 
 /*
 La funzione test dovra’:
@@ -30,13 +31,22 @@ void init_sup_struct() {
 
 //init free support descriptor list
 void init_sd_free(){
-    INIT_LIST_HEAD(&support_free);
-    for (int i = 0; i < UPROCMAX; i++) {
-        list_head *l = &(sd_table[i])->p_list;
-        list_add(l, &support_free);
-    }
+    INIT_LIST_HEAD(&sd_free);
+    for (int i = 0; i < UPROCMAX; i++)
+        free_sd(sd_table[i]);
 }
 
+// return a support descriptor taken from the free sd list
+support_t alloc_sd(){
+    list_head *l = list_next(&sd_free);
+    list_del(l);
+    return container_of(l, support_t, p_list);
+}
+
+// add a support descriptor to the free sd list
+void free_sd(support_t *s) {
+    list_add(&s->p_list, &sd_free);
+}
 
 void run_test() {
 

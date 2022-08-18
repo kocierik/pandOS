@@ -1,9 +1,9 @@
-#include "headers/syscall.h"
+#include "headers/supSyscall.h"
 
-void get_tod(state_t *excState){
-    unsigned int tod;
+cpu_t get_tod(state_t *excState){
+    cpu_t tod;
     STCK(tod);
-    (*excState)->reg_v0 = tod; // TODO fatta a caso, da controllare
+    return tod;
 }
 
 void terminate(state_t *excState){
