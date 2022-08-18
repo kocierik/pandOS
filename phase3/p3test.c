@@ -3,6 +3,10 @@
 #include <umps/libumps.h>
 #include "./headers/VMSupport.h"
 
+
+static support_t sd_table[UPROCMAX];    // table of usable support descriptor
+static list_head sd_free;               // list of free support descriptor
+
 /*
 La funzione test dovra’:
 - Inizializzare le strutture dati di fase 3
@@ -20,10 +24,19 @@ void test() {
 }
 
 void init_sup_struct() {
-    initSwap();
-    initPageTable();
-    initSem();
+    init_sd_free()
+
 }
+
+//init free support descriptor list
+void init_sd_free(){
+    INIT_LIST_HEAD(&support_free);
+    for (int i = 0; i < UPROCMAX; i++) {
+        list_head *l = &(sd_table[i])->p_list;
+        list_add(l, &support_free);
+    }
+}
+
 
 void run_test() {
 

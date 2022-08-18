@@ -1,4 +1,4 @@
-#include "./headers/VMSupport.h"
+#include "./headers/supVM.h"
 
 swap_t swap_table[POOLSIZE];
 int swapSem;
