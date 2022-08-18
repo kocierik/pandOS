@@ -2,6 +2,16 @@
 
 extern pcb_PTR currentActiveProc;
 
+void uTLB_RefillHandler() {
+    state_t *s = (state_t *)BIOSDATAPAGE;
+    // get index from entry hi
+    pteEntry_t pte = currentActiveProc->p_support->sup_privatePgTbl[index];
+    setENTRYHI(pte.pte_entry_hi);
+    setENTRYLO(pte.pte_entry_lo);
+    TLBWR();
+    LDST(s);
+}
+
 void general_execption_hendler()
 {
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);

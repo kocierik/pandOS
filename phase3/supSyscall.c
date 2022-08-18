@@ -1,5 +1,7 @@
 #include "headers/supSyscall.h"
 
+// Sezione 4.7
+
 cpu_t get_tod(state_t *excState){
     cpu_t tod;
     STCK(tod);
