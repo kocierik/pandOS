@@ -3,6 +3,9 @@
 
 #include "../../generic_headers/pandos_const.h"
 #include "../../generic_headers/pandos_types.h"
+#include <umps/libumps.h>
+#include <umps/arch.h>
+#include "umps/cp0.h"
 #include "supSyscall.h"
 
 void general_execption_hendler();

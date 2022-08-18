@@ -5,6 +5,7 @@ extern pcb_PTR currentActiveProc;
 void uTLB_RefillHandler() {
     state_t *s = (state_t *)BIOSDATAPAGE;
     // get index from entry hi
+    int index = 0; // da modificare
     pteEntry_t pte = currentActiveProc->p_support->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entry_hi);
     setENTRYLO(pte.pte_entry_lo);
@@ -16,6 +17,8 @@ void general_execption_hendler()
 {
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_except_state[GENERALEXCEPT];
+    save->pc_epc += WORD_SIZE; // da controllare
+
     switch (CAUSE_GET_EXCCODE(exc_sd->sup_except_state[GENERALEXCEPT].cause))
     {
     case 8:
@@ -24,7 +27,6 @@ void general_execption_hendler()
     default:
         SYSCALL(TERMINATE, 0, 0, 0);
     }
-    save->pc_epc += WORD_SIZE;
     LDST(save);
 }
 
@@ -46,12 +48,12 @@ void sup_syscall_handler(support_t *exc_sd)
     case READTERMINAL:
         ret = read_terminal();
         break;
-
     case TERMINATE:
-    default:
         terminate();
         break;
+    default:
+        PANIC();
     }
-    currentActiveProc->pc_epc += WORDLEN; // da controllare
+    //currentActiveProc->pc_epc += WORDLEN; // da controllare: già fatto in general exc handl
     exc_sd->sup_except_state[GENERALEXCEPT].reg_v0 = ret;
 }
