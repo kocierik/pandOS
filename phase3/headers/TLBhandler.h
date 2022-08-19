@@ -7,8 +7,10 @@
 #include <umps/arch.h>
 #include "umps/cp0.h"
 #include "supSyscall.h"
+#include "supVM.h"
 
+void uTLB_RefillHandler();
 void general_execption_hendler();
-void sup_syscall_handler();
+void sup_syscall_handler(support_t *exc_sd);
 
 #endif

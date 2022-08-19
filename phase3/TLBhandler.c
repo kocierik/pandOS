@@ -2,7 +2,8 @@
 
 extern pcb_PTR currentActiveProc;
 
-void uTLB_RefillHandler() {
+void uTLB_RefillHandler()
+{
     state_t *s = (state_t *)BIOSDATAPAGE;
     // get index from entry hi
     int index = 0; // da modificare
@@ -25,7 +26,7 @@ void general_execption_hendler()
         sup_syscall_handler(exc_sd);
         break;
     default:
-        SYSCALL(TERMINATE, 0, 0, 0);
+        SYSCALL(TERMINATE, 0, 0, 0); // trap
     }
     LDST(save);
 }
@@ -49,11 +50,11 @@ void sup_syscall_handler(support_t *exc_sd)
         ret = read_terminal();
         break;
     case TERMINATE:
-        terminate();
+        terminate(exc_sd);
         break;
     default:
         PANIC();
     }
-    //currentActiveProc->pc_epc += WORDLEN; // da controllare: già fatto in general exc handl
+    // currentActiveProc->pc_epc += WORDLEN; // da controllare: già fatto in general exc handl
     exc_sd->sup_except_state[GENERALEXCEPT].reg_v0 = ret;
 }

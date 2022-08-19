@@ -3,8 +3,12 @@
 #include <umps/libumps.h>
 #include "./headers/supVM.h"
 
+int master_sem;
+
 // table of usable support descriptor
 static support_t sd_table[UPROCMAX];
+// list of free support descriptor
+static list_head sd_free;
 
 /*
 La funzione test dovra’:
@@ -18,18 +22,45 @@ volta terminati tutti)
 Sezione 4.9
 */
 
-void test() {
-    init_sup_struct();
+void test()
+{
+    init_ds();
     run_test();
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
-void init_sup_struct() {
+// init support data structures
+void init_ds()
+{
+    master_sem = 0;
     init_swap_pool_table();
-
+    init_sd_free();
 }
 
-void run_test() {
+// init free support descriptor list
+void init_sd_free()
+{
+    INIT_LIST_HEAD(&sd_free);
+    for (int i = 0; i < UPROCMAX; i++)
+        free_sd(sd_table[i]);
+}
+
+// return a support descriptor taken from the free sd list
+support_t alloc_sd()
+{
+    list_head *l = list_next(&sd_free);
+    list_del(l);
+    return container_of(l, support_t, p_list);
+}
+
+// add a support descriptor to the free sd list
+void free_sd(support_t *s)
+{
+    list_add(&s->p_list, &sd_free);
+}
+
+void run_test()
+{
 
     state_t proc_state;
 
@@ -37,19 +68,22 @@ void run_test() {
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
     pstate.status = ALLOFF | IEPON | IMON | TEBITON;
 
+    for (int i = 0; i < UPROCMAX; i++)
+    {
+        int asid = i + 1; // unique asid from 1 to 8
+        proc_state.entry_hi = asid << ASIDSHIFT;
 
-    for (int i = 0; i < UPROCMAX; i++) {
-        int asid = i+1;
-        pstate.entry_hi = asid << ASIDSHIFT;
-        
-        support_t *s = sd_table[i];
+        support_t *s = alloc_sd();
         s->sup_asid = asid;
 
         init_page_table(s->sup_privatePgTbl, asid);
 
         // cose
 
-        SYSCALL(CREATEPROCESS, proc_state PROCESS_PRIO_LOW, (int)s);
+        SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s);
     }
-    
+
+    // wait others process to end before exit
+    for (int i = 0; i < UPROCMAX; i++)
+        SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
 }
