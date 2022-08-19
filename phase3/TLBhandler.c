@@ -2,6 +2,7 @@
 
 extern pcb_PTR currentActiveProc;
 
+
 void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
@@ -13,6 +14,7 @@ void uTLB_RefillHandler()
     TLBWR();
     LDST(s);
 }
+
 
 void general_execption_hendler()
 {
@@ -30,6 +32,7 @@ void general_execption_hendler()
     }
     LDST(save);
 }
+
 
 void sup_syscall_handler(support_t *exc_sd)
 {

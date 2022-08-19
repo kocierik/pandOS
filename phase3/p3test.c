@@ -1,36 +1,23 @@
-#include "../generic_headers/pandos_const.h"
-#include "../generic_headers/pandos_types.h"
-#include <umps/libumps.h>
-#include "./headers/supVM.h"
+#include "./headers/p3test.h"
 
-int master_sem;
+static int master_sem;
 
 // table of usable support descriptor
 static support_t sd_table[UPROCMAX];
 // list of free support descriptor
-static list_head sd_free;
+static struct list_head sd_free;
 
-/*
-La funzione test dovra’:
-- Inizializzare le strutture dati di fase 3
-- Caricare e far partire l’esecuzione dei
-processi che vi forniamo
-- Mettersi in attesa della fine di questi ultimi
-(e’ opportuno che il sistema si fermi una
-volta terminati tutti)
-
-Sezione 4.9
-*/
+// Sezione 4.9
 
 void test()
 {
-    init_ds();
+    init_sds();
     run_test();
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
 // init support data structures
-void init_ds()
+void init_sds()
 {
     master_sem = 0;
     init_swap_pool_table();
@@ -61,12 +48,14 @@ void free_sd(support_t *s)
 
 void run_test()
 {
-
+    memaddr ramaddrs;
     state_t proc_state;
 
     pstate.pc_epc = pstate.reg_t9 = (memaddr)UPROCSTARTADDR;
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
     pstate.status = ALLOFF | IEPON | IMON | TEBITON;
+
+    RAMTOP(ramaddrs);
 
     for (int i = 0; i < UPROCMAX; i++)
     {
@@ -80,7 +69,7 @@ void run_test()
 
         // cose
 
-        SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s);
+        SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
     }
 
     // wait others process to end before exit
