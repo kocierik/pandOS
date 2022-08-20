@@ -2,7 +2,6 @@
 
 // Sezione 4.9
 
-
 // table of usable support descriptor
 static support_t sd_table[UPROCMAX];
 // list of free support descriptor

@@ -29,34 +29,35 @@ void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
     pt[npage].pte_entryLO = DIRTYON;
 }
 
-
 // if i-th swap pool table frame is free return true, false otherwise
-int is_spframe_free(int i) {
+int is_spframe_free(int i)
+{
     return swap_pool_table[i].sw_asid == NOPROC;
 }
 
-
-int pick_frame() {
+int pick_frame()
+{
     static int c = 0;
     for (int i = 0; i < POOLSIZE; i++)
         if (is_spframe_free(i))
-            return i;   // if i is not occupied, return i
+            return i;        // if i is not occupied, return i
     return (c++) % POOLSIZE; // implementazione fifo
 }
 
-
-void pager(){
+void pager()
+{
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &supp->sup_exceptState[PGFAULTEXCEPT];
 
-    if (save->cause == 1)   // TLB-Modification exception
+    if (save->cause == 1)            // TLB-Modification exception
         SYSCALL(TERMINATE, 0, 0, 0); // trap
 
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
     int index = entryhi_to_index(save->entry_hi);
     int victim = pick_frame();
 
-    if(!is_spframe_free(victim)) {
+    if (!is_spframe_free(victim))
+    {
         /* 8.
         if frame i is currently occupied, assume it is occupied by logical page
         number k belonging to process x (ASID) and that it is “dirty” (i.e.

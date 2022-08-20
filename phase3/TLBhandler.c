@@ -4,7 +4,6 @@ extern pcb_PTR currentActiveProc;
 
 int entryhi_to_index(memaddr enthi)
 {
-
 }
 
 void uTLB_RefillHandler()

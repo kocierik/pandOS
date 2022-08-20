@@ -15,7 +15,7 @@ void terminate(support_t *s)
 {
     // marcare la memoria come non occupata
     free_sd(s);
-    //SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);   // release swap pool semaphore, serve davvero?
+    // SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);   // release swap pool semaphore, serve davvero?
     SYSCALL(VERHOGEN, (int)&master_sem, 0, 0);
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
