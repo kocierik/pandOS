@@ -35,7 +35,7 @@ all : kernel.core.umps
 kernel.core.umps : kernel
 	umps3-elf2umps -k $<
 
-kernel : phase1/asl.o phase1/pcb.o phase2/exceptionHandler.o phase2/handlerFunction.o phase2/syscall.o phase2/scheduler.o phase3/p3test.o phase3/supSyscall.o phase3/supVM.o phase3/TLBHandler.o crtso.o libumps.o phase2/initial.o
+kernel : phase1/asl.o phase1/pcb.o phase2/exceptionHandler.o phase2/handlerFunction.o phase2/syscall.o phase2/scheduler.o phase3/p3test.o phase3/supSyscall.o phase3/supVM.o phase3/TLBhandler.o crtso.o libumps.o phase2/initial.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :

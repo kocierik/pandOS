@@ -1,13 +1,12 @@
 #include "./headers/p3test.h"
 
-static int master_sem;
+// Sezione 4.9
+
 
 // table of usable support descriptor
 static support_t sd_table[UPROCMAX];
 // list of free support descriptor
 static struct list_head sd_free;
-
-// Sezione 4.9
 
 void test()
 {
@@ -29,13 +28,13 @@ void init_sd_free()
 {
     INIT_LIST_HEAD(&sd_free);
     for (int i = 0; i < UPROCMAX; i++)
-        free_sd(sd_table[i]);
+        free_sd(&sd_table[i]);
 }
 
 // return a support descriptor taken from the free sd list
-support_t alloc_sd()
+support_t *alloc_sd()
 {
-    list_head *l = list_next(&sd_free);
+    struct list_head *l = list_next(&sd_free);
     list_del(l);
     return container_of(l, support_t, p_list);
 }
@@ -51,9 +50,9 @@ void run_test()
     memaddr ramaddrs;
     state_t proc_state;
 
-    pstate.pc_epc = pstate.reg_t9 = (memaddr)UPROCSTARTADDR;
+    proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
-    pstate.status = ALLOFF | IEPON | IMON | TEBITON;
+    proc_state.status = ALLOFF | IEPON | IMON | TEBITON;
 
     RAMTOP(ramaddrs);
 

@@ -3,12 +3,15 @@
 
 #include "../../generic_headers/pandos_const.h"
 #include "../../generic_headers/pandos_types.h"
+#include "../testers/h/tconst.h"
 #include <umps/libumps.h>
 #include <umps/arch.h>
 #include "umps/cp0.h"
 #include "supSyscall.h"
 #include "supVM.h"
+#include "TLBhandler.h"
 
+int entryhi_to_index(memaddr enthi);
 void uTLB_RefillHandler();
 void general_execption_hendler();
 void sup_syscall_handler(support_t *exc_sd);
