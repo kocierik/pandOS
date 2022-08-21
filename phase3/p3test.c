@@ -1,12 +1,5 @@
 #include "./headers/p3test.h"
 
-// Sezione 4.9
-
-// table of usable support descriptor
-static support_t sd_table[UPROCMAX];
-// list of free support descriptor
-static struct list_head sd_free;
-
 void test()
 {
     init_sds();
@@ -48,10 +41,11 @@ void run_test()
 {
     memaddr ramaddrs;
     state_t proc_state;
+    unsigned int supp_state;
 
     proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
-    proc_state.status = ALLOFF | IEPON | IMON | TEBITON;
+    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da controllare
 
     RAMTOP(ramaddrs);
 
@@ -65,7 +59,11 @@ void run_test()
 
         init_page_table(s->sup_privatePgTbl, asid);
 
-        // cose
+        s->sup_exceptContext[1].status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da controllare
+        s->sup_exceptContext[0].pc = (memaddr)pager;
+        s->sup_exceptContext[1].pc = (memaddr)general_execption_hendler;
+        s->sup_exceptContext[0].stackPtr = ramaddrs - (asid * 4096 * 2) + 4096;
+        s->sup_exceptContext[1].stackPtr = ramaddrs - (asid * 4096 * 2);
 
         SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
     }

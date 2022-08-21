@@ -1,12 +1,6 @@
 #include "./headers/supVM.h"
 
-// swap pool table
-static swap_t swap_pool_table[POOLSIZE];
-static int swap_pool_sem;
-
-// page table entry per Uproc
-pteEntry_t page_table[MAXPAGES];
-
+// init semaphore and swap pool table
 void init_swap_pool_table()
 {
     swap_pool_sem = 1;
@@ -14,19 +8,21 @@ void init_swap_pool_table()
         swap_pool_table[i].sw_asid = NOPROC;
 }
 
-void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
+// init a page table with the right asid and addresses
+void init_page_table(page_table pt, int asid)
 {
-
     int npage = MAXPAGES - 1;
 
     for (int i = 0; i < npage; i++)
     {
         pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        pt[i].pte_entryLO = DIRTYON;
+        pt[i].pte_entryLO = DIRTYON + GLOBALON; // D ON, V OFF, G ON    da controllare
     }
 
+    // ??
+
     pt[npage].pte_entryHI = 0xBFFFF000 - USERSTACKTOP;
-    pt[npage].pte_entryLO = DIRTYON;
+    pt[npage].pte_entryLO = DIRTYON + GLOBALON;
 }
 
 // if i-th swap pool table frame is free return true, false otherwise
@@ -35,6 +31,7 @@ int is_spframe_free(int i)
     return swap_pool_table[i].sw_asid == NOPROC;
 }
 
+// pick an index (fifo implemented)
 int pick_frame()
 {
     static int c = 0;
@@ -44,6 +41,7 @@ int pick_frame()
     return (c++) % POOLSIZE; // implementazione fifo
 }
 
+// page fault exception
 void pager()
 {
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
@@ -54,9 +52,9 @@ void pager()
 
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
     int index = entryhi_to_index(save->entry_hi);
-    int victim = pick_frame();
+    int victim_page = pick_frame();
 
-    if (!is_spframe_free(victim))
+    if (!is_spframe_free(victim_page))
     {
         /* 8.
         if frame i is currently occupied, assume it is occupied by logical page

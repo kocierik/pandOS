@@ -2,10 +2,13 @@
 
 extern pcb_PTR currentActiveProc;
 
-int entryhi_to_index(memaddr enthi)
+// convert the entryhi value into an index
+int entryhi_to_index(memaddr entry_hi)
 {
+    return 1;
 }
 
+// tlb refill handler
 void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
@@ -17,11 +20,11 @@ void uTLB_RefillHandler()
     LDST(s);
 }
 
-void general_execption_hendler()
+void general_execption_handler()
 {
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
-    save->pc_epc += WORD_SIZE; // da controllare
+    save->pc_epc += WORD_SIZE;
 
     switch (CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause))
     {
@@ -32,7 +35,6 @@ void general_execption_hendler()
         SYSCALL(TERMINATE, 0, 0, 0); // trap
     }
 
-    // currentActiveProc->pc_epc += WORDLEN; // da controllare: già fatto?
     LDST(save);
 }
 

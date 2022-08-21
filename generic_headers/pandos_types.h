@@ -33,7 +33,7 @@ typedef struct context_t {
 
 /* Support level descriptor */
 typedef struct support_t {
-    struct list_head p_list;
+    struct list_head p_list;                    /* Aggiunto da noi              */
     int        sup_asid;                        /* process ID					*/
     state_t    sup_exceptState[2];              /* old state exceptions			*/
     context_t  sup_exceptContext[2];            /* new contexts for passing up	*/

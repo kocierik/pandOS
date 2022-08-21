@@ -13,6 +13,11 @@
 // master semaphore to controll the end of the uproc
 static int master_sem;
 
+// table of usable support descriptor
+static support_t sd_table[UPROCMAX];
+// list of free support descriptor
+static struct list_head sd_free;
+
 void test();
 void init_sds();
 void init_sd_free();
