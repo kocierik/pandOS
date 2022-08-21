@@ -41,7 +41,6 @@ void run_test()
 {
     memaddr ramaddrs;
     state_t proc_state;
-    unsigned int supp_state;
 
     proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
@@ -61,7 +60,7 @@ void run_test()
 
         s->sup_exceptContext[1].status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da controllare
         s->sup_exceptContext[0].pc = (memaddr)pager;
-        s->sup_exceptContext[1].pc = (memaddr)general_execption_hendler;
+        s->sup_exceptContext[1].pc = (memaddr)general_execption_handler;
         s->sup_exceptContext[0].stackPtr = ramaddrs - (asid * 4096 * 2) + 4096;
         s->sup_exceptContext[1].stackPtr = ramaddrs - (asid * 4096 * 2);
 

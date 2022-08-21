@@ -2,6 +2,9 @@
 #define SYSCALL_H_INCLUDED3
 
 #include "../../generic_headers/pandos_types.h"
+#include <umps/libumps.h>
+#include <umps/arch.h>
+#include "umps/cp0.h"
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"

@@ -3,40 +3,40 @@
         "core-file": "kernel.core.umps",
         "load-core-file": true
     },
-    "bootstrap-rom": "/usr/local/share/umps3/coreboot.rom.umps",
+    "bootstrap-rom": "/usr/share/umps3/coreboot.rom.umps",
     "clock-rate": 1,
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "testers/strConcat.umps"
+            "file": "phase3/testers/strConcat.umps"
         },
         "flash1": {
             "enabled": true,
-            "file": "testers/terminalTest2.umps"
+            "file": "phase3/testers/terminalTest2.umps"
         },
         "flash2": {
             "enabled": true,
-            "file": "testers/terminalTest3.umps"
+            "file": "phase3/testers/terminalTest3.umps"
         },
         "flash3": {
             "enabled": true,
-            "file": "testers/terminalTest4.umps"
+            "file": "phase3/testers/terminalTest4.umps"
         },
         "flash4": {
             "enabled": true,
-            "file": "testers/terminalTest5.umps"
+            "file": "phase3/testers/terminalTest5.umps"
         },
         "flash5": {
             "enabled": true,
-            "file": "testers/fibEight.umps"
+            "file": "phase3/testers/fibEight.umps"
         },
         "flash6": {
             "enabled": true,
-            "file": "testers/printerTest.umps"
+            "file": "phase3/testers/printerTest.umps"
         },
         "flash7": {
             "enabled": true,
-            "file": "testers/fibEleven.umps"
+            "file": "phase3/testers/fibEleven.umps"
         },
         "printer0": {
             "enabled": true,
@@ -103,7 +103,7 @@
             "file": "term7.umps"
         }
     },
-    "execution-rom": "/usr/local/share/umps3/exec.rom.umps",
+    "execution-rom": "/usr/share/umps3/exec.rom.umps",
     "num-processors": 1,
     "num-ram-frames": 128,
     "symbol-table": {
