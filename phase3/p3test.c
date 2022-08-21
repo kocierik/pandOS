@@ -1,5 +1,7 @@
 #include "./headers/p3test.h"
 
+extern void klog_print(char *s);
+
 void test()
 {
     init_sds();
@@ -48,6 +50,7 @@ void run_test()
 
     RAMTOP(ramaddrs);
 
+
     for (int i = 0; i < UPROCMAX; i++)
     {
         int asid = i + 1; // unique asid from 1 to 8
@@ -63,6 +66,9 @@ void run_test()
         s->sup_exceptContext[1].pc = (memaddr)general_execption_handler;
         s->sup_exceptContext[0].stackPtr = ramaddrs - (asid * 4096 * 2) + 4096;
         s->sup_exceptContext[1].stackPtr = ramaddrs - (asid * 4096 * 2);
+
+
+        klog_print("sto creando un processo\n");
 
         SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
     }
