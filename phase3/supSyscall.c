@@ -1,10 +1,8 @@
 #include "headers/supSyscall.h"
 
-#define PRINTCHR 2
-#define TERMSTATMASK 0xFF
-#define DEV_STATUS_READY 1
-
-int sem_term[UPROCMAX], sem_print[UPROCMAX];
+extern int semPrinterDevice[8];
+extern int semTerminalDeviceWriting[8];
+extern int semTerminalDeviceReading[8];
 
 void get_tod(support_t *s)
 {
@@ -15,7 +13,7 @@ void get_tod(support_t *s)
 
 void terminate(support_t *s)
 {
-    SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0); // release swap pool semaphore
+    //SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0); // release swap pool semaphore, serve? da controllare
     for (int i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == s->sup_asid)
             swap_pool_table[i].sw_asid = NOPROC; // unmark swap pool table
@@ -34,29 +32,17 @@ void write_to_terminal(support_t *s)
     syscall_write(s, IL_TERMINAL);
 }
 
-void syscall_write(support_t *s, int IL_X)
+int *get_dev_sem(int i, int IL_X)
 {
-    int len, terminal = FALSE;
-    int index = s->sup_asid - 1;
     int *sems;
-
-    char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
-    len = s->sup_exceptState[GENERALEXCEPT].reg_a2;
-
-    if (len < 0 || len > 100 || (memaddr)msg < KUSEG)
-        SYSCALL(TERMINATE, 0, 0, 0);
-
-    void *device = (void *)DEV_REG_ADDR(IL_X, index);
-
     switch (IL_X)
     {
     case IL_PRINTER:
-        sems = sem_print;
+        sems = semPrinterDevice;
         break;
 
     case IL_TERMINAL:
-        sems = sem_term;
-        terminal = TRUE;
+        sems = semTerminalDeviceWriting;
         break;
 
     default:
@@ -64,24 +50,46 @@ void syscall_write(support_t *s, int IL_X)
         break;
     }
 
-    int sem = sems[index];
+    return &sems[i];
+}
+
+// da controllare
+void syscall_write(support_t *s, int IL_X)
+{
+    unsigned int status;
+    char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
+    int len = s->sup_exceptState[GENERALEXCEPT].reg_a2;
+    int arg1, arg2, terminal = IL_X == IL_TERMINAL, index = s->sup_asid - 1;
+
+    int *sem = get_dev_sem(index, IL_X);
+    void *device = (void *)DEV_REG_ADDR(IL_X, index);
+
+    if (len < 0 || len > 100 || (memaddr)msg < KUSEG)
+        SYSCALL(TERMINATE, 0, 0, 0);
 
     SYSCALL(PASSEREN, (int)&sem, 0, 0);
 
     for (int i = 0; i < len; i++)
     {
-        int arg1 = (int)&((dtpreg_t *)device)->command;
-        int arg2 = PRINTCHR;
+        setSTATUS(getSTATUS() & (!IECON)); // disable interrupts
 
-        if (terminal) {
+        arg1 = (int)&((dtpreg_t *)device)->command;
+        arg2 = PRINTCHR;
+
+        if (terminal)
+        {
             arg1 = (int)&((termreg_t *)device)->transm_command;
             arg2 |= ((unsigned int)msg[i] << 8);
-        } else {
+        }
+        else
+        {
             ((dtpreg_t *)device)->data0 = msg[i];
             arg2 |= 0;
         }
 
-        unsigned int status = SYSCALL(DOIO, arg1, (int)arg2, 0);
+        setSTATUS(getSTATUS() | IECON); // enable interrupts
+
+        status = SYSCALL(DOIO, arg1, (int)arg2, 0);
 
         if ((status & (terminal ? TERMSTATMASK : -1)) != (terminal ? RECVD : DEV_STATUS_READY))
         {
@@ -98,6 +106,6 @@ void syscall_write(support_t *s, int IL_X)
 void read_from_terminal(support_t *s)
 {
     int ret = -1;
-    // ??
+    // da completare
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
 }

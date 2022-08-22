@@ -1,12 +1,10 @@
 #include "./headers/p3test.h"
 
-extern void klog_print(char *s);
-
 void test()
 {
     init_sds();
-    run_test();
-    SYSCALL(TERMPROCESS, 0, 0, 0);
+    run_proc();
+    SYSCALL(TERMPROCESS, 0, 0, 0); // HALT
 }
 
 // init support data structures
@@ -39,39 +37,40 @@ void free_sd(support_t *s)
     list_add(&s->p_list, &sd_free);
 }
 
-void run_test()
+// init a uproc
+void create_uproc(int asid)
 {
     memaddr ramaddrs;
     state_t proc_state;
 
-    proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
-    proc_state.reg_sp = (memaddr)USERSTACKTOP;
-    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da controllare
-
     RAMTOP(ramaddrs);
 
+    proc_state.entry_hi = asid << ASIDSHIFT;
+    proc_state.pc_epc = proc_state.reg_t9 = UPROCSTARTADDR;
+    proc_state.reg_sp = USERSTACKTOP;
+    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
 
+    support_t *s = alloc_sd();
+    s->sup_asid = asid;
+
+    s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
+    s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
+    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
+
+    s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
+    s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
+    s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
+
+    init_page_table(s->sup_privatePgTbl, asid);
+
+    SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
+}
+
+// run every proc
+void run_proc()
+{
     for (int i = 0; i < UPROCMAX; i++)
-    {
-        int asid = i + 1; // unique asid from 1 to 8
-        proc_state.entry_hi = asid << ASIDSHIFT;
-
-        support_t *s = alloc_sd();
-        s->sup_asid = asid;
-
-        init_page_table(s->sup_privatePgTbl, asid);
-
-        s->sup_exceptContext[1].status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da controllare
-        s->sup_exceptContext[0].pc = (memaddr)pager;
-        s->sup_exceptContext[1].pc = (memaddr)general_execption_handler;
-        s->sup_exceptContext[0].stackPtr = ramaddrs - (asid * 4096 * 2) + 4096;
-        s->sup_exceptContext[1].stackPtr = ramaddrs - (asid * 4096 * 2);
-
-
-        klog_print("sto creando un processo\n");
-
-        SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
-    }
+        create_uproc(i + 1); // asid from 1 to 8
 
     // wait others process to end before exit
     for (int i = 0; i < UPROCMAX; i++)

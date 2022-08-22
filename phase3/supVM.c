@@ -11,18 +11,14 @@ void init_swap_pool_table()
 // init a page table with the right asid and addresses
 void init_page_table(page_table pt, int asid)
 {
-    int npage = MAXPAGES - 1;
-
-    for (int i = 0; i < npage; i++)
+    for (int i = 0; i < MAXPAGES - 1; i++)
     {
         pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        pt[i].pte_entryLO = DIRTYON + GLOBALON; // D ON, V OFF, G ON    da controllare
+        pt[i].pte_entryLO = DIRTYON;
     }
-
-    // ??
-
-    pt[npage].pte_entryHI = 0xBFFFF000 - USERSTACKTOP;
-    pt[npage].pte_entryLO = DIRTYON + GLOBALON;
+    // stack
+    pt[MAXPAGES - 1].pte_entryHI = 0xBFFFF000 + (asid << ASIDSHIFT); //- USERSTACKTOP;
+    pt[MAXPAGES - 1].pte_entryLO = DIRTYON;
 }
 
 // if i-th swap pool table frame is free return true, false otherwise
@@ -42,6 +38,7 @@ int pick_frame()
 }
 
 // page fault exception
+// da completare
 void pager()
 {
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);

@@ -9,6 +9,10 @@
 #include "supVM.h"
 #include "TLBhandler.h"
 
+#define PRINTCHR 2
+#define TERMSTATMASK 0xFF
+#define DEV_STATUS_READY 1
+
 void get_tod(support_t *s);
 void terminate(support_t *s);
 void write_to_printer(support_t *s);

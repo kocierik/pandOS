@@ -5,7 +5,7 @@ extern pcb_PTR currentActiveProc;
 // convert the entryhi value into an index
 int entryhi_to_index(memaddr entry_hi)
 {
-    return 1;
+    return ((entry_hi & 0xFFFFF000) >> VPNSHIFT) - 0x80000; // da controllare
 }
 
 // tlb refill handler
@@ -28,7 +28,7 @@ void general_execption_handler()
 
     switch (CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause))
     {
-    case 8:
+    case SYSEXCEPTION:
         sup_syscall_handler(exc_sd);
         break;
     default:
@@ -58,6 +58,6 @@ void sup_syscall_handler(support_t *exc_sd)
         read_from_terminal(exc_sd);
         break;
     default:
-        PANIC();
+        SYSCALL(TERMINATE, 0, 0, 0); // trap
     }
 }

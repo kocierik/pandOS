@@ -23,6 +23,7 @@ void init_sds();
 void init_sd_free();
 support_t *alloc_sd();
 void free_sd(support_t *s);
-void run_test();
+void create_uproc(int asid);
+void run_proc();
 
 #endif
