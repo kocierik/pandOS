@@ -103,9 +103,34 @@ void syscall_write(support_t *s, int IL_X)
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
 
-void read_from_terminal(support_t *s)
-{
-    int ret = -1;
-    // da completare
+void read_from_terminal(support_t *virtualAddress)
+{ 
+    int ret = 0;
+
+    support_t* sup = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0); 
+
+    int terminalASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
+    int terminalSemaphoreIndex = (TERMINT - 3) * 8 + 2*terminalASID;  
+
+    if((unsigned int)virtualAddress < KUSEG)    /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */     ■ Cast to smaller integer
+      terminate();  
+
+    devreg_t *terminalDEVREG = (devreg_t*)(START_DEVREG + ((TERMINT - 3) * 0x80) + (terminalASID * 0x10));
+
+    char recv_char = 0;                                                           
+    while(recv_char != '\n'){   /* lettura dell'input */      
+      const size_t status = SYSCALL(DOIO, (unsigned int)&(terminalDEVREG->term.recv_command), RECEIVECHAR, 0);  
+      if((status & 0xFF) == CHARRECV){ // NO errore
+        *virtualAddress = status >> BYTELENGTH;
+        recv_char = status >> BYTELENGTH;
+        virtualAddress++;
+        ret++;
+      } else {
+        ret = -status; 
+        break;
+      }
+    }
+
+    SYSCALL(VERHOGEN, (int)&semaphore[terminalSemaphoreIndex], 0, 0);  
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
 }
