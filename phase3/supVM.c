@@ -55,6 +55,9 @@ void pager()
   int victim_page = pick_frame();
   unsigned int frameStartAddr = SWAPSTART + (victim_page * PAGESIZE);  
 
+	unsigned int missingPageNum = (supp->sup_exceptState[PGFAULTEXCEPT].entry_hi & GETPAGENO) >> VPNSHIFT;
+
+
   if (!is_spframe_free(victim_page))
   {
     /* marca come invalid la riga della tabella delle pagine corrispondente alla pagina vittima */
@@ -73,10 +76,6 @@ void pager()
     unsigned int asid = swap_pool_table[victim_page].sw_asid;                                                                 
     unsigned int deviceBlockNumber = swap_pool_table[victim_page].sw_pageNo; /* [0 - 31] */                                   
 
-    unsigned int ioStatus = write_to_backingStore(asid, frameStartAddr, deviceBlockNumber);                                    
-
-    unsigned int asid = sup_ptr->sup_asid;
-	  unsigned int deviceBlockNumber = missingPageNum;                          
   }
 
     /* 8.

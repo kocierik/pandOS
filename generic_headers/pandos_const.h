@@ -116,6 +116,8 @@
 
 #define OKCHARTRANS  5
 #define TRANSMITCHAR 2
+#define RECEIVECHAR 	2		// aggiunta comando di ricezione del carattere
+#define PRINTCHR	2		// aggiunta comando di stampa del carattere
 
 #define SEEKTOCYL  2
 #define DISKREAD   3
@@ -177,6 +179,11 @@
 */
 #define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8))) // performs a bit shift based on the parameters
 
+
+#define NRSEMAPHORES 49         /* Numero semafori devices + pseudo clock */
+#define NSUPPSEM 48 		/* Numero di semafori devices per il livello di supporto */
+
+
 #define DISKBACK     1
 #define FLASHBACK    0
 #define BACKINGSTORE FLASHBACK
@@ -185,5 +192,9 @@
 #define POOLSIZE (UPROCMAX * 2)
 /* End of Mikeyg constants */
 
+#define CHARRECV			5		/* Character received*/
+
+/* Inizio indirizzo di device registers */
+#define START_DEVREG		0x10000054
 
 #endif

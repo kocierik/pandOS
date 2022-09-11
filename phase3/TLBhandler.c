@@ -55,7 +55,7 @@ void sup_syscall_handler(support_t *exc_sd)
         write_to_terminal(exc_sd);
         break;
     case READTERMINAL:
-        read_from_terminal(exc_sd);
+        read_from_terminal((char*)exc_sd);
         break;
     default:
         SYSCALL(TERMINATE, 0, 0, 0); // trap
