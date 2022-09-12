@@ -40,41 +40,87 @@ int pick_frame()
   return (c++) % POOLSIZE; // implementazione fifo
 }
 
+
+
+// Funzioni supporto per pager
+
+unsigned int backigStoreOperation(unsigned int asid, unsigned int frameStartAddress, unsigned int numDeviceBlock, char kindOfOperation){
+  /*
+  int index = 8 + asid-1;
+  SYSCALL(PASSEREN, &semaphore[index], 0, 0);
+
+  devreg_t* devReg = (devreg_t*) DEV_REG_ADDR(FLASHINT, asid-1);
+  devReg->dtp.data0 = frameStartAddress;
+
+  unsigned int command;
+  // Verifico che sia un operazione di lettura (reading) o scrittura (writing)
+  if (kindOfOperation == 'r') command = (numDeviceBlock << 8) | FLASHREAD;
+  else command = (numDeviceBlock << 8) | FLASHWRITE;
+
+  int status = SYSCALL(DOIO, (unsigned int) &(devReg->dtp.command), command, 0);
+  SYSCALL(VERHOGEN, &semaphore[index], 0, 0);
+
+  return status;
+  */
+}
+
+unsigned int writeBackingStore(unsigned int asid, unsigned int frameStartAddress, unsigned int numDeviceBlock){
+  return backigStoreOperation(asid, frameStartAddress, numDeviceBlock, 'w');
+}
+
+unsigned int readBackingStore(unsigned int asid, unsigned int frameStartAddress, unsigned int numDeviceBlock){
+  return backigStoreOperation(asid, frameStartAddress, numDeviceBlock, 'r');
+}
+
 // page fault exception
 // da completare
 void pager()
 {
+
+  // Puntatore alla struttura di supporto del processo corrente
   support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
   state_t *save = &supp->sup_exceptState[PGFAULTEXCEPT];
 
-  if (save->cause == 1)            // TLB-Modification exception
-    SYSCALL(TERMINATE, 0, 0, 0); // trap
+  // Controllo la causa del TLB exception, se si tratta di un TLB-modification genero una trap
+  if (save->cause == 1)
+    SYSCALL(TERMINATE, 0, 0, 0); // Trap
 
+  // Ottengo la mutua esclusione sulla Swap Pool table
   SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
-  int index = entryhi_to_index(save->entry_hi);
-  int victim_page = pick_frame();
-  unsigned int frameStartAddr = SWAPSTART + (victim_page * PAGESIZE);  
 
+  // Trovo il page number mancante
+  int index = entryhi_to_index(save->entry_hi);
+
+  // Prendo una frame dalla Swap Pool utilizzando un algoritmo già implementato in Pandos
+  int victim_page = pick_frame();
+
+  unsigned int frameStartAddr = SWAPSTART + (victim_page * PAGESIZE);  
 	unsigned int missingPageNum = (supp->sup_exceptState[PGFAULTEXCEPT].entry_hi & GETPAGENO) >> VPNSHIFT;
 
-
+  // Controllo se il frame scelto è occupato
   if (!is_spframe_free(victim_page))
   {
+    //TODO vedi se dovresti disattivare interrupt
     /* marca come invalid la riga della tabella delle pagine corrispondente alla pagina vittima */
     pteEntry_t *victim_pte = swap_pool_table[victim_page].sw_pte; 
-    setENTRYHI(victim_pte->pte_entryHI);                                                                                       
-    TLBP();                                                                                                                    
+    //victim_pte->pte_entryLO = victim_pte->pte_entryLO & (VALIDON) //TODO controlla se può servire
 
+    
+    // Aggiornamento del TLB
+    setENTRYHI(victim_pte->pte_entryHI);                                                                                       
+    TLBP();
     if ((getINDEX() & 0x80000000) == 0) {                                                                                      
       setENTRYHI(victim_pte->pte_entryHI);                                                                                     
       setENTRYLO(victim_pte->pte_entryLO);                                                                                     
       TLBWI();                                                                                                                 
     }             
-
+    //TODO vedi se dovresti riattivare interrupt
     setSTATUS(getSTATUS() | IECON);                                                                                            
 
     unsigned int asid = swap_pool_table[victim_page].sw_asid;                                                                 
     unsigned int deviceBlockNumber = swap_pool_table[victim_page].sw_pageNo; /* [0 - 31] */                                   
+    
+    
 
   }
 
