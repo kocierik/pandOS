@@ -12,7 +12,7 @@
 #include "TLBhandler.h"
 
 void trap();
-int entryhi_to_index(memaddr enthi);
+//int entryhi_to_index(memaddr enthi);
 void uTLB_RefillHandler();
 void general_execption_handler();
 void sup_syscall_handler(support_t *exc_sd);

@@ -19,7 +19,7 @@ void trap()
 void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
-    int index = entryhi_to_index(s->entry_hi);
+    int index = ENTRYHI_GET_ASID(s->entry_hi);  // da controllare
     pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entryHI);
     setENTRYLO(pte.pte_entryLO);
