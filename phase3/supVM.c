@@ -1,5 +1,5 @@
 #include "./headers/supVM.h"
-#define SWAPSTART 0x20020000 
+#define SWAPSTART 0x20020000
 
 extern int semaphore[NSUPPSEM];
 
@@ -15,10 +15,10 @@ void init_swap_pool_table()
 void init_page_table(page_table pt, int asid)
 {
   for (int i = 0; i < MAXPAGES - 1; i++)
-    {
-      pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-      pt[i].pte_entryLO = DIRTYON;
-    }
+  {
+    pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
+    pt[i].pte_entryLO = DIRTYON;
+  }
   // stack
   pt[MAXPAGES - 1].pte_entryHI = 0xBFFFF000 + (asid << ASIDSHIFT); //- USERSTACKTOP;
   pt[MAXPAGES - 1].pte_entryLO = DIRTYON;
@@ -36,15 +36,14 @@ int pick_frame()
   static int c = 0;
   for (int i = 0; i < POOLSIZE; i++)
     if (is_spframe_free(i))
-      return i;        // if i is not occupied, return i
+      return i;            // if i is not occupied, return i
   return (c++) % POOLSIZE; // implementazione fifo
 }
 
+/* Useful function for pager */
 
-
-// Funzioni supporto per pager
-
-unsigned int backigStoreOperation(unsigned int asid, unsigned int frameStartAddress, unsigned int numDeviceBlock, char kindOfOperation){
+unsigned int backigStoreOperation(unsigned int asid, unsigned int frameStartAddress, unsigned int numDeviceBlock, char kindOfOperation)
+{
   /*
   int index = 8 + asid-1;
   SYSCALL(PASSEREN, &semaphore[index], 0, 0);
@@ -80,98 +79,90 @@ void pager()
 
   // Puntatore alla struttura di supporto del processo corrente
   support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-  state_t *suppState =  &(supp->sup_exceptState[PGFAULTEXCEPT]);
+  state_t *suppState = &(supp->sup_exceptState[PGFAULTEXCEPT]);
 
   // Controllo la causa del TLB exception, se si tratta di un TLB-modification genero una trap
   if (suppState->cause == 1)
-    SYSCALL(TERMINATE, 0, 0, 0); // Trap
+    trap();
 
   // Ottengo la mutua esclusione sulla Swap Pool table
   SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
   // Page number mancante
   int index = ENTRYHI_GET_ASID(suppState->entry_hi);
-  //int index = entryhi_to_index(suppState->entry_hi);
+  // int index = entryhi_to_index(suppState->entry_hi);
 
   // Frame dalla Swap Pool trovato utilizzando un algoritmo già implementato in Pandos
   int victim_page = pick_frame();
 
-  unsigned int frameStartAddr = SWAPSTART + (victim_page * PAGESIZE);  
-	unsigned int missingPageNum = (supp->sup_exceptState[PGFAULTEXCEPT].entry_hi & GETPAGENO) >> VPNSHIFT;
-  unsigned int asid = swap_pool_table[victim_page].sw_asid;    
+  unsigned int frameStartAddr = SWAPSTART + (victim_page * PAGESIZE);
+  unsigned int missingPageNum = (supp->sup_exceptState[PGFAULTEXCEPT].entry_hi & GETPAGENO) >> VPNSHIFT;
+  unsigned int asid = swap_pool_table[victim_page].sw_asid;
 
   // Controllo se il frame scelto è occupato
   if (!is_spframe_free(victim_page))
   {
     // Disabilito interrupt per eseguire le seguenti operazioni atomicamente
-    setSTATUS(getSTATUS() & (DISABLEINTS)); 
+    setSTATUS(getSTATUS() & (DISABLEINTS));
 
     /*8.a*/
     /* marca come invalid la riga della tabella delle pagine corrispondente alla pagina vittima */
-    pteEntry_t *victim_pte = swap_pool_table[victim_page].sw_pte; 
+    pteEntry_t *victim_pte = swap_pool_table[victim_page].sw_pte;
     victim_pte->pte_entryLO = victim_pte->pte_entryLO & (!VALIDON); // TODO Controllare
 
     // 8.b
     // Aggiornamento del TLB
-    setENTRYHI(victim_pte->pte_entryHI);                                                                                       
+    setENTRYHI(victim_pte->pte_entryHI);
     TLBP();
-    if ((getINDEX() & PRESENTFLAG) == 0) {                                                                                       
-      setENTRYHI(victim_pte->pte_entryHI);                                                                                     
-      setENTRYLO(victim_pte->pte_entryLO);                                                                                     
-      TLBWI();                                                                                                                 
-    }             
+    if ((getINDEX() & PRESENTFLAG) == 0)
+    {
+      setENTRYHI(victim_pte->pte_entryHI);
+      setENTRYLO(victim_pte->pte_entryLO);
+      TLBWI();
+    }
 
     // Riattivo interrupt
-    setSTATUS(getSTATUS() | IECON);                                                                                            
+    setSTATUS(getSTATUS() | IECON);
 
-  
-
-    /* WRITE FLASH */                                                             
-    dtpreg_t* device = (dtpreg_t*) DEV_REG_ADDR(FLASHINT, asid - 1);
-    device->data0 = (memaddr) frameStartAddr;
+    /* WRITE FLASH */
+    dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
+    device->data0 = (memaddr)frameStartAddr;
     const size_tt cmd = FLASHWRITE | index << 8;
     // TODO modifica commento -> 8 number of the least significant bit of BLOCKNUMBER in the COMMAND field.
     const int result = SYSCALL(DOIO, (int)&device->command, cmd, 0);
-    //Controllo se ci sono errori, se si genero una trap.
-    if (result != DEV_STATUS_READY) SYSCALL(TERMINATE, 0, 0, 0); // Trap
-
-    
-
+    // Controllo se ci sono errori, se si genero una trap.
+    if (result != DEV_STATUS_READY)
+      trap();
   }
 
-  /*READ FLASH*/
-  dtpreg_t* device = (dtpreg_t*) DEV_REG_ADDR(FLASHINT, asid - 1);
-  device->data0 = (memaddr) frameStartAddr;
+  /* READ FLASH* /
+  dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
+  device->data0 = (memaddr)frameStartAddr;
   const size_tt cmd = FLASHREAD | index << 8;
   const int result = SYSCALL(DOIO, (int)&device->command, cmd, 0);
-  if (result != DEV_STATUS_READY) SYSCALL(TERMINATE, 0, 0, 0); // Trap
-
+  if (result != DEV_STATUS_READY)
+    trap();
 
   // Update swap pool table entry
-	unsigned int missingPageNum = (suppState->entry_hi & GETPAGENO) >> VPNSHIFT;
+  unsigned int missingPageNum = (suppState->entry_hi & GETPAGENO) >> VPNSHIFT;
 
   swap_pool_table[supp->sup_asid].sw_asid = supp->sup_asid;
   swap_pool_table[supp->sup_asid].sw_pageNo = missingPageNum;
   swap_pool_table[supp->sup_asid].sw_pte = &(supp->sup_privatePgTbl[missingPageNum]);
 
   // Update page table
-  setSTATUS(getSTATUS() & (DISABLEINTS)); 
+  setSTATUS(getSTATUS() & (DISABLEINTS));
 
-	//sup_ptr->sup_privatePgTbl[missingPageNum].pte_entryLO = (frameStartAddr & 0xFFFFF000) | VALIDON | (sup_ptr->sup_privatePgTbl[missingPageNum].pte_entryLO & DIRTYON);
+  // sup_ptr->sup_privatePgTbl[missingPageNum].pte_entryLO = (frameStartAddr & 0xFFFFF000) | VALIDON | (sup_ptr->sup_privatePgTbl[missingPageNum].pte_entryLO & DIRTYON);
 
-  //page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
+  // page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
 
-  supp->sup_privatePgTbl[missingPageNum].pte_entryLO = (unsigned int) &swap_pool_table[victim_page] | VALIDON | DIRTYON;
+  supp->sup_privatePgTbl[missingPageNum].pte_entryLO = (unsigned int)&swap_pool_table[victim_page] | VALIDON | DIRTYON;
 
+  setSTATUS(getSTATUS() | IECON);
 
-  setSTATUS(getSTATUS() | IECON);                                                                                            
+  // unsigned int deviceBlockNumber = swap_pool_table[victim_page].sw_pageNo; /* [0 - 31] */
 
-
-
-
-
-  //unsigned int deviceBlockNumber = swap_pool_table[victim_page].sw_pageNo; /* [0 - 31] */                                   
-  
   SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
   LDST(suppState);
 }

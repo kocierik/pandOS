@@ -37,7 +37,7 @@ void free_sd(support_t *s)
     list_add(&s->p_list, &sd_free);
 }
 
-// init a uproc
+// init an uproc
 void create_uproc(int asid)
 {
     memaddr ramaddrs;
@@ -72,7 +72,7 @@ void run_proc()
     for (int i = 0; i < UPROCMAX; i++)
         create_uproc(i + 1); // asid from 1 to 8
 
-    // wait others process to end before exit
+    // wait for others process to end
     for (int i = 0; i < UPROCMAX; i++)
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
 }

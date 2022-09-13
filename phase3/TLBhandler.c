@@ -2,7 +2,7 @@
 
 extern pcb_PTR currentActiveProc;
 
-/**
+/*
 // convert the entryhi value into an index
 int entryhi_to_index(memaddr entry_hi)
 {
@@ -10,7 +10,12 @@ int entryhi_to_index(memaddr entry_hi)
 }
 */
 
-// tlb refill handler
+// just a terminate wrapper
+void trap()
+{
+    SYSCALL(TERMINATE, 0, 0, 0);
+}
+
 void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
@@ -34,7 +39,7 @@ void general_execption_handler()
         sup_syscall_handler(exc_sd);
         break;
     default:
-        SYSCALL(TERMINATE, 0, 0, 0); // trap
+        trap();
     }
 
     LDST(save);
@@ -57,9 +62,9 @@ void sup_syscall_handler(support_t *exc_sd)
         write_to_terminal(exc_sd);
         break;
     case READTERMINAL:
-        read_from_terminal((char*)exc_sd);
+        read_from_terminal(exc_sd, (char *)exc_sd);
         break;
     default:
-        SYSCALL(TERMINATE, 0, 0, 0); // trap
+        trap();
     }
 }

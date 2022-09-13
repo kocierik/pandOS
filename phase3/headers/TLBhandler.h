@@ -11,6 +11,7 @@
 #include "supVM.h"
 #include "TLBhandler.h"
 
+void trap();
 int entryhi_to_index(memaddr enthi);
 void uTLB_RefillHandler();
 void general_execption_handler();

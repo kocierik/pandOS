@@ -13,12 +13,12 @@ void get_tod(support_t *s)
 
 void terminate(support_t *s)
 {
-    //SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0); // release swap pool semaphore, serve? da controllare
+    // SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0); // release swap pool semaphore, serve? da controllare (prob non serve)
     for (int i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == s->sup_asid)
             swap_pool_table[i].sw_asid = NOPROC; // unmark swap pool table
-    free_sd(s);                                  // free support descriptor
     SYSCALL(VERHOGEN, (int)&master_sem, 0, 0);   // realise master sem
+    free_sd(s);                                  // free support descriptor
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -65,7 +65,7 @@ void syscall_write(support_t *s, int IL_X)
     void *device = (void *)DEV_REG_ADDR(IL_X, index);
 
     if (len < 0 || len > 100 || (memaddr)msg < KUSEG)
-        SYSCALL(TERMINATE, 0, 0, 0);
+        trap();
 
     SYSCALL(PASSEREN, (int)&sem, 0, 0);
 
@@ -103,35 +103,37 @@ void syscall_write(support_t *s, int IL_X)
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
 
-// guardato dal progetto fede 
-void read_from_terminal(char *virtualAddress)
-{ 
+// da controllare
+void read_from_terminal(support_t *sup, char *virtualAddr)
+{
     int ret = 0;
 
-    support_t* sup = (support_t*) SYSCALL(GETSUPPORTPTR, 0, 0, 0); 
+    int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
+    int *sem = &semTerminalDeviceReading[termASID];
 
-    int terminalASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
-    int terminalSemaphoreIndex = (TERMINT - 3) * 8 + 2*terminalASID;  
-    
-    if((unsigned int)virtualAddress < KUSEG){    /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
+    if ((unsigned int)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
+        trap();
+
+    devreg_t *termDEVREG = (devreg_t *)(START_DEVREG + ((TERMINT - 3) * 0x80) + (termASID * 0x10));
+
+    char recv_char = 0;
+    SYSCALL(PASSEREN, (int)sem, 0, 0);
+    while (recv_char != '\n')
+    { /* lettura dell'input */
+        int status = SYSCALL(DOIO, (unsigned int)&(termDEVREG->term.recv_command), RECEIVECHAR, 0);
+        if ((status & 0xFF) == CHARRECV)
+        { // NO errore
+            *virtualAddr = status >> BYTELENGTH;
+            recv_char = status >> BYTELENGTH;
+            virtualAddr++;
+            ret++;
+        }
+        else
+        {
+            ret = -status;
+            break;
+        }
     }
-
-    devreg_t *terminalDEVREG = (devreg_t*)(START_DEVREG + ((TERMINT - 3) * 0x80) + (terminalASID * 0x10));
-
-    char recv_char = 0;                                                           
-    while(recv_char != '\n'){   /* lettura dell'input */      
-      int status = SYSCALL(DOIO, (unsigned int)&(terminalDEVREG->term.recv_command), RECEIVECHAR, 0);  
-      if((status & 0xFF) == CHARRECV){ // NO errore
-        *virtualAddress = status >> BYTELENGTH;
-        recv_char = status >> BYTELENGTH;
-        virtualAddress++;
-        ret++;
-      } else {
-        ret = -status; 
-        break;
-      }
-    }
-    // VERHOGEN DA FARE corretto?
-     SYSCALL(VERHOGEN, (int)&semTerminalDeviceReading[terminalSemaphoreIndex], 0, 0);  
-  sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
+    SYSCALL(VERHOGEN, (int)sem, 0, 0);
+    sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
 }
