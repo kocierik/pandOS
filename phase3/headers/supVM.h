@@ -6,6 +6,7 @@
 #include "supSyscall.h"
 #include "p3test.h"
 #include "TLBhandler.h"
+#include <umps3/umps/cp0.h>
 
 #define SWAP_POOL_ADDR (memaddr *)0x20020000
 

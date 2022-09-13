@@ -2,11 +2,13 @@
 
 extern pcb_PTR currentActiveProc;
 
+/**
 // convert the entryhi value into an index
 int entryhi_to_index(memaddr entry_hi)
 {
     return ((entry_hi & 0xFFFFF000) >> VPNSHIFT) - 0x80000; // da controllare
 }
+*/
 
 // tlb refill handler
 void uTLB_RefillHandler()
