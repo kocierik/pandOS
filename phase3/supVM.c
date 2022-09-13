@@ -1,7 +1,6 @@
 #include "./headers/supVM.h"
-#define SWAPSTART 0x20020000
 
-extern int semaphore[NSUPPSEM];
+// extern int semaphore[NSUPPSEM];  // a cosa ci serve?
 
 // init semaphore and swap pool table
 void init_swap_pool_table()
@@ -73,6 +72,55 @@ unsigned int read_backing_store(int asid, memaddr addr, unsigned int num_dev_blo
   return backing_store_op(asid, addr, num_dev_block, 'r');
 }
 
+// Disabilita gli interrupts
+void off_interrupts()
+{
+  setSTATUS(getSTATUS() & (DISABLEINTS));
+}
+
+// Abilita gli interrupts
+void on_interrupts()
+{
+  setSTATUS(getSTATUS() & (IECON));
+}
+
+// Legge dal dispositivo di flash
+int read_flash(int asid, int block, void *dest)
+{
+  off_interrupts();
+  dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
+  dev->data0 = (memaddr)dest;
+  int cmd = FLASHREAD | block << 8;
+  int res = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
+  on_interrupts();
+  return res;
+}
+
+// Scrive su un disposivo di flash
+int write_flash(int asid, int block, void *src)
+{
+  off_interrupts();
+  dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
+  int cmd = FLASHWRITE | block << 8;
+  dev->data0 = (memaddr)src;
+  int ret = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
+  on_interrupts();
+  return ret;
+}
+
+// aggiorna TLB
+void update_tlb(pteEntry_t p)
+{
+  setENTRYHI(p.pte_entryHI);
+  TLBP();
+  if ((getINDEX() & PRESENTFLAG) == 0) // controllo giusto?
+  {
+    setENTRYHI(p.pte_entryHI);
+    setENTRYLO(p.pte_entryLO);
+    TLBWI();
+  }
+}
+
 // da completare
 void pager()
 {
@@ -88,75 +136,54 @@ void pager()
   SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
   // Page number mancante
-  int index = ENTRYHI_GET_ASID(supp_state->entry_hi); // da controllare
+  int index = ENTRYHI_GET_ASID(supp_state->entry_hi); // da controllare!!
   // int index = entryhi_to_index(supp_state->entry_hi);
 
-  // Frame dalla Swap Pool trovato utilizzando un algoritmo già implementato in Pandos
+  // Prendo una pagina vittima da sostituire
   int victim_page = pick_frame();
-
-  unsigned int victim_page_addr = SWAPSTART + (victim_page * PAGESIZE);
-  unsigned int missing_page_num = (supp_state->entry_hi & GETPAGENO) >> VPNSHIFT;
+  memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
+  memaddr missing_page_num = (supp_state->entry_hi & GETPAGENO) >> VPNSHIFT; // da controllare??
   swap_t swap_entry = swap_pool_table[victim_page];
   int asid = swap_entry.sw_asid;
 
   // Controllo se il frame scelto è occupato
   if (!is_spframe_free(victim_page))
   {
-    // Disabilito interrupt per eseguire le seguenti operazioni atomicamente
-    setSTATUS(getSTATUS() & (DISABLEINTS));
+    off_interrupts();
 
     /*8.a Marca come invalid la riga della tabella delle pagine corrispondente alla pagina vittima */
     pteEntry_t *victim_pte = swap_entry.sw_pte;
-    victim_pte->pte_entryLO = victim_pte->pte_entryLO & (!VALIDON); // TODO Controllare
+    victim_pte->pte_entryLO &= !VALIDON;
 
     // 8.b Aggiornamento del TLB
-    setENTRYHI(victim_pte->pte_entryHI);
-    TLBP();
-    if ((getINDEX() & PRESENTFLAG) == 0)
-    {
-      setENTRYHI(victim_pte->pte_entryHI);
-      setENTRYLO(victim_pte->pte_entryLO);
-      TLBWI();
-    }
+    update_tlb(*victim_pte);
 
-    // Riattivo interrupt
-    setSTATUS(getSTATUS() | IECON);
+    on_interrupts();
 
     /* WRITE FLASH */
-    dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
-    device->data0 = (memaddr)victim_page_addr;
-    const size_tt cmd = FLASHWRITE | index << 8;
-    // TODO modifica commento -> 8 number of the least significant bit of BLOCKNUMBER in the COMMAND field.
-    const int result = SYSCALL(DOIO, (int)&device->command, cmd, 0);
-    // Controllo se ci sono errori, se si genero una trap.
-    if (result != DEV_STATUS_READY)
+    if (write_flash(asid, index, (void *)victim_page_addr) != DEV_STATUS_READY)
       trap();
   }
 
   /* READ FLASH */
-  dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
-  device->data0 = (memaddr)victim_page_addr;
-  const size_tt cmd = FLASHREAD | index << 8;
-  const int result = SYSCALL(DOIO, (int)&device->command, cmd, 0);
-  if (result != DEV_STATUS_READY)
+  if (read_flash(asid, index, (void *)victim_page_addr) != DEV_STATUS_READY)
     trap();
 
+  off_interrupts();
+
+  // aggiungi entry alla swap table
   swap_entry.sw_asid = supp->sup_asid;
   swap_entry.sw_pageNo = missing_page_num;
   swap_entry.sw_pte = &(supp->sup_privatePgTbl[missing_page_num]);
 
   // Update page table
-  setSTATUS(getSTATUS() & (DISABLEINTS));
+  // supp->sup_privatePgTbl[missing_page_num].pte_entryLO = victim_frame_addr | VALIDON | DIRTYON; // da geno: io userei questaaaa forseee dipende se è giusto il missing_page_num come index
+  supp->sup_privatePgTbl[missing_page_num].pte_entryLO = (unsigned int)&swap_entry | VALIDON | DIRTYON; // da controllare??
 
-  // sup_ptr->sup_privatePgTbl[missing_page_num].pte_entryLO = (victim_page_addr & 0xFFFFF000) | VALIDON | (sup_ptr->sup_privatePgTbl[missing_page_num].pte_entryLO & DIRTYON);
+  // update TLB??
+  on_interrupts();
 
-  // page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
-
-  supp->sup_privatePgTbl[missing_page_num].pte_entryLO = (unsigned int)&swap_entry | VALIDON | DIRTYON;
-
-  setSTATUS(getSTATUS() | IECON);
-
-  // unsigned int deviceBlockNumber = swap_entry.sw_pageNo; /* [0 - 31] */
+  // unsigned int deviceBlockNumber = swap_entry.sw_pageNo; /* [0 - 31] */ //??
 
   SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
   LDST(supp_state);

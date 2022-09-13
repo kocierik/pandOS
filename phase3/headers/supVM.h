@@ -6,9 +6,9 @@
 #include "supSyscall.h"
 #include "p3test.h"
 #include "TLBhandler.h"
-#include <umps3/umps/cp0.h>
+#include <umps/cp0.h>
 
-#define SWAP_POOL_ADDR (memaddr *)0x20020000
+#define SWAP_POOL_ADDR (memaddr)0x20020000
 
 // swap pool table
 static swap_t swap_pool_table[POOLSIZE];
@@ -21,6 +21,11 @@ void init_swap_pool_table();
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid);
 int pick_frame();
 int is_spframe_free(int i);
+void off_interrupts();
+void on_interrupts();
+int read_flash(int asid, int block, void *dest);
+int write_flash(int asid, int block, void *src);
+void update_tlb(pteEntry_t p);
 unsigned int backing_store_op(int asid, memaddr addr, unsigned int num_dev_block, char mode);
 unsigned int write_backing_store(int asid, memaddr addr, unsigned int num_dev_block);
 unsigned int read_backing_store(int asid, memaddr addr, unsigned int num_dev_block);
