@@ -3,6 +3,9 @@
 void bp() {}
 
 // init semaphore and swap pool table
+/**
+ * Initialize the swap pool table.
+ */
 void init_swap_pool_table()
 {
     swap_pool_sem = 1;
@@ -11,6 +14,12 @@ void init_swap_pool_table()
 }
 
 // init a page table with the right asid and addresses
+/**
+ * It initializes the page table for the process
+ * 
+ * @param pt the page table
+ * @param asid the address space identifier
+ */
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
 {
     for (int i = 0; i < MAXPAGES - 1; i++)
@@ -30,6 +39,12 @@ int is_spframe_free(int i)
 }
 
 // pick an index (fifo implemented)
+/**
+ * It returns the first free frame in the pool, or the next frame in the pool if all frames are
+ * occupied
+ * 
+ * @return The index of the first free frame in the pool.
+ */
 int pick_frame()
 {
     static int c = 0;
@@ -51,6 +66,18 @@ void on_interrupts()
     setSTATUS(getSTATUS() & (IECON));
 }
 
+/**
+ * It writes the address of the flash memory to be accessed in the data0 register of the device, then
+ * it issues a DOIO command to the device, with the command field set to either FLASHWRITE or
+ * FLASHREAD, depending on the mode parameter
+ * 
+ * @param asid the ASID of the device (1-4)
+ * @param block the block number to read/write
+ * @param addr the address of the data to be written or read
+ * @param mode 'r' for read, 'w' for write
+ * 
+ * @return The result of the syscall.
+ */
 int flash(int asid, int block, memaddr addr, char mode)
 {
     off_interrupts();
@@ -63,6 +90,11 @@ int flash(int asid, int block, memaddr addr, char mode)
 }
 
 // aggiorna TLB
+/**
+ * It updates the TLB with the given page table entry.
+ * 
+ * @param p the page table entry
+ */
 void update_tlb(pteEntry_t p)
 {
     setENTRYHI(p.pte_entryHI);
@@ -76,6 +108,9 @@ void update_tlb(pteEntry_t p)
 }
 
 // da completare
+/**
+ * It reads the page from the flash memory and puts it in the swap pool
+ */
 void pager()
 {
     myprint("pager start\n");

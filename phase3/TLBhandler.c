@@ -11,6 +11,10 @@ void trap()
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
+/**
+ * It takes the virtual address of the page fault, finds the corresponding page table entry, and writes
+ * it to the TLB
+ */
 void uTLB_RefillHandler()
 {
     myprint("utlb refill start\n");
@@ -37,6 +41,9 @@ void uTLB_RefillHandler()
     LDST(s);
 }
 
+/**
+ * It handles general exceptions
+ */
 void general_execption_handler()
 {
     myprint("general execption\n");
@@ -57,6 +64,12 @@ void general_execption_handler()
     LDST(save);
 }
 
+/**
+ * It handles the syscall exception by calling the appropriate function based on the value of the
+ * syscall number in register a0
+ * 
+ * @param exc_sd the support_t struct that contains the state of the exception
+ */
 void sup_syscall_handler(support_t *exc_sd)
 {
     myprint("syscall user\n");

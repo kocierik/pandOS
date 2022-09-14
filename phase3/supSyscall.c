@@ -4,6 +4,11 @@ extern int semPrinterDevice[8];
 extern int semTerminalDeviceWriting[8];
 extern int semTerminalDeviceReading[8];
 
+/**
+ * It gets the time of day from the CPU and puts it in the v0 register
+ * 
+ * @param s the support structure
+ */
 void get_tod(support_t *s)
 {
     cpu_t tod;
@@ -11,6 +16,12 @@ void get_tod(support_t *s)
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = tod;
 }
 
+/**
+ * It releases the swap pool semaphore, unmarks the swap pool table, releases the master semaphore,
+ * frees the support descriptor and terminates the process
+ * 
+ * @param s the support descriptor
+ */
 void terminate(support_t *s)
 {
     // SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0); // release swap pool semaphore, serve? da controllare (prob non serve)
@@ -32,6 +43,14 @@ void write_to_terminal(support_t *s)
     syscall_write(s, IL_TERMINAL);
 }
 
+/**
+ * It returns a pointer to the semaphore of the device with index i
+ * 
+ * @param i the index of the device
+ * @param IL_X the device type, either IL_PRINTER or IL_TERMINAL
+ * 
+ * @return The address of the semaphore for the device.
+ */
 int *get_dev_sem(int i, int IL_X)
 {
     int *sems;
@@ -54,6 +73,12 @@ int *get_dev_sem(int i, int IL_X)
 }
 
 // da controllare
+/**
+ * It writes a string to a device
+ * 
+ * @param s the support structure
+ * @param IL_X the device type (terminal or disk)
+ */
 void syscall_write(support_t *s, int IL_X)
 {
     myprint("write start \n");
@@ -110,6 +135,12 @@ void syscall_write(support_t *s, int IL_X)
 }
 
 // da controllare
+/**
+ * It reads from the terminal, and stores the read characters in the virtual address passed as argument
+ * 
+ * @param sup the support structure
+ * @param virtualAddr the address of the first byte of the buffer where the input will be stored
+ */
 void read_from_terminal(support_t *sup, char *virtualAddr)
 {
     myprint("read from term start\n");
