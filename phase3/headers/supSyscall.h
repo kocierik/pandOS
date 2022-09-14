@@ -17,7 +17,7 @@ void get_tod(support_t *s);
 void terminate(support_t *s);
 void write_to_printer(support_t *s);
 void write_to_terminal(support_t *s);
-void syscall_write(support_t *s, int IL_X);
+void write(support_t *s, int IL_X);
 void read_from_terminal(support_t *sup, char *virtualAddr);
 
 #endif

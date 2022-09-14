@@ -92,9 +92,11 @@ void device_handler(int interLine, state_t *excState)
     int *deviceSemaphore;
     int devNumber = getDevice(interLine);
 
+    devreg_t *tmp = (devreg_t *)DEV_REG_ADDR(interLine, devNumber);
+
     if (interLine == IL_TERMINAL)
     {
-        termreg_t *devRegAddr = (termreg_t *)(0x10000054 + ((IL_TERMINAL - 3) * 0x80) + (devNumber * 0x10));
+        termreg_t *devRegAddr = &tmp->term;
 
         if (devRegAddr->recv_status == RECVD)
         {
@@ -111,8 +113,8 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-        dtpreg_t *devRegAddr = (dtpreg_t *)((0x10000054 + ((interLine - 3) * 0x80) + (devNumber * 0x10)));
-        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
+        dtpreg_t *devRegAddr = &tmp->dtp;  // da controllare
+        deviceSemaphore = getDeviceSemaphore(interLine, devNumber); 
         statusCode = devRegAddr->status; // Save status code
         devRegAddr->command = ACK;       // Acknowledge the interrupt
     }

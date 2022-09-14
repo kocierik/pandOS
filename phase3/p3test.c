@@ -1,5 +1,6 @@
 #include "./headers/p3test.h"
 
+// the program routine strarts here
 void test()
 {
     init_sds();
@@ -41,25 +42,25 @@ void free_sd(support_t *s)
 void create_uproc(int asid)
 {
     memaddr ramaddrs;
-    state_t proc_state;
-
     RAMTOP(ramaddrs);
+
+    state_t proc_state;
 
     proc_state.entry_hi = asid << ASIDSHIFT;
     proc_state.pc_epc = proc_state.reg_t9 = UPROCSTARTADDR;
     proc_state.reg_sp = USERSTACKTOP;
-    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
+    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da mettere? USERPON
 
     support_t *s = alloc_sd();
     s->sup_asid = asid;
 
     s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
     s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
-    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
+    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
 
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
     s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
-    s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
+    s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
 
     init_page_table(s->sup_privatePgTbl, asid);
 

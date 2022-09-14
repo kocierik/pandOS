@@ -67,7 +67,7 @@ void general_execption_handler()
 /**
  * It handles the syscall exception by calling the appropriate function based on the value of the
  * syscall number in register a0
- * 
+ *
  * @param exc_sd the support_t struct that contains the state of the exception
  */
 void sup_syscall_handler(support_t *exc_sd)

@@ -2,9 +2,8 @@
 
 void bp() {}
 
-// init semaphore and swap pool table
 /**
- * Initialize the swap pool table.
+ * Initialize the swap pool table and its semaphore.
  */
 void init_swap_pool_table()
 {
@@ -13,22 +12,28 @@ void init_swap_pool_table()
         swap_pool_table[i].sw_asid = NOPROC;
 }
 
-// init a page table with the right asid and addresses
 /**
  * It initializes the page table for the process
- * 
+ *
  * @param pt the page table
  * @param asid the address space identifier
  */
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
 {
+    memaddr file[1025]; // da controllare
+
+    if (flash(asid, 0, file, 'r') != READY)
+        trap();
+
+    int file_size = file[5] / PAGESIZE;
+
     for (int i = 0; i < MAXPAGES - 1; i++)
     {
         pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        pt[i].pte_entryLO = DIRTYON;
+        pt[i].pte_entryLO = i < file_size ? 0 : DIRTYON;
     }
     // stack
-    pt[MAXPAGES - 1].pte_entryHI = 0xBFFFF000 + (asid << ASIDSHIFT); //- USERSTACKTOP;
+    pt[MAXPAGES - 1].pte_entryHI = 0xBFFFF000 + (asid << ASIDSHIFT);
     pt[MAXPAGES - 1].pte_entryLO = DIRTYON;
 }
 
@@ -38,12 +43,10 @@ int is_spframe_free(int i)
     return swap_pool_table[i].sw_asid == NOPROC;
 }
 
-// pick an index (fifo implemented)
 /**
- * It returns the first free frame in the pool, or the next frame in the pool if all frames are
- * occupied
- * 
- * @return The index of the first free frame in the pool.
+ * It returns the first free frame in the pool, or the next frame in the pool in fifo order
+ *
+ * @return The index of the victim frame
  */
 int pick_frame()
 {
@@ -70,12 +73,12 @@ void on_interrupts()
  * It writes the address of the flash memory to be accessed in the data0 register of the device, then
  * it issues a DOIO command to the device, with the command field set to either FLASHWRITE or
  * FLASHREAD, depending on the mode parameter
- * 
- * @param asid the ASID of the device (1-4)
+ *
+ * @param asid the ASID of the device (1-8)
  * @param block the block number to read/write
  * @param addr the address of the data to be written or read
  * @param mode 'r' for read, 'w' for write
- * 
+ *
  * @return The result of the syscall.
  */
 int flash(int asid, int block, memaddr addr, char mode)
@@ -92,7 +95,7 @@ int flash(int asid, int block, memaddr addr, char mode)
 // aggiorna TLB
 /**
  * It updates the TLB with the given page table entry.
- * 
+ *
  * @param p the page table entry
  */
 void update_tlb(pteEntry_t p)
