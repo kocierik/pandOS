@@ -140,11 +140,15 @@ void pass_up_or_die(int pageFault, state_t *excState)
     {
         if (currentActiveProc->p_supportStruct == NULL)
         {
+            klog_print("\n die \n");
+            bp();
             term_proc(0);
             scheduler();
         }
         else
         {
+            klog_print("\n passup \n");
+            bp();
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;

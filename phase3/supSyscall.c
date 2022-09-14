@@ -56,10 +56,14 @@ int *get_dev_sem(int i, int IL_X)
 // da controllare
 void syscall_write(support_t *s, int IL_X)
 {
+    myprint("write start \n");
+
     unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
     int len = s->sup_exceptState[GENERALEXCEPT].reg_a2;
-    int arg1, arg2, terminal = IL_X == IL_TERMINAL, index = s->sup_asid - 1;
+    int arg1, arg2,
+        terminal = IL_X == IL_TERMINAL, // bool: if is terminal TRUE
+        index = s->sup_asid - 1;
 
     int *sem = get_dev_sem(index, IL_X);
     void *device = (void *)DEV_REG_ADDR(IL_X, index);
@@ -91,7 +95,7 @@ void syscall_write(support_t *s, int IL_X)
 
         status = SYSCALL(DOIO, arg1, (int)arg2, 0);
 
-        if ((status & (terminal ? TERMSTATMASK : -1)) != (terminal ? RECVD : DEV_STATUS_READY))
+        if ((status & (terminal ? TERMSTATMASK : -1)) != (terminal ? RECVD : READY))
         {
             len = -(status & (terminal ? TERMSTATMASK : -1));
             break;
@@ -100,12 +104,16 @@ void syscall_write(support_t *s, int IL_X)
 
     SYSCALL(VERHOGEN, (int)&sem, 0, 0);
 
+    myprint("write end\n");
+
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
 
 // da controllare
 void read_from_terminal(support_t *sup, char *virtualAddr)
 {
+    myprint("read from term start\n");
+
     int ret = 0;
 
     int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
@@ -136,4 +144,6 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     }
     SYSCALL(VERHOGEN, (int)sem, 0, 0);
     sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
+
+    myprint("read from term end\n");
 }

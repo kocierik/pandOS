@@ -11,8 +11,11 @@
 #include "supVM.h"
 #include "TLBhandler.h"
 
+#define myprint(s) \
+    klog_print(s); \
+    bp()
+
 void trap();
-//int entryhi_to_index(memaddr enthi);
 void uTLB_RefillHandler();
 void general_execption_handler();
 void sup_syscall_handler(support_t *exc_sd);

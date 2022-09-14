@@ -6,27 +6,41 @@ extern void klog_print(char *s);
 // just a terminate wrapper
 void trap()
 {
-    klog_print("\ntrappolona\n");
-    bp();
+    myprint("trap\n");
+
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
 void uTLB_RefillHandler()
 {
+    myprint("utlb refill start\n");
+
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
-    if (index == 0x3FFFF){ 
-		index = 31; /* stack */
-    } // serve fare un controllo sull'index???
+    if (index == 0x3FFFF)
+    {
+        myprint("stack index \n");
+        index = 31; /* stack */
+    }
+    else if (index < 0 || index > 31)
+    { // da togliere
+        myprint("index strano \n");
+    }
+    // serve fare un controllo sull'index???
     pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entryHI);
     setENTRYLO(pte.pte_entryLO);
     TLBWR();
+
+    myprint("utlb refill end\n");
+
     LDST(s);
 }
 
 void general_execption_handler()
 {
+    myprint("general execption\n");
+
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
     save->pc_epc += WORD_SIZE;
@@ -45,6 +59,8 @@ void general_execption_handler()
 
 void sup_syscall_handler(support_t *exc_sd)
 {
+    myprint("syscall user\n");
+
     switch (exc_sd->sup_exceptState[GENERALEXCEPT].reg_a0)
     {
     case TERMINATE:
