@@ -1,5 +1,8 @@
 #include "./headers/p3test.h"
 
+extern void klog_print(char *s);
+
+
 void test()
 {
     init_sds();
@@ -69,8 +72,10 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 0; i < UPROCMAX; i++)
+    for (int i = 0; i < UPROCMAX; i++) {
+        klog_print("sto creando un processo\n");
         create_uproc(i + 1); // asid from 1 to 8
+    }
 
     // wait for others process to end
     for (int i = 0; i < UPROCMAX; i++)

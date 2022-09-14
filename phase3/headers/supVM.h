@@ -17,6 +17,10 @@ static int swap_pool_sem;
 // page table entry per Uproc
 typedef pteEntry_t page_table[MAXPAGES];
 
+
+void bp();
+
+
 void init_swap_pool_table();
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid);
 int pick_frame();

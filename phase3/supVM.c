@@ -1,6 +1,8 @@
 #include "./headers/supVM.h"
 
-// extern int semaphore[NSUPPSEM];  // a cosa ci serve?
+void bp() {}
+extern void klog_print(char *s);
+extern void klog_print_dec(unsigned int num);
 
 // init semaphore and swap pool table
 void init_swap_pool_table()
@@ -41,37 +43,6 @@ int pick_frame()
 
 /* Useful function for pager */
 
-unsigned int backing_store_op(int asid, memaddr addr, unsigned int num_dev_block, char mode)
-{
-  /*
-  int index = 8 + asid-1;
-  SYSCALL(PASSEREN, &semaphore[index], 0, 0);  // sarà il semDiskDevice???
-
-  devreg_t* devReg = (devreg_t*) DEV_REG_ADDR(FLASHINT, asid-1);
-  devReg->dtp.data0 = addr;
-
-  unsigned int command;
-  // Verifico che sia un operazione di lettura (reading) o scrittura (writing)
-  if (mode == 'r') command = (num_dev_block << 8) | FLASHREAD;
-  else command = (num_dev_block << 8) | FLASHWRITE;
-
-  int status = SYSCALL(DOIO, (unsigned int) &(devReg->dtp.command), command, 0);
-  SYSCALL(VERHOGEN, &semaphore[index], 0, 0);
-
-  return status;
-  */
-}
-
-unsigned int write_backing_store(int asid, memaddr addr, unsigned int num_dev_block)
-{
-  return backing_store_op(asid, addr, num_dev_block, 'w');
-}
-
-unsigned int read_backing_store(int asid, memaddr addr, unsigned int num_dev_block)
-{
-  return backing_store_op(asid, addr, num_dev_block, 'r');
-}
-
 // Disabilita gli interrupts
 void off_interrupts()
 {
@@ -87,11 +58,14 @@ void on_interrupts()
 // Legge dal dispositivo di flash
 int read_flash(int asid, int block, void *dest)
 {
+
   off_interrupts();
   dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
   dev->data0 = (memaddr)dest;
   int cmd = FLASHREAD | block << 8;
   int res = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
+  klog_print("ciao");
+  bp();
   on_interrupts();
   return res;
 }
@@ -101,8 +75,8 @@ int write_flash(int asid, int block, void *src)
 {
   off_interrupts();
   dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
-  int cmd = FLASHWRITE | block << 8;
   dev->data0 = (memaddr)src;
+  int cmd = FLASHWRITE | block << 8;
   int ret = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
   on_interrupts();
   return ret;
@@ -113,7 +87,7 @@ void update_tlb(pteEntry_t p)
 {
   setENTRYHI(p.pte_entryHI);
   TLBP();
-  if ((getINDEX() & PRESENTFLAG) == 0) // controllo giusto?
+  if ((getINDEX() & PRESENTFLAG) == 0)
   {
     setENTRYHI(p.pte_entryHI);
     setENTRYLO(p.pte_entryLO);
@@ -135,16 +109,18 @@ void pager()
   // Ottengo la mutua esclusione sulla Swap Pool table
   SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
-  // Page number mancante
-  int index = ENTRYHI_GET_ASID(supp_state->entry_hi); // da controllare!!
-  // int index = entryhi_to_index(supp_state->entry_hi);
-
   // Prendo una pagina vittima da sostituire
   int victim_page = pick_frame();
-  memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
-  memaddr missing_page_num = (supp_state->entry_hi & GETPAGENO) >> VPNSHIFT; // da controllare??
+
   swap_t swap_entry = swap_pool_table[victim_page];
   int asid = swap_entry.sw_asid;
+
+  // Page number mancante
+  int index = swap_entry.sw_pageNo;
+
+  // Dati utili
+  memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
+  memaddr vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
 
   // Controllo se il frame scelto è occupato
   if (!is_spframe_free(victim_page))
@@ -171,19 +147,18 @@ void pager()
 
   off_interrupts();
 
-  // aggiungi entry alla swap table
+  // Adding entry to swap table
   swap_entry.sw_asid = supp->sup_asid;
-  swap_entry.sw_pageNo = missing_page_num;
-  swap_entry.sw_pte = &(supp->sup_privatePgTbl[missing_page_num]);
+  swap_entry.sw_pageNo = vpn;
+  swap_entry.sw_pte = &(supp->sup_privatePgTbl[vpn]);
 
   // Update page table
-  // supp->sup_privatePgTbl[missing_page_num].pte_entryLO = victim_frame_addr | VALIDON | DIRTYON; // da geno: io userei questaaaa forseee dipende se è giusto il missing_page_num come index
-  supp->sup_privatePgTbl[missing_page_num].pte_entryLO = (unsigned int)&swap_entry | VALIDON | DIRTYON; // da controllare??
+  supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr | VALIDON | DIRTYON;
 
-  // update TLB??
+  // Update TLB
+  update_tlb(supp->sup_privatePgTbl[index]); // da controllare
+
   on_interrupts();
-
-  // unsigned int deviceBlockNumber = swap_entry.sw_pageNo; /* [0 - 31] */ //??
 
   SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
   LDST(supp_state);

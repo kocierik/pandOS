@@ -71,7 +71,7 @@ void syscall_write(support_t *s, int IL_X)
 
     for (int i = 0; i < len; i++)
     {
-        setSTATUS(getSTATUS() & (!IECON)); // disable interrupts
+        off_interrupts();
 
         arg1 = (int)&((dtpreg_t *)device)->command;
         arg2 = PRINTCHR;
@@ -87,7 +87,7 @@ void syscall_write(support_t *s, int IL_X)
             arg2 |= 0;
         }
 
-        setSTATUS(getSTATUS() | IECON); // enable interrupts
+        on_interrupts();
 
         status = SYSCALL(DOIO, arg1, (int)arg2, 0);
 

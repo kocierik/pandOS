@@ -1,25 +1,23 @@
 #include "headers/TLBhandler.h"
 
 extern pcb_PTR currentActiveProc;
-
-/*
-// convert the entryhi value into an index
-int entryhi_to_index(memaddr entry_hi)
-{
-    return ((entry_hi & 0xFFFFF000) >> VPNSHIFT) - 0x80000; // da controllare
-}
-*/
+extern void klog_print(char *s);
 
 // just a terminate wrapper
 void trap()
 {
+    klog_print("\ntrappolona\n");
+    bp();
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
 void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
-    int index = ENTRYHI_GET_ASID(s->entry_hi);  // da controllare
+    int index = ENTRYHI_GET_VPN(s->entry_hi);
+    if (index == 0x3FFFF){ 
+		index = 31; /* stack */
+    } // serve fare un controllo sull'index???
     pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entryHI);
     setENTRYLO(pte.pte_entryLO);
