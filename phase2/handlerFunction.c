@@ -22,6 +22,7 @@ int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 // handler IL_CPUTIMER
 void plt_time_handler(state_t *excState)
 {
+    klog_print("plt exc\n");
     setTIMER(-2); // ACK
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
@@ -31,6 +32,7 @@ void plt_time_handler(state_t *excState)
 // handler IL_TIMER
 void intervall_timer_handler(state_t *excState)
 {
+    klog_print("timer exc\n");
     LDIT(100000); // ACK
     pcb_PTR p;
     while ((p = removeBlocked(&semIntervalTimer)) != NULL)
@@ -94,6 +96,7 @@ void device_handler(int interLine, state_t *excState)
 
     devreg_t *tmp = (devreg_t *)DEV_REG_ADDR(interLine, devNumber);
 
+    klog_print("if_handl\n");
     if (interLine == IL_TERMINAL)
     {
         termreg_t *devRegAddr = &tmp->term;
@@ -113,9 +116,11 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
+        klog_print("flash\n");
         dtpreg_t *devRegAddr = &tmp->dtp;  // da controllare
         deviceSemaphore = getDeviceSemaphore(interLine, devNumber); 
         statusCode = devRegAddr->status; // Save status code
+        klog_print_dec(statusCode);
         devRegAddr->command = ACK;       // Acknowledge the interrupt
     }
 
@@ -142,15 +147,13 @@ void pass_up_or_die(int pageFault, state_t *excState)
     {
         if (currentActiveProc->p_supportStruct == NULL)
         {
-            klog_print("\n die \n");
-            bp();
+            klog_print("die \n");
             term_proc(0);
             scheduler();
         }
         else
         {
-            klog_print("\n passup \n");
-            bp();
+            klog_print("passup \n");
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;

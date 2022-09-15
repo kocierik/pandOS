@@ -54,14 +54,11 @@ void create_uproc(int asid)
     support_t *s = alloc_sd();
     s->sup_asid = asid;
 
-    s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr) &pager;
-
+    s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
     s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
-    //support_table[asid-1].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &(support_table[asid-1].sup_stackTLB[499]);
-
     s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
-    s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr) &general_execption_handler;
+    s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
     s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 

@@ -20,12 +20,13 @@ void uTLB_RefillHandler()
 
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
+    klog_print_dec(index);
     if (index == 0x3FFFF)
     {
         myprint("stack index \n");
         index = 31; /* stack */
     }
-    else if (index < 0 || index > 31)
+    else if (index < 0 || index > 31 || index == 31)
     { // da togliere
         myprint("index strano \n");
     }
@@ -45,7 +46,7 @@ void uTLB_RefillHandler()
  */
 void general_execption_handler()
 {
-    myprint("general execption\n");
+    myprint("gen exc\n");
 
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
@@ -71,7 +72,7 @@ void general_execption_handler()
  */
 void sup_syscall_handler(support_t *exc_sd)
 {
-    myprint("syscall user\n");
+    myprint("sysuser\n");
 
     switch (exc_sd->sup_exceptState[GENERALEXCEPT].reg_a0)
     {

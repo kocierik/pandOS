@@ -1,5 +1,7 @@
 #include "./headers/supVM.h"
 
+extern int semFlashDevice[8];
+
 void bp() {}
 
 /**
@@ -20,21 +22,10 @@ void init_swap_pool_table()
  */
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
 {
-    memaddr file[1025]; // da controllare
-
-    // TODO Questo controllo è stato saltato, ma va bene?
-    /*
-    if (flash(asid, 0, file, 'r') != READY) 
-          trap();
-    */    
-
-    flash(asid, 0, file, 'r');
-    int file_size = file[5] / PAGESIZE;
-
     for (int i = 0; i < MAXPAGES - 1; i++)
     {
         pt[i].pte_entryHI = KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        pt[i].pte_entryLO = i < file_size ? 0 : DIRTYON;
+        pt[i].pte_entryLO = DIRTYON;
     }
     // stack
     pt[MAXPAGES - 1].pte_entryHI = 0xBFFFF000 + (asid << ASIDSHIFT);
@@ -88,6 +79,7 @@ void on_interrupts()
 int flash(int asid, int block, memaddr addr, char mode)
 {
     off_interrupts();
+    myprint("flash\n");
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
@@ -96,7 +88,6 @@ int flash(int asid, int block, memaddr addr, char mode)
     return res;
 }
 
-// aggiorna TLB
 /**
  * It updates the TLB with the given page table entry.
  *

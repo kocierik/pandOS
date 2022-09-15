@@ -27,6 +27,8 @@ void exception_handler() {
 
 // case 0 exception_handler() 
 void interrupt_handler(state_t *excState) {
+    myprint("int hand\n");
+
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
     if      CAUSE_IP_GET(cause, IL_CPUTIMER)    plt_time_handler(excState);
@@ -54,7 +56,6 @@ void trap_handler(state_t *excState) {
 
 // case 8 case exception_handler()
 void syscall_handler(state_t *callerProcState) {
-    myprint("case 8 exception_handler()");
     int syscode = (*callerProcState).reg_a0;
     callerProcState->pc_epc += WORDLEN;
     
