@@ -22,9 +22,13 @@ void init_page_table(pteEntry_t pt[MAXPAGES], int asid)
 {
     memaddr file[1025]; // da controllare
 
-    if (flash(asid, 0, file, 'r') != READY)
-        trap();
+    // TODO Questo controllo è stato saltato, ma va bene?
+    /*
+    if (flash(asid, 0, file, 'r') != READY) 
+          trap();
+    */    
 
+    flash(asid, 0, file, 'r');
     int file_size = file[5] / PAGESIZE;
 
     for (int i = 0; i < MAXPAGES - 1; i++)

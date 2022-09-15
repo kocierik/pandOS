@@ -46,21 +46,24 @@ void create_uproc(int asid)
 
     state_t proc_state;
 
-    proc_state.entry_hi = asid << ASIDSHIFT;
     proc_state.pc_epc = proc_state.reg_t9 = UPROCSTARTADDR;
     proc_state.reg_sp = USERSTACKTOP;
     proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da mettere? USERPON
+    proc_state.entry_hi = asid << ASIDSHIFT;
 
     support_t *s = alloc_sd();
     s->sup_asid = asid;
 
-    s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
-    s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
-    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
+    s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr) &pager;
 
-    s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
-    s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
+    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
+    //support_table[asid-1].sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr) &(support_table[asid-1].sup_stackTLB[499]);
+
+    s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
+
+    s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr) &general_execption_handler;
     s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
+    s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     init_page_table(s->sup_privatePgTbl, asid);
 
@@ -70,13 +73,15 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 0; i < UPROCMAX; i++)
+    for (int i = 1; i <= UPROCMAX; i++)
     {
         myprint("creo proc\n");
-        create_uproc(i + 1); // asid from 1 to 8
+        create_uproc(i); // asid from 1 to 8
     }
+    myprint("Tutti i processi caricati\n");
 
     // wait for others process to end
     for (int i = 0; i < UPROCMAX; i++)
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
+    myprint("Passeren eseguite\n");
 }

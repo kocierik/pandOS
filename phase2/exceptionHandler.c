@@ -1,4 +1,5 @@
 #include "headers/exceptionHandler.h"
+#include "../phase3/headers/p3test.h"
 
 
 void exception_handler() {
@@ -41,16 +42,19 @@ void interrupt_handler(state_t *excState) {
 
 // case 1 ... 3 exception_handler()
 void tlb_handler(state_t *excState) {
+    myprint("case 1 ... 3 exception_handler()\n");
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
 // case 4 ... 7 | 9 ... 12 exception_handler()
 void trap_handler(state_t *excState) {
+    myprint("case 4-7 9-12 exception_handler()");
     pass_up_or_die(GENERALEXCEPT, excState);
 }
 
 // case 8 case exception_handler()
 void syscall_handler(state_t *callerProcState) {
+    myprint("case 8 exception_handler()");
     int syscode = (*callerProcState).reg_a0;
     callerProcState->pc_epc += WORDLEN;
     

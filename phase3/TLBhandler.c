@@ -7,7 +7,6 @@ extern void klog_print(char *s);
 void trap()
 {
     myprint("trap\n");
-
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
