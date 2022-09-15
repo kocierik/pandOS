@@ -6,7 +6,7 @@ extern void klog_print(char *s);
 // just a terminate wrapper
 void trap()
 {
-    myprint("trap\n");
+    myprint("trap  ");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -16,15 +16,19 @@ void trap()
  */
 void uTLB_RefillHandler()
 {
-    myprint("utlb refill start\n");
+    myprint("tlbref start  ");
 
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
+
+    klog_print("index: ");
     klog_print_dec(index);
-    if (index == 0x3FFFF)
+    klog_print("\n");
+
+    if (index == 0x3FFFF)  /* stack */
     {
         myprint("stack index \n");
-        index = 31; /* stack */
+        index = 31;
     }
     else if (index < 0 || index > 31 || index == 31)
     { // da togliere
@@ -36,7 +40,7 @@ void uTLB_RefillHandler()
     setENTRYLO(pte.pte_entryLO);
     TLBWR();
 
-    myprint("utlb refill end\n");
+    myprint("tlbref end  ");
 
     LDST(s);
 }
@@ -46,7 +50,7 @@ void uTLB_RefillHandler()
  */
 void general_execption_handler()
 {
-    myprint("gen exc\n");
+    myprint("gen exc  ");
 
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];

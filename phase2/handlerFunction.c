@@ -116,25 +116,33 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-        klog_print("flash\n");
+        klog_print("flashHAND  :)");
         dtpreg_t *devRegAddr = &tmp->dtp;  // da controllare
         deviceSemaphore = getDeviceSemaphore(interLine, devNumber); 
         statusCode = devRegAddr->status; // Save status code
         klog_print_dec(statusCode);
         devRegAddr->command = ACK;       // Acknowledge the interrupt
+
+        klog_print("flashHAND 2 :)");
     }
 
     /* V-Operation */
     pcb_PTR p = V(deviceSemaphore, NULL);
 
+        klog_print("flashHAND 3 :)");
+
     if (p == NULL || p == currentActiveProc)
     {
+
+        klog_print("flashHAND 4 :)");
         currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
     }
     else
     {
+
+        klog_print("flashHAND 5 :)");
         p->p_s.reg_v0 = statusCode;
         load_or_scheduler(excState);
     }

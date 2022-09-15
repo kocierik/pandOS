@@ -63,16 +63,19 @@ void create_uproc(int asid)
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     init_page_table(s->sup_privatePgTbl, asid);
-
+    klog_print("asid: ");
+    klog_print_dec(asid);
+    klog_print("  ");
+    bp();
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
 }
 
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= UPROCMAX; i++)
+    for (int i = 1; i <= 1; i++)   // DA MOFICARE
     {
-        myprint("creo proc\n");
+        myprint("new proc  ");
         create_uproc(i); // asid from 1 to 8
     }
     myprint("Tutti i processi caricati\n");

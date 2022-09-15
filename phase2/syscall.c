@@ -279,7 +279,7 @@ void do_IO_device(state_t *excState)
     int *cmdAddr = (int *)(*excState).reg_a1;
     int cmdValue = (int)(*excState).reg_a2;
 
-    int *devSemaphore = 0; // Semaphore address
+    int *devSemaphore; // Semaphore address
     devregarea_t *deviceRegs = (devregarea_t *)RAMBASEADDR;
 
     /* Searching which device is running looking first for terminal then for generic devices */
@@ -303,7 +303,7 @@ void do_IO_device(state_t *excState)
             for (int j = 0; j < 4; j++)
             {
                 //myprint("doio dev\n");
-                klog_print_dec((int)deviceRegs->devreg[j][i].dtp.command);
+                klog_print_dec((memaddr *)cmdAddr);
                 if (&(deviceRegs->devreg[j][i].dtp.command) == (memaddr *)cmdAddr)
                 {
                     myprint("eja\n");

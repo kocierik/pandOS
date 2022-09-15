@@ -15,6 +15,7 @@ void exception_handler() {
             break;
         case 4 ... 7:                           // Trap 
         case 9 ... 12:
+            klog_print_dec(causeCode);
             trap_handler(exceptionState);
             break;
         case 8:                                 // System Call
@@ -27,7 +28,7 @@ void exception_handler() {
 
 // case 0 exception_handler() 
 void interrupt_handler(state_t *excState) {
-    myprint("int hand\n");
+    myprint("int hand  ");
 
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
@@ -44,13 +45,13 @@ void interrupt_handler(state_t *excState) {
 
 // case 1 ... 3 exception_handler()
 void tlb_handler(state_t *excState) {
-    myprint("case 1 ... 3 exception_handler()\n");
+    myprint("tlb exc  ");
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
 // case 4 ... 7 | 9 ... 12 exception_handler()
 void trap_handler(state_t *excState) {
-    myprint("case 4-7 9-12 exception_handler()");
+    myprint("trap kern  ");
     pass_up_or_die(GENERALEXCEPT, excState);
 }
 
