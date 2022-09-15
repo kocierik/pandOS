@@ -7,7 +7,7 @@
 #include "p3test.h"
 #include "TLBhandler.h"
 #include <umps/cp0.h>
-#include "var.h"
+#include "../../phase2/headers/globals.h"
 
 extern int semFlashDevice[8];
 

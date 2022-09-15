@@ -1,12 +1,5 @@
 #include "./headers/p3test.h"
 
-static int master_sem; // master sem to controll the end of the uproc
-
-static support_t sd_table[UPROCMAX]; // table of usable support descriptor
-static struct list_head sd_free;     // list of free support descriptor
-
-static swap_t swap_pool_table[POOLSIZE];
-static int swap_pool_sem;
 
 // the program routine strarts here
 void test()

@@ -9,6 +9,7 @@
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"
+#include "../../phase2/headers/globals.h"
 
 #define myprint(s) \
     klog_print(s); \

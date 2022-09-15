@@ -10,7 +10,7 @@
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"
-#include "var.h"
+#include "../../phase2/headers/globals.h"
 
 extern pcb_PTR currentActiveProc;
 extern void klog_print(char *s);

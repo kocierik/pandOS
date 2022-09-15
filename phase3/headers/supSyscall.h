@@ -9,7 +9,7 @@
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"
-#include "var.h"
+#include "../../phase2/headers/globals.h"
 
 #define PRINTCHR 2
 #define TERMSTATMASK 0xFF
