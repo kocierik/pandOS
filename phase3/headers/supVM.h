@@ -9,7 +9,6 @@
 #include <umps/cp0.h>
 #include "../../phase2/headers/globals.h"
 
-extern int semFlashDevice[8];
 
 #define SWAP_POOL_ADDR (memaddr)0x20020000
 

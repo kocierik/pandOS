@@ -8,35 +8,7 @@
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "phase3/testers/strConcat.umps"
-        },
-        "flash1": {
-            "enabled": true,
             "file": "phase3/testers/terminalTest2.umps"
-        },
-        "flash2": {
-            "enabled": true,
-            "file": "phase3/testers/terminalTest3.umps"
-        },
-        "flash3": {
-            "enabled": true,
-            "file": "phase3/testers/terminalTest4.umps"
-        },
-        "flash4": {
-            "enabled": true,
-            "file": "phase3/testers/terminalTest5.umps"
-        },
-        "flash5": {
-            "enabled": true,
-            "file": "phase3/testers/fibEight.umps"
-        },
-        "flash6": {
-            "enabled": true,
-            "file": "phase3/testers/printerTest.umps"
-        },
-        "flash7": {
-            "enabled": true,
-            "file": "phase3/testers/fibEleven.umps"
         },
         "printer0": {
             "enabled": true,

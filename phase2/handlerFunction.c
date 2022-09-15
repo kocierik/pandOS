@@ -104,7 +104,6 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-<<<<<<< HEAD
         klog_print("flashHAND");
         dtpreg_t *devRegAddr = &tmp->dtp; // da controllare
         deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
@@ -112,39 +111,23 @@ void device_handler(int interLine, state_t *excState)
         klog_print_dec(statusCode);
         devRegAddr->command = ACK; // Acknowledge the interrupt
         klog_print("flashHAND 2");
-=======
-        klog_print("flash\n");
-        dtpreg_t *devRegAddr = &tmp->dtp;  // da controllare
-        deviceSemaphore = getDeviceSemaphore(interLine, devNumber); 
-        statusCode = devRegAddr->status; // Save status code
-        klog_print_dec(statusCode);
-        devRegAddr->command = ACK;       // Acknowledge the interrupt
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     }
 
     /* V-Operation */
     pcb_PTR p = V(deviceSemaphore, NULL);
 
-<<<<<<< HEAD
     klog_print("flashHAND 3");
 
     if (p == NULL || p == currentActiveProc)
     {
         klog_print("flashHAND 4");
-=======
-    if (p == NULL || p == currentActiveProc)
-    {
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
         currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
     }
     else
     {
-<<<<<<< HEAD
         klog_print("flashHAND 5");
-=======
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
         p->p_s.reg_v0 = statusCode;
         load_or_scheduler(excState);
     }

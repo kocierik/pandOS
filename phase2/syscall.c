@@ -255,11 +255,7 @@ void do_IO_device(state_t *excState)
     int *cmdAddr = (int *)(*excState).reg_a1;
     int cmdValue = (int)(*excState).reg_a2;
 
-<<<<<<< HEAD
     int *devSemaphore = NULL; // Semaphore address
-=======
-    int *devSemaphore = 0; // Semaphore address
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     devregarea_t *deviceRegs = (devregarea_t *)RAMBASEADDR;
 
     /* Searching which device is running looking first for terminal then for generic devices */
@@ -279,13 +275,7 @@ void do_IO_device(state_t *excState)
         {
             for (int j = 0; j < 4; j++)
             {
-<<<<<<< HEAD
                 if ((memaddr *)&deviceRegs->devreg[j][i].dtp.command == (memaddr *)cmdAddr)
-=======
-                //myprint("doio dev\n");
-                klog_print_dec((int)deviceRegs->devreg[j][i].dtp.command);
-                if (&(deviceRegs->devreg[j][i].dtp.command) == (memaddr *)cmdAddr)
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
                 {
                     if (j == 0)
                         devSemaphore = &semDiskDevice[i];

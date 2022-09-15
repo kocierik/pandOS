@@ -1,6 +1,5 @@
 #include "./headers/p3test.h"
 
-
 // the program routine strarts here
 void test()
 {
@@ -33,7 +32,7 @@ support_t *alloc_sd()
     return container_of(l, support_t, p_list);
 }
 
-// add a support descriptor to the free sd list
+// add a support desc to the free sd list
 void free_sd(support_t *s)
 {
     list_add(&s->p_list, &sd_free);
@@ -65,27 +64,20 @@ void create_uproc(int asid)
 
     init_page_table(s->sup_privatePgTbl, asid);
 
-<<<<<<< HEAD
     klog_print("asid: ");
     klog_print_dec(asid);
     klog_print("  ");
     bp();
 
-=======
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
 }
 
 // run every proc
 void run_proc()
 {
-<<<<<<< HEAD
     for (int i = 1; i <= 1; i++) // DA MOFICARE
-=======
-    for (int i = 1; i <= UPROCMAX; i++)
->>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     {
-        myprint("creo proc\n");
+        myprint("new proc  ");
         create_uproc(i); // asid from 1 to 8
     }
     myprint("all proc loaded\n");
