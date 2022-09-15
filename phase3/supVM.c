@@ -55,13 +55,13 @@ int pick_frame()
 // Disabilita gli interrupts
 void off_interrupts()
 {
-    setSTATUS(getSTATUS() & (!IECON));
+    setSTATUS(getSTATUS() & (DISABLEINTS));
 }
 
 // Abilita gli interrupts
 void on_interrupts()
 {
-    setSTATUS(getSTATUS() | (IECON));
+    setSTATUS(getSTATUS() & (IECON));
 }
 
 /**
@@ -79,8 +79,12 @@ void on_interrupts()
 int flash(int asid, int block, memaddr addr, char mode)
 {
     off_interrupts();
+<<<<<<< HEAD
     myprint("flash  ");
     klog_print_dec(asid);
+=======
+    myprint("flash\n");
+>>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
@@ -96,7 +100,10 @@ int flash(int asid, int block, memaddr addr, char mode)
  */
 void update_tlb(pteEntry_t p)
 {
+<<<<<<< HEAD
     myprint("tlb upd  ");
+=======
+>>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     setENTRYHI(p.pte_entryHI);
     TLBP();
     if ((getINDEX() & PRESENTFLAG) == 0)
@@ -113,12 +120,12 @@ void update_tlb(pteEntry_t p)
  */
 void pager()
 {
-    myprint("pager start  ");
+    myprint("pager start\n");
 
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *supp_state = &(supp->sup_exceptState[PGFAULTEXCEPT]);
 
-    if (supp_state->cause == 1) // if cause is TLB-modification, then trap
+    if (supp_state->cause == 1) // if cause is TLB-modification,, then trap
         trap();
 
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
@@ -128,7 +135,6 @@ void pager()
     swap_t swap_entry = swap_pool_table[victim_page];
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
-    vpn = (vpn < 0 || vpn > 31) ? 31 : vpn;  // controllo di sicurezza
 
     // Controllo se il frame scelto è occupato
     if (!is_spframe_free(victim_page))
@@ -139,6 +145,7 @@ void pager()
         pteEntry_t *victim_pte = swap_entry.sw_pte;
         victim_pte->pte_entryLO &= !VALIDON;
 
+        // 8.b Aggiornamento del TLB
         update_tlb(*victim_pte);
 
         on_interrupts();

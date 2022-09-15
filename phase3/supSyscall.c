@@ -76,7 +76,7 @@ int *get_dev_sem(int i, int IL_X)
  */
 void write(support_t *s, int mode)
 {
-    myprint("write start   ");
+    myprint("write start \n");
 
     unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
@@ -106,8 +106,10 @@ void write(support_t *s, int mode)
             arg2 |= ((unsigned int)msg[i] << 8);
         }
         else
+        {
             ((dtpreg_t *)device)->data0 = msg[i];
-            //arg2 |= 0;
+            arg2 |= 0;
+        }
 
         on_interrupts();
 
@@ -136,7 +138,7 @@ void write(support_t *s, int mode)
  */
 void read_from_terminal(support_t *sup, char *virtualAddr)
 {
-    myprint("readterm start  ");
+    myprint("read from term start\n");
 
     int ret = 0;
 
@@ -169,5 +171,5 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     SYSCALL(VERHOGEN, (int)sem, 0, 0);
     sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
 
-    myprint("readterm end  ");
+    myprint("read from term end\n");
 }

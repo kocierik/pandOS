@@ -6,6 +6,7 @@ void exception_handler()
     state_t *exceptionState = (state_t *)BIOSDATAPAGE;
     int causeCode = CAUSE_GET_EXCCODE(getCAUSE());
 
+<<<<<<< HEAD
     switch (causeCode)
     {
     case IOINTERRUPTS: // Interrupt
@@ -31,6 +32,30 @@ void exception_handler()
 void interrupt_handler(state_t *excState)
 {
     myprint("int hand  ");
+=======
+    switch(causeCode){
+        case IOINTERRUPTS:                      // Interrupt
+            interrupt_handler(exceptionState);
+            break;
+        case 1 ... 3:                           // TLB Exception
+            tlb_handler(exceptionState);
+            break;
+        case 4 ... 7:                           // Trap 
+        case 9 ... 12:
+            trap_handler(exceptionState);
+            break;
+        case 8:                                 // System Call
+            syscall_handler(exceptionState);
+            break;
+        default:
+            PANIC();
+    }
+}
+
+// case 0 exception_handler() 
+void interrupt_handler(state_t *excState) {
+    myprint("int hand\n");
+>>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
 
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 
@@ -53,16 +78,26 @@ void interrupt_handler(state_t *excState)
 }
 
 // case 1 ... 3 exception_handler()
+<<<<<<< HEAD
 void tlb_handler(state_t *excState)
 {
     myprint("tlb exc  ");
+=======
+void tlb_handler(state_t *excState) {
+    myprint("case 1 ... 3 exception_handler()\n");
+>>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     pass_up_or_die(PGFAULTEXCEPT, excState);
 }
 
 // case 4 ... 7 | 9 ... 12 exception_handler()
+<<<<<<< HEAD
 void trap_handler(state_t *excState)
 {
     myprint("trap kern  ");
+=======
+void trap_handler(state_t *excState) {
+    myprint("case 4-7 9-12 exception_handler()");
+>>>>>>> parent of 33564e8 (aaaaaaaaaaaaaaaaaa)
     pass_up_or_die(GENERALEXCEPT, excState);
 }
 
