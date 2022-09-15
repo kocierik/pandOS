@@ -32,7 +32,7 @@ support_t *alloc_sd()
     return container_of(l, support_t, p_list);
 }
 
-// add a support descriptor to the free sd list
+// add a support desc to the free sd list
 void free_sd(support_t *s)
 {
     list_add(&s->p_list, &sd_free);
