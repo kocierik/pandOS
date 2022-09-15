@@ -22,7 +22,7 @@ void uTLB_RefillHandler()
     klog_print_dec(index);
     klog_print("\n");
 
-    if (index == 0x3FFFF) /* stack */
+    if (index == 0x3FFFF)  /* stack */
     {
         myprint("stack index \n");
         index = 31;

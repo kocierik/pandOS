@@ -12,9 +12,6 @@
 #include "TLBhandler.h"
 #include "../../phase2/headers/globals.h"
 
-extern pcb_PTR currentActiveProc;
-extern void klog_print(char *s);
-
 #define myprint(s) \
     klog_print(s); \
     bp()

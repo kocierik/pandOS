@@ -1,7 +1,5 @@
 #include "./headers/supVM.h"
 
-
-
 void bp() {}
 
 /**
@@ -128,7 +126,7 @@ void pager()
     swap_t swap_entry = swap_pool_table[victim_page];
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
-    vpn = (vpn < 0 || vpn > 31) ? 31 : vpn;  // controllo di sicurezza
+    vpn = (vpn < 0 || vpn > 31) ? 31 : vpn; // controllo di sicurezza
 
     // Controllo se il frame scelto è occupato
     if (!is_spframe_free(victim_page))
