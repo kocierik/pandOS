@@ -1,5 +1,13 @@
 #include "./headers/p3test.h"
 
+static int master_sem; // master sem to controll the end of the uproc
+
+static support_t sd_table[UPROCMAX]; // table of usable support descriptor
+static struct list_head sd_free;     // list of free support descriptor
+
+static swap_t swap_pool_table[POOLSIZE];
+static int swap_pool_sem;
+
 // the program routine strarts here
 void test()
 {
@@ -38,7 +46,7 @@ void free_sd(support_t *s)
     list_add(&s->p_list, &sd_free);
 }
 
-// init an uproc
+// init a proc
 void create_uproc(int asid)
 {
     memaddr ramaddrs;
@@ -63,22 +71,24 @@ void create_uproc(int asid)
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     init_page_table(s->sup_privatePgTbl, asid);
+
     klog_print("asid: ");
     klog_print_dec(asid);
     klog_print("  ");
     bp();
+
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
 }
 
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= 1; i++)   // DA MOFICARE
+    for (int i = 1; i <= 1; i++) // DA MOFICARE
     {
         myprint("new proc  ");
         create_uproc(i); // asid from 1 to 8
     }
-    myprint("Tutti i processi caricati\n");
+    myprint("all proc loaded\n");
 
     // wait for others process to end
     for (int i = 0; i < UPROCMAX; i++)

@@ -1,16 +1,5 @@
 #include "headers/handlerFunction.h"
 
-/* Usefull external variables */
-extern int blockedProc;
-extern pcb_t *currentActiveProc;
-extern int semIntervalTimer;
-extern int semDiskDevice[8];
-extern int semFlashDevice[8];
-extern int semNetworkDevice[8];
-extern int semPrinterDevice[8];
-extern int semTerminalDeviceReading[8];
-extern int semTerminalDeviceWriting[8];
-
 /* Usefull external function */
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
@@ -96,7 +85,6 @@ void device_handler(int interLine, state_t *excState)
 
     devreg_t *tmp = (devreg_t *)DEV_REG_ADDR(interLine, devNumber);
 
-    klog_print("if_handl\n");
     if (interLine == IL_TERMINAL)
     {
         termreg_t *devRegAddr = &tmp->term;
@@ -116,33 +104,30 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-        klog_print("flashHAND  :)");
-        dtpreg_t *devRegAddr = &tmp->dtp;  // da controllare
-        deviceSemaphore = getDeviceSemaphore(interLine, devNumber); 
+        klog_print("flashHAND");
+        dtpreg_t *devRegAddr = &tmp->dtp; // da controllare
+        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
         statusCode = devRegAddr->status; // Save status code
         klog_print_dec(statusCode);
-        devRegAddr->command = ACK;       // Acknowledge the interrupt
-
-        klog_print("flashHAND 2 :)");
+        devRegAddr->command = ACK; // Acknowledge the interrupt
+        klog_print("flashHAND 2");
     }
 
     /* V-Operation */
     pcb_PTR p = V(deviceSemaphore, NULL);
 
-        klog_print("flashHAND 3 :)");
+    klog_print("flashHAND 3");
 
     if (p == NULL || p == currentActiveProc)
     {
-
-        klog_print("flashHAND 4 :)");
+        klog_print("flashHAND 4");
         currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
     }
     else
     {
-
-        klog_print("flashHAND 5 :)");
+        klog_print("flashHAND 5");
         p->p_s.reg_v0 = statusCode;
         load_or_scheduler(excState);
     }

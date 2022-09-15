@@ -9,9 +9,14 @@
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"
+#include "var.h"
 
 #define PRINTCHR 2
 #define TERMSTATMASK 0xFF
+
+extern int semPrinterDevice[8];
+extern int semTerminalDeviceWriting[8];
+extern int semTerminalDeviceReading[8];
 
 void get_tod(support_t *s);
 void terminate(support_t *s);

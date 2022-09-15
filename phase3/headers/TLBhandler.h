@@ -10,6 +10,10 @@
 #include "supSyscall.h"
 #include "supVM.h"
 #include "TLBhandler.h"
+#include "var.h"
+
+extern pcb_PTR currentActiveProc;
+extern void klog_print(char *s);
 
 #define myprint(s) \
     klog_print(s); \

@@ -1,9 +1,5 @@
 #include "headers/supSyscall.h"
 
-extern int semPrinterDevice[8];
-extern int semTerminalDeviceWriting[8];
-extern int semTerminalDeviceReading[8];
-
 /**
  * It gets the time of day from the CPU and puts it in the v0 register
  * 

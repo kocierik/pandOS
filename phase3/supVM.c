@@ -1,6 +1,6 @@
 #include "./headers/supVM.h"
 
-extern int semFlashDevice[8];
+
 
 void bp() {}
 
@@ -80,6 +80,7 @@ int flash(int asid, int block, memaddr addr, char mode)
 {
     off_interrupts();
     myprint("flash  ");
+    klog_print_dec(asid);
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
@@ -95,7 +96,7 @@ int flash(int asid, int block, memaddr addr, char mode)
  */
 void update_tlb(pteEntry_t p)
 {
-    myprint("tlb update  ");
+    myprint("tlb upd  ");
     setENTRYHI(p.pte_entryHI);
     TLBP();
     if ((getINDEX() & PRESENTFLAG) == 0)

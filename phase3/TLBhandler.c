@@ -1,12 +1,9 @@
 #include "headers/TLBhandler.h"
 
-extern pcb_PTR currentActiveProc;
-extern void klog_print(char *s);
-
 // just a terminate wrapper
 void trap()
 {
-    myprint("trap  ");
+    myprint("utrap  ");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -25,12 +22,12 @@ void uTLB_RefillHandler()
     klog_print_dec(index);
     klog_print("\n");
 
-    if (index == 0x3FFFF)  /* stack */
+    if (index == 0x3FFFF) /* stack */
     {
         myprint("stack index \n");
         index = 31;
     }
-    else if (index < 0 || index > 31 || index == 31)
+    else if (index < 0 || index > 31)
     { // da togliere
         myprint("index strano \n");
     }

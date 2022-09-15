@@ -4,15 +4,16 @@
 #include "../../phase1/headers/pcb.h"
 #include "../../phase1/headers/listx.h"
 
+
 /* Global Variables */
-int processId;                  // Variabile globale utilizzata per assegnare un id unico ai processi creati
-int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
-int blockedProc;                // Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
-struct list_head queueLowProc;  // Coda dei processi a bassa priorità
-struct list_head queueHighProc; // Coda dei processi a alta priorità
-pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
-cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
-pcb_PTR yieldHighProc;          // Variabile booleana usata per fare yield su processi ad alta priorita'
+extern int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
+extern int processId;                  // Variabile globale utilizzata per assegnare un id unico ai processi creati
+extern int blockedProc;                // Processi 'blocked': in attesa di I/O oppure timer || Soft-Block Count
+extern struct list_head queueLowProc;  // Coda dei processi a bassa priorità
+extern struct list_head queueHighProc; // Coda dei processi a alta priorità
+extern pcb_PTR currentActiveProc;      // Puntatore processo in stato "running" (attivo) || Current Process
+extern cpu_t startTime;                // Intero utilizzato per aggiornare il tempo di uso di un processo della cpu
+extern pcb_PTR yieldHighProc;          // Variabile booleana usata per fare yield su processi ad alta priorita'
 
 // Vettore di interi per i semafori dei device|| Device Semaphores
 /*
@@ -20,12 +21,12 @@ pcb_PTR yieldHighProc;          // Variabile booleana usata per fare yield su pr
  * Primo semaforo dedicato alle operazioni di scrittura (transm)
  * Secondo semaforo dedicato alle operazioni di lettura (recv)
  */
-int semIntervalTimer;
-int semDiskDevice[8];
-int semFlashDevice[8];
-int semNetworkDevice[8];
-int semPrinterDevice[8];
-int semTerminalDeviceReading[8];
-int semTerminalDeviceWriting[8];
+extern int semIntervalTimer;
+extern int semDiskDevice[8];
+extern int semFlashDevice[8];
+extern int semNetworkDevice[8];
+extern int semPrinterDevice[8];
+extern int semTerminalDeviceReading[8];
+extern int semTerminalDeviceWriting[8];
 
 #endif

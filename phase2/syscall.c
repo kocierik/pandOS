@@ -1,29 +1,5 @@
 #include "headers/syscall.h"
 
-/* External variables */
-extern int activeProc;
-extern int blockedProc;
-extern struct list_head queueLowProc;
-extern struct list_head queueHighProc;
-extern pcb_PTR currentActiveProc;
-extern pcb_PTR yieldHighProc;
-extern int semIntervalTimer;
-extern int semDiskDevice[8];
-extern int semFlashDevice[8];
-extern int semNetworkDevice[8];
-extern int semPrinterDevice[8];
-extern int semTerminalDeviceReading[8];
-extern int semTerminalDeviceWriting[8];
-
-/* External function */
-extern void insert_ready_queue(int prio, pcb_PTR p);
-
-
-
-#define myprint(s) \
-    klog_print(s); \
-    bp()
-
 /* HELPER FUNCTION */
 
 /**
@@ -279,7 +255,7 @@ void do_IO_device(state_t *excState)
     int *cmdAddr = (int *)(*excState).reg_a1;
     int cmdValue = (int)(*excState).reg_a2;
 
-    int *devSemaphore; // Semaphore address
+    int *devSemaphore = NULL; // Semaphore address
     devregarea_t *deviceRegs = (devregarea_t *)RAMBASEADDR;
 
     /* Searching which device is running looking first for terminal then for generic devices */
@@ -287,14 +263,11 @@ void do_IO_device(state_t *excState)
     {
         if (&(deviceRegs->devreg[4][i].term.transm_command) == (memaddr *)cmdAddr)
         { // Terminal Devices Writing
-
-            myprint("eja1\n");
             devSemaphore = &semTerminalDeviceWriting[i];
             break;
         }
         else if (&(deviceRegs->devreg[4][i].term.recv_command) == (memaddr *)cmdAddr)
         { // Terminal Devices Reading
-            myprint("eja2\n");
             devSemaphore = &semTerminalDeviceReading[i];
             break;
         }
@@ -302,11 +275,8 @@ void do_IO_device(state_t *excState)
         {
             for (int j = 0; j < 4; j++)
             {
-                //myprint("doio dev\n");
-                klog_print_dec((memaddr *)cmdAddr);
-                if (&(deviceRegs->devreg[j][i].dtp.command) == (memaddr *)cmdAddr)
+                if ((memaddr *)&deviceRegs->devreg[j][i].dtp.command == (memaddr *)cmdAddr)
                 {
-                    myprint("eja\n");
                     if (j == 0)
                         devSemaphore = &semDiskDevice[i];
                     else if (j == 1)
@@ -315,17 +285,14 @@ void do_IO_device(state_t *excState)
                         devSemaphore = &semNetworkDevice[i];
                     else
                         devSemaphore = &semPrinterDevice[i];
+                    break;
                 }
-                break;
             }
         }
     }
 
     *cmdAddr = cmdValue;         // Execute request command
-    myprint("dev sem val: ");
-    klog_print_dec(devSemaphore);
     P(devSemaphore, excState);   // Call a P on the semaphore found, should be blocking
-    myprint("\nNO"); // non ci dovrebbe arrivare qua
     load_or_scheduler(excState); // Just in case
 }
 

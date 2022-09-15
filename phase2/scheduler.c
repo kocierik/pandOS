@@ -1,16 +1,5 @@
 #include "headers/scheduler.h"
 
-/* External usefull variables */
-extern int activeProc;
-extern int blockedProc;
-extern struct list_head queueLowProc;
-extern struct list_head queueHighProc;
-extern pcb_PTR currentActiveProc;
-extern cpu_t startTime;
-extern pcb_PTR yieldHighProc;
-
-extern void insert_ready_queue(int prio, pcb_PTR p);
-
 /**
  * If there are processes in the high priority queue, remove the first one and load its state;
  * otherwise, if there are processes in the low priority queue, remove the first one and load its state;

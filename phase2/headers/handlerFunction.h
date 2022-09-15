@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "scheduler.h"
 #include "exceptionHandler.h"
+#include "globals.h"
 
 
 /* Interrupt handler functions */

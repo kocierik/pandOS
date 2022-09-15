@@ -10,7 +10,9 @@
 #include "umps/cp0.h"
 #include "scheduler.h"
 #include "handlerFunction.h"
+#include "globals.h"
 
+extern void insert_ready_queue(int prio, pcb_PTR p);
 
 /* Funzioni di aiuto per syscall */
 void copy_state(state_t *new, state_t *old);
@@ -21,7 +23,6 @@ void block_curr_proc(state_t *excState, int *semaddr);
 pcb_PTR free_process(int *semaddr);
 void term_proc(int pid);
 int lenQ(struct list_head *l);
-
 
 void create_process(state_t *excState);
 void terminate_process(state_t *excState);
@@ -35,6 +36,5 @@ void wait_for_clock(state_t *excState);
 void get_support_data(state_t *excState);
 void get_ID_process(state_t *excState);
 void yield(state_t *excState);
-
 
 #endif

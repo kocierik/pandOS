@@ -4,7 +4,9 @@
 #include "../../phase1/headers/pcb.h"
 #include "../../generic_headers/pandos_const.h"
 #include "umps/libumps.h"
+#include "globals.h"
 
+extern void insert_ready_queue(int prio, pcb_PTR p);
 
 void scheduler();
 void load_state(state_t *s);

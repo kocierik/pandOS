@@ -7,6 +7,9 @@
 #include "p3test.h"
 #include "TLBhandler.h"
 #include <umps/cp0.h>
+#include "var.h"
+
+extern int semFlashDevice[8];
 
 #define SWAP_POOL_ADDR (memaddr)0x20020000
 
