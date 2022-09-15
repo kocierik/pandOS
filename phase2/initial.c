@@ -39,7 +39,7 @@ struct list_head sd_free; // list of free support descriptor
 swap_t swap_pool_table[POOLSIZE];
 int swap_pool_sem;
 
-
+int g;
 
 /* Extern functions */
 extern void test();

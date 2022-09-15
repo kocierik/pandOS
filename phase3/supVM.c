@@ -53,13 +53,13 @@ int pick_frame()
 // Disabilita gli interrupts
 void off_interrupts()
 {
-    setSTATUS(getSTATUS() & (!IECON));
+    setSTATUS(getSTATUS() & !IECON);
 }
 
 // Abilita gli interrupts
 void on_interrupts()
 {
-    setSTATUS(getSTATUS() | (IECON));
+    setSTATUS(getSTATUS() | IECON);
 }
 
 /**
@@ -76,9 +76,9 @@ void on_interrupts()
  */
 int flash(int asid, int block, memaddr addr, char mode)
 {
+    // da aggiungere i semafori
     off_interrupts();
     myprint("flash  ");
-    klog_print_dec(asid);
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
@@ -94,7 +94,7 @@ int flash(int asid, int block, memaddr addr, char mode)
  */
 void update_tlb(pteEntry_t p)
 {
-    myprint("tlb upd  ");
+    myprint("tlb update  ");
     setENTRYHI(p.pte_entryHI);
     TLBP();
     if ((getINDEX() & PRESENTFLAG) == 0)

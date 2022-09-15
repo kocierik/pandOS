@@ -4,7 +4,6 @@
 #include "../../phase1/headers/pcb.h"
 #include "../../phase1/headers/listx.h"
 
-
 /* Global Variables */
 extern int activeProc;                 // Processi iniziati e non ancora terminati: attivi || Process Count
 extern int processId;                  // Variabile globale utilizzata per assegnare un id unico ai processi creati
@@ -29,8 +28,7 @@ extern int semPrinterDevice[8];
 extern int semTerminalDeviceReading[8];
 extern int semTerminalDeviceWriting[8];
 
-
- /* Global Variables PHASE3  */
+/* Global Variables PHASE3  */
 
 extern int master_sem; // master sem to controll the end of the uproc
 
@@ -39,5 +37,7 @@ extern struct list_head sd_free;     // list of free support descriptor
 
 extern swap_t swap_pool_table[POOLSIZE];
 extern int swap_pool_sem;
+
+extern int g;
 
 #endif

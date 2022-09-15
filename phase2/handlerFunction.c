@@ -76,18 +76,18 @@ int getDevice(int interLine)
     return -1; // ERROR
 }
 
-// handler IL_DISK | IL_FLASH | IL_ETHERNET | IL_PRINTER
+// handler IL_DISK | IL_FLASH | IL_ETHERNET | IL_PRINTER | IL_TERMINAL
 void device_handler(int interLine, state_t *excState)
 {
     unsigned int statusCode;
     int *deviceSemaphore;
-    int devNumber = getDevice(interLine);
+    int devNumber = getDevice(interLine);  // da riparare getDevice
 
-    devreg_t *tmp = (devreg_t *)DEV_REG_ADDR(interLine, devNumber);
+    // l'errore ora consisiste in getDevice che ritorna il numero sbagliato del semaforo 
 
     if (interLine == IL_TERMINAL)
     {
-        termreg_t *devRegAddr = &tmp->term;
+        termreg_t *devRegAddr = (termreg_t *)DEV_REG_ADDR(interLine, devNumber);
 
         if (devRegAddr->recv_status == RECVD)
         {
@@ -104,30 +104,29 @@ void device_handler(int interLine, state_t *excState)
     }
     else
     {
-        klog_print("flashHAND");
-        dtpreg_t *devRegAddr = &tmp->dtp; // da controllare
-        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);
+        dtpreg_t *devRegAddr = (dtpreg_t *)DEV_REG_ADDR(interLine, devNumber); // da controllare
+        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);  // errore qua
         statusCode = devRegAddr->status; // Save status code
-        klog_print_dec(statusCode);
-        devRegAddr->command = ACK; // Acknowledge the interrupt
-        klog_print("flashHAND 2");
+        devRegAddr->command = ACK;       // Acknowledge the interrupt
     }
+
+    g = &deviceSemaphore;
+    klog_print("AOAOA  ");
+    klog_print_dec(devNumber);
 
     /* V-Operation */
     pcb_PTR p = V(deviceSemaphore, NULL);
 
-    klog_print("flashHAND 3");
-
-    if (p == NULL || p == currentActiveProc)
+    if (p == currentActiveProc)
     {
-        klog_print("flashHAND 4");
-        currentActiveProc->p_s.reg_v0 = statusCode;
+        if (p == NULL)
+            trap(); // ERRORE
+        currentActiveProc->p_s.reg_v0 = statusCode; // si blocca qua
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
     }
     else
     {
-        klog_print("flashHAND 5");
         p->p_s.reg_v0 = statusCode;
         load_or_scheduler(excState);
     }
