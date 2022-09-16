@@ -16,21 +16,15 @@ void uTLB_RefillHandler()
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
 
-    klog_print("tlb index: ");
-    klog_print_dec(index);
-    klog_print("\n");
-
-    if (index == 0x3FFFF)  /* stack */
-    {
-        myprint("stack index \n");
+    if (index == 0x3FFFF)
         index = 31;
-    }
+    else if(index < 0 || index > 31)
+        klog_print("BELLA");
+
     pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entryHI);
     setENTRYLO(pte.pte_entryLO);
     TLBWR();
-
-    myprint("tlbref end  ");
 
     LDST(s);
 }

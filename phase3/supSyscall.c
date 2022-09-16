@@ -2,7 +2,7 @@
 
 /**
  * It gets the time of day from the CPU and puts it in the v0 register
- * 
+ *
  * @param s the support structure
  */
 void get_tod(support_t *s)
@@ -15,7 +15,7 @@ void get_tod(support_t *s)
 /**
  * It releases the swap pool semaphore, unmarks the swap pool table, releases the master semaphore,
  * frees the support descriptor and terminates the process
- * 
+ *
  * @param s the support descriptor
  */
 void terminate(support_t *s)
@@ -41,10 +41,10 @@ void write_to_terminal(support_t *s)
 
 /**
  * It returns a pointer to the semaphore of the device with index i
- * 
+ *
  * @param i the index of the device
  * @param IL_X the device type, either IL_PRINTER or IL_TERMINAL
- * 
+ *
  * @return The address of the semaphore for the device.
  */
 int *get_dev_sem(int i, int IL_X)
@@ -53,11 +53,11 @@ int *get_dev_sem(int i, int IL_X)
     switch (IL_X)
     {
     case IL_PRINTER:
-        sems = semPrinterDevice;
+        sems = semPrinter_phase3;
         break;
 
     case IL_TERMINAL:
-        sems = semTerminalDeviceWriting;
+        sems = semTermWrite_phase3;
         break;
 
     default:
@@ -71,13 +71,13 @@ int *get_dev_sem(int i, int IL_X)
 // da controllare
 /**
  * It writes a string to a device
- * 
+ *
  * @param s the support structure
  * @param IL_X the device type (terminal or disk)
  */
 void write(support_t *s, int mode)
 {
-    myprint("write start   ");
+    myprint("Cwrite start   ");
 
     unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
@@ -108,7 +108,7 @@ void write(support_t *s, int mode)
         }
         else
             ((dtpreg_t *)device)->data0 = msg[i];
-            //arg2 |= 0;
+            // arg2 |= 0;
 
         on_interrupts();
 
@@ -131,7 +131,7 @@ void write(support_t *s, int mode)
 // da controllare
 /**
  * It reads from the terminal, and stores the read characters in the virtual address passed as argument
- * 
+ *
  * @param sup the support structure
  * @param virtualAddr the address of the first byte of the buffer where the input will be stored
  */
@@ -142,7 +142,7 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     int ret = 0;
 
     int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
-    int *sem = &semTerminalDeviceReading[termASID];
+    int *sem = &semTermRead_phase3[termASID];
 
     if ((unsigned int)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
         trap();

@@ -31,13 +31,16 @@ int semTerminalDeviceWriting[8];
 
 /* Global Variables PHASE3 */
 
-int master_sem; // master sem to controll the end of the uproc
+int master_sem;                   // master semaphore to controll the end of the uproc
+support_t sd_table[UPROCMAX];     // table of usable support descriptor
+struct list_head sd_free;         // list of free support descriptor
+swap_t swap_pool_table[POOLSIZE]; // swap pool table di grandezza 2*UPROMAX
+int swap_pool_sem;                // semaforo che gestisce l'accesso alla swap pool table
 
-support_t sd_table[UPROCMAX]; // table of usable support descriptor
-struct list_head sd_free; // list of free support descriptor
-
-swap_t swap_pool_table[POOLSIZE];
-int swap_pool_sem;
+// semafori per la gestione dei device in fase 3
+int semTermRead_phase3[8];
+int semTermWrite_phase3[8];
+int semPrinter_phase3[8];
 
 int g;
 int g1;

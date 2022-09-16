@@ -290,7 +290,7 @@ void do_IO_device(state_t *excState)
             }
         }
     }
-    g = devSemaphore;
+    
     *cmdAddr = cmdValue;         // Execute request command
     P(devSemaphore, excState);   // Call a P on the semaphore found, should be blocking
     load_or_scheduler(excState); // Just in case

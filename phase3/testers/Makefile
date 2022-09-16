@@ -13,7 +13,7 @@ SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 
 TDEFS = h/print.h h/tconst.h $(INCDIR)/libumps.e Makefile
 
-CFLAGS = -ffreestanding -ansi -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls
+CFLAGS = -ffreestanding -ansi -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -I/usr/include/umps3 -std=gnu99 -fno-pic -mno-abicalls
 # -Wall
 
 LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
@@ -30,9 +30,7 @@ UDEV = umps3-mkdev
 all: printerTest.umps strConcat.umps \
 	fibEight.umps fibEleven.umps \
 	terminalTest2.umps terminalTest3.umps terminalTest4.umps \
-	terminalTest5.umps  \
-
-	
+	terminalTest5.umps  
 	
 %.o: %.c $(TDEFS)
 	$(CC) $(CFLAGS) $<

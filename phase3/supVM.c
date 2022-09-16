@@ -76,9 +76,7 @@ void on_interrupts()
  */
 int flash(int asid, int block, memaddr addr, char mode)
 {
-    // da aggiungere i semafori
     off_interrupts();
-    //myprint("flash  ");
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
@@ -94,7 +92,6 @@ int flash(int asid, int block, memaddr addr, char mode)
  */
 void update_tlb(pteEntry_t p)
 {
-    //myprint("tlb update  ");
     setENTRYHI(p.pte_entryHI);
     TLBP();
     if ((getINDEX() & PRESENTFLAG) == 0)
@@ -167,7 +164,7 @@ void pager()
 
     SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
 
-    myprint("pager end\n");
+    myprint("pager end  ");
 
     LDST(supp_state);
 }

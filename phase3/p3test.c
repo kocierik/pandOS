@@ -14,6 +14,7 @@ void init_sds()
     master_sem = 0;
     init_swap_pool_table();
     init_sd_free();
+    init_sem();
 }
 
 // init free support descriptor list
@@ -22,6 +23,13 @@ void init_sd_free()
     INIT_LIST_HEAD(&sd_free);
     for (int i = 0; i < UPROCMAX; i++)
         free_sd(&sd_table[i]);
+}
+
+// init phase 3 device semaphores
+void init_sem()
+{
+    for (int i = 0; i < 8; i++)
+        semPrinter_phase3[i] = semTermRead_phase3[i] = semTermWrite_phase3[i] = 1;
 }
 
 // return a support descriptor taken from the free sd list
@@ -46,8 +54,8 @@ void create_uproc(int asid)
 
     state_t proc_state;
 
-    proc_state.pc_epc = proc_state.reg_t9 = UPROCSTARTADDR;
-    proc_state.reg_sp = USERSTACKTOP;
+    proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
+    proc_state.reg_sp = (memaddr)USERSTACKTOP;
     proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da mettere? USERPON
     proc_state.entry_hi = asid << ASIDSHIFT;
 
@@ -77,7 +85,7 @@ void run_proc()
 {
     for (int i = 1; i <= 1; i++)
         create_uproc(i); // asid from 1 to 8
-    //myprint("all proc loaded\n");
+    // myprint("all proc loaded\n");
 
     // wait for others process to end
     for (int i = 1; i <= 1; i++) // DA MODIFICARE TODO

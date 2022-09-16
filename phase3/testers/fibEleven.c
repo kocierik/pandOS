@@ -1,6 +1,6 @@
 /*	Test of a CPU intensive recusive job */
 
-#include "/usr/local/include/umps3/umps/libumps.h"
+#include <umps/libumps.h>
 
 #include "h/tconst.h"
 #include "h/print.h"

@@ -3,9 +3,6 @@
 /* Usefull external function */
 extern void insert_ready_queue(int prio, pcb_PTR p);
 
-// vector for Bitwise operation
-int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
-
 /* INTERRUPT HANDLER FUNCTION */
 
 // handler IL_CPUTIMER
@@ -57,49 +54,21 @@ int *getDeviceSemaphore(int interruptLine, int devNumber)
     return NULL;
 }
 
-/**
- * It returns the device number of the interrupt line that is currently active
- *
- * @param interLine the interrupt line that the device is on
- *
- * @return The device number.
- */
-/**
-int getDevice(int interLine)
-{
-    klog_print("\n\n");
-    for (int i = 0; i < 8; i++)
-    {
-        if (interLine & powOf2[i]){
-            g2 = powOf2[i];
-            klog_print("GetDevice sta per tornare: ");
-            klog_print_dec(i);
-            return i;
-        }
-    }
-    klog_print("Errore get Device ");
-    return -1; // ERROR
-}
-*/
 // handler IL_DISK | IL_FLASH | IL_ETHERNET | IL_PRINTER | IL_TERMINAL
 void device_handler(int interLine, state_t *excState)
 {
     unsigned int statusCode;
-    int *devSemaphore = NULL; // Semaphore address
+    int *devSemaphore = NULL;
     int devNumber = 0;
 
-
-    devregarea_t *dev_regs = (devregarea_t *)RAMBASEADDR;
-    unsigned int bitmap_word = dev_regs->interrupt_dev[interLine - 3];
+    devregarea_t *devRegs = (devregarea_t *)RAMBASEADDR;
+    unsigned int bitmap_word = devRegs->interrupt_dev[interLine - 3];
     unsigned int mask = 1;
 
-    // Scorro i dispositivi
     for (int i = 0; i < N_DEV_PER_IL; i++)
     {
-        // Check per trovare il device con un pending interrupt
         if (bitmap_word & mask)
         {
-            // Salvo il numero del device trovato
             devNumber = i;
 
             if (interLine == IL_TERMINAL)
@@ -121,10 +90,10 @@ void device_handler(int interLine, state_t *excState)
             }
             else
             {
-                dtpreg_t *devRegAddr = (dtpreg_t *)DEV_REG_ADDR(interLine, devNumber); // da controllare
-                devSemaphore = getDeviceSemaphore(interLine, devNumber);               // errore qua
-                statusCode = devRegAddr->status;                                       // Save status code
-                devRegAddr->command = ACK;                                             // Acknowledge the interrupt
+                dtpreg_t *devRegAddr = (dtpreg_t *)DEV_REG_ADDR(interLine, devNumber);
+                devSemaphore = getDeviceSemaphore(interLine, devNumber);
+                statusCode = devRegAddr->status; // Save status code
+                devRegAddr->command = ACK;       // Acknowledge the interrupt
             }
         }
         mask *= 2;
@@ -137,7 +106,7 @@ void device_handler(int interLine, state_t *excState)
     {
         if (currentActiveProc == NULL)
             trap(); // ERRORE
-        currentActiveProc->p_s.reg_v0 = statusCode; // si blocca qua
+        currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
     }
@@ -161,7 +130,7 @@ void pass_up_or_die(int pageFault, state_t *excState)
         }
         else
         {
-            klog_print("passup \n");
+            klog_print("pasup  ");
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;

@@ -1,6 +1,6 @@
 /* Does nothing but outputs to the printer and terminates */
 
-#include "/usr/local/include/umps3/umps/libumps.h"
+#include <umps/libumps.h>
 
 #include "h/tconst.h"
 #include "h/print.h"

@@ -1,6 +1,6 @@
 /*	Test the terminal for reading user input */
 
-#include "/usr/local/include/umps3/umps/libumps.h"
+#include <umps/libumps.h>
 
 #include "h/tconst.h"
 #include "h/print.h"

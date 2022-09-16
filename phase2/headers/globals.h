@@ -38,6 +38,10 @@ extern struct list_head sd_free;     // list of free support descriptor
 extern swap_t swap_pool_table[POOLSIZE];
 extern int swap_pool_sem;
 
+extern int semTermRead_phase3[8];
+extern int semTermWrite_phase3[8];
+extern int semPrinter_phase3[8];
+
 extern int g;
 extern int g1;
 extern int g2;
