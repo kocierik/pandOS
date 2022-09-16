@@ -40,6 +40,9 @@ swap_t swap_pool_table[POOLSIZE];
 int swap_pool_sem;
 
 int g;
+int g1;
+int g2;
+int g3;
 
 /* Extern functions */
 extern void test();

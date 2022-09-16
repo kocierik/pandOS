@@ -39,5 +39,8 @@ extern swap_t swap_pool_table[POOLSIZE];
 extern int swap_pool_sem;
 
 extern int g;
+extern int g1;
+extern int g2;
+extern int g3;
 
 #endif

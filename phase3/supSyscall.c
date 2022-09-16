@@ -35,6 +35,7 @@ void write_to_printer(support_t *s)
 
 void write_to_terminal(support_t *s)
 {
+    myprint("write TERM   ");
     write(s, IL_TERMINAL);
 }
 

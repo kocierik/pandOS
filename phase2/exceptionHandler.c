@@ -30,7 +30,7 @@ void exception_handler()
 // case 0 exception_handler()
 void interrupt_handler(state_t *excState)
 {
-    myprint("int hand  ");
+    myprint("interrupt handler  ");
 
     int cause = getCAUSE(); // Ritorna il registro CAUSE (3.3 pops)
 

@@ -75,7 +75,7 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= 1; i++) // DA MOFICARE
+    for (int i = 1; i <= 1; i++) // DA MOFICARE TODO
     {
         myprint("new proc  ");
         create_uproc(i); // asid from 1 to 8
@@ -83,7 +83,7 @@ void run_proc()
     myprint("all proc loaded\n");
 
     // wait for others process to end
-    for (int i = 0; i < UPROCMAX; i++)
+    for (int i = 1; i <= 1; i++) // DA MODIFICARE TODO
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
     myprint("Passeren eseguite\n");
 }

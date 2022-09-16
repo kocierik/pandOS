@@ -66,61 +66,80 @@ int *getDeviceSemaphore(int interruptLine, int devNumber)
  *
  * @return The device number.
  */
+/**
 int getDevice(int interLine)
 {
+    klog_print("\n\n");
     for (int i = 0; i < 8; i++)
     {
-        if (interLine & powOf2[i])
+        if (interLine & powOf2[i]){
+            g2 = powOf2[i];
+            klog_print("GetDevice sta per tornare: ");
+            klog_print_dec(i);
             return i;
+        }
     }
+    klog_print("Errore get Device ");
     return -1; // ERROR
 }
-
+*/
 // handler IL_DISK | IL_FLASH | IL_ETHERNET | IL_PRINTER | IL_TERMINAL
 void device_handler(int interLine, state_t *excState)
 {
     unsigned int statusCode;
-    int *deviceSemaphore;
-    int devNumber = getDevice(interLine);  // da riparare getDevice
+    int *devSemaphore = NULL; // Semaphore address
+    int devNumber = 0;
 
-    // l'errore ora consisiste in getDevice che ritorna il numero sbagliato del semaforo 
 
-    if (interLine == IL_TERMINAL)
+    devregarea_t *dev_regs = (devregarea_t *)RAMBASEADDR;
+    unsigned int bitmap_word = dev_regs->interrupt_dev[interLine - 3];
+    unsigned int mask = 1;
+
+    // Scorro i dispositivi
+    for (int i = 0; i < N_DEV_PER_IL; i++)
     {
-        termreg_t *devRegAddr = (termreg_t *)DEV_REG_ADDR(interLine, devNumber);
-
-        if (devRegAddr->recv_status == RECVD)
+        // Check per trovare il device con un pending interrupt
+        if (bitmap_word & mask)
         {
-            statusCode = devRegAddr->recv_status;
-            devRegAddr->recv_command = ACK;
-            deviceSemaphore = &semTerminalDeviceReading[devNumber];
-        }
-        else
-        {
-            statusCode = devRegAddr->transm_status;
-            devRegAddr->transm_command = ACK;
-            deviceSemaphore = &semTerminalDeviceWriting[devNumber];
-        }
-    }
-    else
-    {
-        dtpreg_t *devRegAddr = (dtpreg_t *)DEV_REG_ADDR(interLine, devNumber); // da controllare
-        deviceSemaphore = getDeviceSemaphore(interLine, devNumber);  // errore qua
-        statusCode = devRegAddr->status; // Save status code
-        devRegAddr->command = ACK;       // Acknowledge the interrupt
-    }
+            // Salvo il numero del device trovato
+            devNumber = i;
 
-    g = &deviceSemaphore;
-    klog_print("AOAOA  ");
-    klog_print_dec(devNumber);
+            if (interLine == IL_TERMINAL)
+            {
+                termreg_t *devRegAddr = (termreg_t *)DEV_REG_ADDR(interLine, devNumber);
+
+                if (devRegAddr->recv_status == RECVD)
+                {
+                    statusCode = devRegAddr->recv_status;
+                    devRegAddr->recv_command = ACK;
+                    devSemaphore = &semTerminalDeviceReading[devNumber];
+                }
+                else
+                {
+                    statusCode = devRegAddr->transm_status;
+                    devRegAddr->transm_command = ACK;
+                    devSemaphore = &semTerminalDeviceWriting[devNumber];
+                }
+            }
+            else
+            {
+                dtpreg_t *devRegAddr = (dtpreg_t *)DEV_REG_ADDR(interLine, devNumber); // da controllare
+                devSemaphore = getDeviceSemaphore(interLine, devNumber);               // errore qua
+                statusCode = devRegAddr->status;                                       // Save status code
+                devRegAddr->command = ACK;                                             // Acknowledge the interrupt
+            }
+        }
+        mask *= 2;
+    }
 
     /* V-Operation */
-    pcb_PTR p = V(deviceSemaphore, NULL);
+    pcb_PTR p = V(devSemaphore, NULL);
 
     if (p == currentActiveProc)
     {
         if (p == NULL)
-            trap(); // ERRORE
+            klog_print("Errore TRAP fatale\n");
+        // trap(); // ERRORE
         currentActiveProc->p_s.reg_v0 = statusCode; // si blocca qua
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
