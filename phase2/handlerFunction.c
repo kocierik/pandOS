@@ -11,7 +11,6 @@ int powOf2[] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 // handler IL_CPUTIMER
 void plt_time_handler(state_t *excState)
 {
-    klog_print("plt exc\n");
     setTIMER(-2); // ACK
     copy_state(excState, &currentActiveProc->p_s);
     insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
@@ -21,7 +20,6 @@ void plt_time_handler(state_t *excState)
 // handler IL_TIMER
 void intervall_timer_handler(state_t *excState)
 {
-    klog_print("timer exc\n");
     LDIT(100000); // ACK
     pcb_PTR p;
     while ((p = removeBlocked(&semIntervalTimer)) != NULL)
@@ -135,11 +133,10 @@ void device_handler(int interLine, state_t *excState)
     /* V-Operation */
     pcb_PTR p = V(devSemaphore, NULL);
 
-    if (p == currentActiveProc)
+    if (p == NULL || p == currentActiveProc)
     {
-        if (p == NULL)
-            klog_print("Errore TRAP fatale\n");
-        // trap(); // ERRORE
+        if (currentActiveProc == NULL)
+            trap(); // ERRORE
         currentActiveProc->p_s.reg_v0 = statusCode; // si blocca qua
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();

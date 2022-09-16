@@ -3,7 +3,7 @@
 // just a terminate wrapper
 void trap()
 {
-    myprint("utrap  ");
+    myprint("\nusertrap");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -13,12 +13,10 @@ void trap()
  */
 void uTLB_RefillHandler()
 {
-    myprint("tlbref start  ");
-
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
 
-    klog_print("index: ");
+    klog_print("tlb index: ");
     klog_print_dec(index);
     klog_print("\n");
 
@@ -27,11 +25,6 @@ void uTLB_RefillHandler()
         myprint("stack index \n");
         index = 31;
     }
-    else if (index < 0 || index > 31)
-    { // da togliere
-        myprint("index strano \n");
-    }
-    // serve fare un controllo sull'index???
     pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(pte.pte_entryHI);
     setENTRYLO(pte.pte_entryLO);

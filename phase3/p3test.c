@@ -64,9 +64,9 @@ void create_uproc(int asid)
 
     init_page_table(s->sup_privatePgTbl, asid);
 
-    klog_print("asid: ");
-    klog_print_dec(asid);
-    klog_print("  ");
+    // klog_print("asid: ");
+    // klog_print_dec(asid);
+    // klog_print("  ");
     bp();
 
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
@@ -75,12 +75,9 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= 1; i++) // DA MOFICARE TODO
-    {
-        myprint("new proc  ");
+    for (int i = 1; i <= 1; i++)
         create_uproc(i); // asid from 1 to 8
-    }
-    myprint("all proc loaded\n");
+    //myprint("all proc loaded\n");
 
     // wait for others process to end
     for (int i = 1; i <= 1; i++) // DA MODIFICARE TODO
