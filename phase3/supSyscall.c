@@ -109,7 +109,7 @@ void write(support_t *s, int mode)
         }
         else
             ((dtpreg_t *)device)->data0 = msg[i];
-            // arg2 |= 0;
+        // arg2 |= 0;
 
         on_interrupts();
 
@@ -139,23 +139,24 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
 {
     myprint("readterm start  ");
 
+    if ((memaddr)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
+        trap();
+
     int ret = 0;
+    char recv_char = 0;
 
     int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
     int *sem = &semTermRead_phase3[termASID];
+    termreg_t *termDev = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, termASID));
 
-    if ((unsigned int)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
-        trap();
 
-    devreg_t *termDEVREG = (devreg_t *)(START_DEVREG + ((TERMINT - 3) * 0x80) + (termASID * 0x10));
-
-    char recv_char = 0;
     SYSCALL(PASSEREN, (int)sem, 0, 0);
+
     while (recv_char != '\n')
-    { /* lettura dell'input */
-        int status = SYSCALL(DOIO, (unsigned int)&(termDEVREG->term.recv_command), RECEIVECHAR, 0);
+    {
+        int status = SYSCALL(DOIO, (unsigned int)&(termDev->recv_command), RECEIVECHAR, 0);
         if ((status & 0xFF) == CHARRECV)
-        { // NO errore
+        {
             *virtualAddr = status >> BYTELENGTH;
             recv_char = status >> BYTELENGTH;
             virtualAddr++;
@@ -163,11 +164,13 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
         }
         else
         {
-            ret = -status;
+            ret = -1*status;
             break;
         }
     }
+
     SYSCALL(VERHOGEN, (int)sem, 0, 0);
+
     sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
 
     myprint("readterm end  ");

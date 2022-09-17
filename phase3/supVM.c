@@ -106,7 +106,7 @@ void update_tlb(pteEntry_t p)
  */
 void pager()
 {
-    myprint("pager ");
+    //myprint("pager ");
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *supp_state = &supp->sup_exceptState[PGFAULTEXCEPT];
 
@@ -116,15 +116,10 @@ void pager()
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
     int victim_page = pick_frame();
-    klog_print("v");
-    klog_print_dec(victim_page);
-    myprint(" ");
     swap_t swap_entry = swap_pool_table[victim_page];
-    g = &swap_entry;
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
     vpn = (vpn < 0 || vpn > 31) ? 31 : vpn; // controllo di sicurezza
-    g1 = vpn;
 
     if (!is_spframe_free(victim_page))
     {
@@ -148,8 +143,6 @@ void pager()
 
     // Adding entry to swap table
     swap_entry.sw_asid = supp->sup_asid;
-    g2 = supp->sup_asid;
-    bp();
     swap_entry.sw_pageNo = vpn;
     swap_entry.sw_pte = &supp->sup_privatePgTbl[vpn];
 
@@ -163,7 +156,7 @@ void pager()
 
     SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
 
-    myprint("pager end  ");
+    //myprint("pager end  ");
 
     LDST(supp_state);
 }

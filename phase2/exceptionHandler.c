@@ -12,25 +12,16 @@ void exception_handler()
         interrupt_handler(exceptionState);
         break;
     case 1 ... 3: // TLB Exception
-        klog_print("tlb exc: ");
-        klog_print_dec(causeCode);
-        klog_print(" ");
-        bp();
         tlb_handler(exceptionState);
         break;
     case 4 ... 7: // Trap
     case 9 ... 12:
-        klog_print(" trap exc: ");
-        klog_print_dec(causeCode);
-        klog_print(" ");
-        bp();
         trap_handler(exceptionState);
         break;
     case 8: // System Call
         syscall_handler(exceptionState);
         break;
     default:
-        klog_print(" exc error cause code ");
         PANIC();
     }
 }
@@ -77,7 +68,7 @@ void syscall_handler(state_t *callerProcState)
     int syscode = callerProcState->reg_a0;
     callerProcState->pc_epc += WORDLEN;
 
-    if ( syscode <= 0 && ((callerProcState->status << 28) >> 31))
+    if (syscode <= 0 && ((callerProcState->status << 28) >> 31))
     {
         callerProcState->cause = (callerProcState->cause & !GETEXECCODE) | 0x00000028;
         pass_up_or_die(GENERALEXCEPT, callerProcState);
@@ -117,9 +108,6 @@ void syscall_handler(state_t *callerProcState)
             yield(callerProcState);
             break;
         default:
-            myprint("sys cause error ");
-            klog_print_dec(syscode);
-            bp();
             trap_handler(callerProcState);
             break;
         }
