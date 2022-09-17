@@ -63,11 +63,11 @@ void create_uproc(int asid)
     s->sup_asid = asid;
 
     s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
-    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr)&(sd_table[asid-1].sup_stackTLB[499]);
+    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
     s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
-    s->sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr)&(sd_table[asid-1].sup_stackGen[499]);
+    s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     init_page_table(s->sup_privatePgTbl, asid);
@@ -83,12 +83,12 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= 1; i++)
+    for (int i = 1; i <= UPROCMAX; i++)
         create_uproc(i); // asid from 1 to 8
     // myprint("all proc loaded\n");
 
     // wait for others process to end
-    for (int i = 1; i <= 1; i++) // DA MODIFICARE TODO
+    for (int i = 1; i <= UPROCMAX; i++) // DA MODIFICARE TODO
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
     myprint("Passeren eseguite\n");
 }

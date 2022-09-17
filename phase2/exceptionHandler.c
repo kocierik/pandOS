@@ -20,7 +20,7 @@ void exception_handler()
         break;
     case 4 ... 7: // Trap
     case 9 ... 12:
-        klog_print(" trap kern: ");
+        klog_print(" trap exc: ");
         klog_print_dec(causeCode);
         klog_print(" ");
         bp();
@@ -30,6 +30,7 @@ void exception_handler()
         syscall_handler(exceptionState);
         break;
     default:
+        klog_print(" exc error cause code ");
         PANIC();
     }
 }
@@ -54,6 +55,7 @@ void interrupt_handler(state_t *excState)
     else if CAUSE_IP_GET (cause, IL_TERMINAL)
         device_handler(IL_TERMINAL, excState);
 
+    klog_print(" no interupt found ");
     PANIC();
 }
 
@@ -72,12 +74,12 @@ void trap_handler(state_t *excState)
 // case 8 case exception_handler()
 void syscall_handler(state_t *callerProcState)
 {
-    int syscode = (*callerProcState).reg_a0;
+    int syscode = callerProcState->reg_a0;
     callerProcState->pc_epc += WORDLEN;
 
-    if (((callerProcState->status << 28) >> 31))
+    if ( syscode <= 0 && ((callerProcState->status << 28) >> 31))
     {
-        callerProcState->cause |= (EXC_RI << CAUSESHIFT);
+        callerProcState->cause = (callerProcState->cause & !GETEXECCODE) | 0x00000028;
         pass_up_or_die(GENERALEXCEPT, callerProcState);
     }
     else
@@ -115,6 +117,9 @@ void syscall_handler(state_t *callerProcState)
             yield(callerProcState);
             break;
         default:
+            myprint("sys cause error ");
+            klog_print_dec(syscode);
+            bp();
             trap_handler(callerProcState);
             break;
         }

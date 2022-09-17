@@ -38,8 +38,6 @@ typedef struct support_t {
     state_t    sup_exceptState[2];              /* old state exceptions			*/
     context_t  sup_exceptContext[2];            /* new contexts for passing up	*/
     pteEntry_t sup_privatePgTbl[USERPGTBLSIZE]; /* user page table				*/
-    memaddr sup_stackTLB[500];
-    memaddr sup_stackGen[500];
 } support_t;
 
 

@@ -155,7 +155,7 @@ void pager()
 
     off_interrupts();
 
-    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr & 0xFFFFF000 | VALIDON | (supp->sup_privatePgTbl[vpn].pte_entryLO & DIRTYON); // Update page table
+    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr | VALIDON | DIRTYON; // Update page table
 
     update_tlb(supp->sup_privatePgTbl[vpn]); // Update TLB
 
