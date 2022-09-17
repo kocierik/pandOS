@@ -8,10 +8,8 @@ void bp() {}
 void init_swap_pool_table()
 {
     swap_pool_sem = 1;
-    // swap_pool_table = SWAP_POOL_ADDR;
     for (int i = 0; i < POOLSIZE; i++)
         swap_pool_table[i].sw_asid = NOPROC;
-    // g = swap_pool_table;
 }
 
 /**
@@ -46,7 +44,11 @@ int is_spframe_free(int i)
 int pick_frame()
 {
     static unsigned int c = 0;
-    return (c++) % POOLSIZE; // implementazione fifo
+    // se si toglie questa parte completa l'ultimo processo in coda
+    for (int i = 0; i < POOLSIZE; i++)
+        if (is_spframe_free(i))
+            return i;
+    return c++ % POOLSIZE; // implementazione fifo
 }
 
 // Disabilita gli interrupts
@@ -106,7 +108,6 @@ void update_tlb(pteEntry_t p)
  */
 void pager()
 {
-    //myprint("pager ");
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *supp_state = &supp->sup_exceptState[PGFAULTEXCEPT];
 
@@ -120,9 +121,12 @@ void pager()
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
     vpn = (vpn < 0 || vpn > 31) ? 31 : vpn; // controllo di sicurezza
+    klog_print_dec(victim_page);
+    myprint("victim ");
 
     if (!is_spframe_free(victim_page))
     {
+        klog_print(" ole ");
         off_interrupts();
 
         pteEntry_t *victim_pte = swap_entry.sw_pte;
@@ -138,11 +142,15 @@ void pager()
     }
 
     /* READ FLASH */
-    if (flash(supp->sup_asid, vpn, victim_page_addr, 'r') != READY)
+    if (flash(supp->sup_asid, vpn, victim_page_addr, 'r') != READY){
+        klog_print(" PANICO ");
         trap();
+    }
 
     // Adding entry to swap table
     swap_entry.sw_asid = supp->sup_asid;
+    klog_print_dec(supp->sup_asid);
+    myprint("asid ");
     swap_entry.sw_pageNo = vpn;
     swap_entry.sw_pte = &supp->sup_privatePgTbl[vpn];
 
@@ -155,8 +163,6 @@ void pager()
     on_interrupts();
 
     SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
-
-    //myprint("pager end  ");
 
     LDST(supp_state);
 }

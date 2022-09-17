@@ -20,12 +20,12 @@ void get_tod(support_t *s)
  */
 void terminate(support_t *s)
 {
-    klog_print("terminate ");
     for (int i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == s->sup_asid)
             swap_pool_table[i].sw_asid = NOPROC; // unmark swap pool table
     SYSCALL(VERHOGEN, (int)&master_sem, 0, 0);   // realise master sem
     free_sd(s);                                  // free support descriptor
+    klog_print("terminate ");
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -80,8 +80,8 @@ void write(support_t *s, int mode)
 {
     unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
-    int len = s->sup_exceptState[GENERALEXCEPT].reg_a2;
     int arg1, arg2,
+        len = s->sup_exceptState[GENERALEXCEPT].reg_a2,
         terminal = mode == IL_TERMINAL, // bool: if is terminal TRUE
         index = s->sup_asid - 1;
 
@@ -106,8 +106,10 @@ void write(support_t *s, int mode)
             arg2 |= ((unsigned int)msg[i] << 8);
         }
         else
+        {
             ((dtpreg_t *)device)->data0 = msg[i];
-        // arg2 |= 0;
+            arg2 |= 0; // serve?
+        }
 
         on_interrupts();
 
@@ -136,30 +138,24 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     if ((memaddr)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
         trap();
 
-    int ret = 0;
-    char recv_char = 0;
-
-    int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
+    int ret = 0, recv = 0, termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
     int *sem = &semTermRead_phase3[termASID];
     termreg_t *termDev = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, termASID));
 
     SYSCALL(PASSEREN, (int)sem, 0, 0);
 
-    while (recv_char != '\n')
+    while (recv != '\n')
     {
         int status = SYSCALL(DOIO, (unsigned int)&(termDev->recv_command), RECEIVECHAR, 0);
-        if ((status & 0xFF) == CHARRECV)
-        {
-            *virtualAddr = status >> BYTELENGTH;
-            recv_char = status >> BYTELENGTH;
-            virtualAddr++;
-            ret++;
-        }
-        else
+        if ((status & 0xFF) != CHARRECV)
         {
             ret = -1 * status;
             break;
         }
+        *virtualAddr = status >> BYTELENGTH;
+        recv = status >> BYTELENGTH;
+        virtualAddr++;
+        ret++;
     }
 
     SYSCALL(VERHOGEN, (int)sem, 0, 0);

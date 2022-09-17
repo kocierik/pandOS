@@ -16,6 +16,9 @@ void uTLB_RefillHandler()
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
 
+    //klog_print_dec(index);
+    //myprint("tlbindex ");
+
     if (index == 0x3FFFF)
         index = 31;
     else if (index < 0 || index > 31)
@@ -34,8 +37,6 @@ void uTLB_RefillHandler()
  */
 void general_execption_handler()
 {
-    //myprint("GEN exc  ");
-
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
 
@@ -64,9 +65,6 @@ void general_execption_handler()
  */
 void sup_syscall_handler(support_t *exc_sd)
 {
-    //myprint("sysuser ");
-
-    // currentActiveProc->p_s.pc_epc += WORD_SIZE;
     int code = exc_sd->sup_exceptState[GENERALEXCEPT].reg_a0;
 
     switch (code)

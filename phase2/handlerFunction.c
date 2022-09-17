@@ -73,7 +73,6 @@ void device_handler(int interLine, state_t *excState)
 
             if (interLine == IL_TERMINAL)
             {
-                //klog_print("cacca");
                 termreg_t *devRegAddr = (termreg_t *)DEV_REG_ADDR(interLine, devNumber);
 
                 if (devRegAddr->transm_status != READY && devRegAddr->transm_status != BUSY)
@@ -84,7 +83,6 @@ void device_handler(int interLine, state_t *excState)
                 }
                 else
                 {
-                    klog_print("detected read ");
                     statusCode = devRegAddr->recv_status;
                     devRegAddr->recv_command = ACK;
                     devSemaphore = &semTerminalDeviceReading[devNumber];
@@ -101,8 +99,8 @@ void device_handler(int interLine, state_t *excState)
         mask *= 2;
     }
 
-    g = devSemaphore;
-    bp();
+
+    //bp();
 
     /* V-Operation */
     pcb_PTR proc = V(devSemaphore, NULL);
@@ -135,7 +133,6 @@ void pass_up_or_die(int pageFault, state_t *excState)
         }
         else
         {
-            // klog_print("pasup  ");
             copy_state(excState, &currentActiveProc->p_supportStruct->sup_exceptState[pageFault]);
             int stackPtr = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].stackPtr;
             int status = currentActiveProc->p_supportStruct->sup_exceptContext[pageFault].status;

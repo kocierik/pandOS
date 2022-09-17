@@ -56,7 +56,7 @@ void create_uproc(int asid)
 
     proc_state.pc_epc = proc_state.reg_t9 = (memaddr)UPROCSTARTADDR;
     proc_state.reg_sp = (memaddr)USERSTACKTOP;
-    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON; // da mettere? USERPON
+    proc_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
     proc_state.entry_hi = asid << ASIDSHIFT;
 
     support_t *s = alloc_sd();
@@ -74,8 +74,7 @@ void create_uproc(int asid)
 
     klog_print("asid ");
     klog_print_dec(asid);
-    klog_print(" ");
-    bp();
+    myprint(" ");
 
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
 }
@@ -83,12 +82,15 @@ void create_uproc(int asid)
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= UPROCMAX; i++)
+    for (int i = 1; i <= 2; i++)
         create_uproc(i); // asid from 1 to 8
-    // myprint("all proc loaded\n");
-
+    
     // wait for others process to end
-    for (int i = 1; i <= UPROCMAX; i++) // DA MODIFICARE TODO
+    for (int i = 1; i <= 2; i++) // DA MODIFICARE TODO
+    {
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
+        klog_print("ALTOLA' ");
+        bp();
+    }
     myprint("Passeren eseguite\n");
 }
