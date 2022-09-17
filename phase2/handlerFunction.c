@@ -76,18 +76,18 @@ void device_handler(int interLine, state_t *excState)
                 //klog_print("cacca");
                 termreg_t *devRegAddr = (termreg_t *)DEV_REG_ADDR(interLine, devNumber);
 
-                if (devRegAddr->recv_status == RECVD)
+                if (devRegAddr->transm_status != READY && devRegAddr->transm_status != BUSY)
+                {
+                    statusCode = devRegAddr->transm_status;
+                    devRegAddr->transm_command = ACK;
+                    devSemaphore = &semTerminalDeviceWriting[devNumber];
+                }
+                else
                 {
                     klog_print("detected read ");
                     statusCode = devRegAddr->recv_status;
                     devRegAddr->recv_command = ACK;
                     devSemaphore = &semTerminalDeviceReading[devNumber];
-                }
-                else
-                {
-                    statusCode = devRegAddr->transm_status;
-                    devRegAddr->transm_command = ACK;
-                    devSemaphore = &semTerminalDeviceWriting[devNumber];
                 }
             }
             else

@@ -18,6 +18,7 @@
 void test();
 void init_sds();
 void init_sd_free();
+void init_sem();
 support_t *alloc_sd();
 void free_sd(support_t *s);
 void create_uproc(int asid);

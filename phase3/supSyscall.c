@@ -20,6 +20,7 @@ void get_tod(support_t *s)
  */
 void terminate(support_t *s)
 {
+    klog_print("terminate ");
     for (int i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == s->sup_asid)
             swap_pool_table[i].sw_asid = NOPROC; // unmark swap pool table
@@ -37,7 +38,6 @@ void write_to_printer(support_t *s)
 // a write syscall wrapper for terminal
 void write_to_terminal(support_t *s)
 {
-    myprint("write TERM   ");
     write(s, IL_TERMINAL);
 }
 
@@ -78,8 +78,6 @@ int *get_dev_sem(int i, int IL_X)
  */
 void write(support_t *s, int mode)
 {
-    myprint("Cwrite start   ");
-
     unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
     int len = s->sup_exceptState[GENERALEXCEPT].reg_a2;
@@ -124,8 +122,6 @@ void write(support_t *s, int mode)
 
     SYSCALL(VERHOGEN, (int)&sem, 0, 0);
 
-    myprint("write end\n");
-
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
 
@@ -137,8 +133,6 @@ void write(support_t *s, int mode)
  */
 void read_from_terminal(support_t *sup, char *virtualAddr)
 {
-    myprint("readterm start  ");
-
     if ((memaddr)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
         trap();
 
@@ -148,7 +142,6 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     int termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
     int *sem = &semTermRead_phase3[termASID];
     termreg_t *termDev = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, termASID));
-
 
     SYSCALL(PASSEREN, (int)sem, 0, 0);
 
@@ -164,7 +157,7 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
         }
         else
         {
-            ret = -1*status;
+            ret = -1 * status;
             break;
         }
     }
@@ -172,6 +165,4 @@ void read_from_terminal(support_t *sup, char *virtualAddr)
     SYSCALL(VERHOGEN, (int)sem, 0, 0);
 
     sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
-
-    myprint("readterm end  ");
 }
