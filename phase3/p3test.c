@@ -63,18 +63,18 @@ void create_uproc(int asid)
     s->sup_asid = asid;
 
     s->sup_exceptContext[PGFAULTEXCEPT].pc = (memaddr)pager;
-    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE);
+    s->sup_exceptContext[PGFAULTEXCEPT].stackPtr = (memaddr)&(sd_table[asid-1].sup_stackTLB[499]);
     s->sup_exceptContext[PGFAULTEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     s->sup_exceptContext[GENERALEXCEPT].pc = (memaddr)general_execption_handler;
-    s->sup_exceptContext[GENERALEXCEPT].stackPtr = ramaddrs - (2 * asid * PAGESIZE) + PAGESIZE;
+    s->sup_exceptContext[GENERALEXCEPT].stackPtr = (memaddr)&(sd_table[asid-1].sup_stackGen[499]);
     s->sup_exceptContext[GENERALEXCEPT].status = ALLOFF | IEPON | IMON | TEBITON;
 
     init_page_table(s->sup_privatePgTbl, asid);
 
-    // klog_print("asid: ");
-    // klog_print_dec(asid);
-    // klog_print("  ");
+    klog_print("asid ");
+    klog_print_dec(asid);
+    klog_print(" ");
     bp();
 
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts

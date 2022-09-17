@@ -28,11 +28,13 @@ void terminate(support_t *s)
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
+// a write syscall wrapper for printer
 void write_to_printer(support_t *s)
 {
     write(s, IL_PRINTER);
 }
 
+// a write syscall wrapper for terminal
 void write_to_terminal(support_t *s)
 {
     myprint("write TERM   ");
@@ -68,7 +70,6 @@ int *get_dev_sem(int i, int IL_X)
     return &sems[i];
 }
 
-// da controllare
 /**
  * It writes a string to a device
  *
@@ -128,7 +129,6 @@ void write(support_t *s, int mode)
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
 
-// da controllare
 /**
  * It reads from the terminal, and stores the read characters in the virtual address passed as argument
  *

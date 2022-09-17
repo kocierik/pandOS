@@ -8,8 +8,10 @@ void bp() {}
 void init_swap_pool_table()
 {
     swap_pool_sem = 1;
+    // swap_pool_table = SWAP_POOL_ADDR;
     for (int i = 0; i < POOLSIZE; i++)
         swap_pool_table[i].sw_asid = NOPROC;
+    // g = swap_pool_table;
 }
 
 /**
@@ -37,16 +39,13 @@ int is_spframe_free(int i)
 }
 
 /**
- * It returns the first free frame in the pool, or the next frame in the pool in fifo order
+ * It returns the next frame in the pool in fifo order
  *
  * @return The index of the victim frame
  */
 int pick_frame()
 {
-    static int c = 0;
-    for (int i = 0; i < POOLSIZE; i++)
-        if (is_spframe_free(i))
-            return i;        // if i is not occupied, return i
+    static unsigned int c = 0;
     return (c++) % POOLSIZE; // implementazione fifo
 }
 
@@ -102,35 +101,35 @@ void update_tlb(pteEntry_t p)
     }
 }
 
-// da completare
 /**
  * It reads the page from the flash memory and puts it in the swap pool
  */
 void pager()
 {
-    //myprint("pager start  ");
-
+    myprint("pager ");
     support_t *supp = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    state_t *supp_state = &(supp->sup_exceptState[PGFAULTEXCEPT]);
+    state_t *supp_state = &supp->sup_exceptState[PGFAULTEXCEPT];
 
     if (supp_state->cause == 1) // if cause is TLB-modification, then trap
         trap();
 
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
-    // Prendo una pagina vittima da sostituire
     int victim_page = pick_frame();
+    klog_print("v");
+    klog_print_dec(victim_page);
+    myprint(" ");
     swap_t swap_entry = swap_pool_table[victim_page];
+    g = &swap_entry;
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
     vpn = (vpn < 0 || vpn > 31) ? 31 : vpn; // controllo di sicurezza
+    g1 = vpn;
 
-    // Controllo se il frame scelto è occupato
     if (!is_spframe_free(victim_page))
     {
         off_interrupts();
 
-        /*8.a Marca come invalid la riga della tabella delle pagine corrispondente alla pagina vittima */
         pteEntry_t *victim_pte = swap_entry.sw_pte;
         victim_pte->pte_entryLO &= !VALIDON;
 
@@ -147,18 +146,18 @@ void pager()
     if (flash(supp->sup_asid, vpn, victim_page_addr, 'r') != READY)
         trap();
 
-    off_interrupts();
-
     // Adding entry to swap table
     swap_entry.sw_asid = supp->sup_asid;
+    g2 = supp->sup_asid;
+    bp();
     swap_entry.sw_pageNo = vpn;
-    swap_entry.sw_pte = &(supp->sup_privatePgTbl[vpn]);
+    swap_entry.sw_pte = &supp->sup_privatePgTbl[vpn];
 
-    // Update page table
-    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr | VALIDON | DIRTYON;
+    off_interrupts();
 
-    // Update TLB
-    update_tlb(supp->sup_privatePgTbl[swap_entry.sw_pageNo]); // da controllare TBCLR()
+    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr & 0xFFFFF000 | VALIDON | (supp->sup_privatePgTbl[vpn].pte_entryLO & DIRTYON); // Update page table
+
+    update_tlb(supp->sup_privatePgTbl[vpn]); // Update TLB
 
     on_interrupts();
 

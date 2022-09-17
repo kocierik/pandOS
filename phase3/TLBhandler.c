@@ -3,7 +3,7 @@
 // just a terminate wrapper
 void trap()
 {
-    myprint("\nusertrap");
+    myprint(" usertrap ");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -18,13 +18,15 @@ void uTLB_RefillHandler()
 
     if (index == 0x3FFFF)
         index = 31;
-    else if(index < 0 || index > 31)
+    else if (index < 0 || index > 31)
         klog_print("BELLA");
 
-    pteEntry_t pte = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
-    setENTRYHI(pte.pte_entryHI);
-    setENTRYLO(pte.pte_entryLO);
+    pteEntry_t p = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
+    setENTRYHI(p.pte_entryHI);
+    setENTRYLO(p.pte_entryLO);
     TLBWR();
+
+    klog_print("!");
 
     LDST(s);
 }
@@ -34,21 +36,25 @@ void uTLB_RefillHandler()
  */
 void general_execption_handler()
 {
-    myprint("gen exc  ");
+    myprint("GEN exc  ");
 
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
-    save->pc_epc += WORD_SIZE;
 
-    switch (CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause))
+    int code = CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause);
+
+    switch (code)
     {
     case SYSEXCEPTION:
         sup_syscall_handler(exc_sd);
         break;
     default:
+        klog_print("trapGenEx   ");
+        klog_print_dec(code);
         trap();
     }
 
+    save->pc_epc += WORD_SIZE;
     LDST(save);
 }
 
@@ -60,9 +66,12 @@ void general_execption_handler()
  */
 void sup_syscall_handler(support_t *exc_sd)
 {
-    myprint("sysuser\n");
+    myprint("sysuser ");
 
-    switch (exc_sd->sup_exceptState[GENERALEXCEPT].reg_a0)
+    // currentActiveProc->p_s.pc_epc += WORD_SIZE;
+    int code = exc_sd->sup_exceptState[GENERALEXCEPT].reg_a0;
+
+    switch (code)
     {
     case TERMINATE:
         terminate(exc_sd);
@@ -71,6 +80,7 @@ void sup_syscall_handler(support_t *exc_sd)
         get_tod(exc_sd);
         break;
     case WRITEPRINTER:
+        myprint("WRITEPRINTER ");
         write_to_printer(exc_sd);
         break;
     case WRITETERMINAL:
@@ -80,6 +90,8 @@ void sup_syscall_handler(support_t *exc_sd)
         read_from_terminal(exc_sd, (char *)exc_sd);
         break;
     default:
+        klog_print("trapSupHan  ");
+        klog_print_dec(code);
         trap();
     }
 }
