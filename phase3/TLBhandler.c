@@ -3,7 +3,6 @@
 // just a terminate wrapper
 void trap()
 {
-    klog_print(" user trap ");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
