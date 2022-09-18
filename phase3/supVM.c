@@ -77,12 +77,14 @@ void on_interrupts()
  */
 int flash(int asid, int block, memaddr addr, char mode)
 {
+    // SYSCALL(PASSEREN, &semFlashDevice[asid - 1], 0, 0);
     off_interrupts();
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
     int res = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
     on_interrupts();
+    // SYSCALL(VERHOGEN, &semFlashDevice[asid - 1], 0, 0);
     return res;
 }
 
@@ -117,10 +119,10 @@ void pager()
     SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 
     int victim_page = pick_frame();
-    swap_t swap_entry = swap_pool_table[victim_page];
+    swap_t *swap_entry = &swap_pool_table[victim_page];
     memaddr victim_page_addr = SWAP_POOL_ADDR + (victim_page * PAGESIZE);
     int vpn = ENTRYHI_GET_VPN(supp_state->entry_hi);
-    vpn = (vpn < 0 || vpn > 31) ? 31 : vpn; // controllo di sicurezza
+    vpn = vpn > 31 ? 31 : vpn; // controllo di sicurezza
     klog_print_dec(victim_page);
     myprint("victim ");
 
@@ -129,7 +131,7 @@ void pager()
         klog_print(" ole ");
         off_interrupts();
 
-        pteEntry_t *victim_pte = swap_entry.sw_pte;
+        pteEntry_t *victim_pte = swap_entry->sw_pte;
         victim_pte->pte_entryLO &= !VALIDON;
 
         update_tlb(*victim_pte);
@@ -137,22 +139,20 @@ void pager()
         on_interrupts();
 
         /* WRITE FLASH */
-        if (flash(swap_entry.sw_asid, swap_entry.sw_pageNo, victim_page_addr, 'w') != READY)
+        if (flash(swap_entry->sw_asid, swap_entry->sw_pageNo, victim_page_addr, 'w') != READY)
             trap();
     }
 
     /* READ FLASH */
-    if (flash(supp->sup_asid, vpn, victim_page_addr, 'r') != READY){
-        klog_print(" PANICO ");
+    if (flash(supp->sup_asid, vpn, victim_page_addr, 'r') != READY)
         trap();
-    }
 
     // Adding entry to swap table
-    swap_entry.sw_asid = supp->sup_asid;
+    swap_entry->sw_asid = supp->sup_asid;
+    swap_entry->sw_pageNo = vpn;
+    swap_entry->sw_pte = &supp->sup_privatePgTbl[vpn];
     klog_print_dec(supp->sup_asid);
-    myprint("asid ");
-    swap_entry.sw_pageNo = vpn;
-    swap_entry.sw_pte = &supp->sup_privatePgTbl[vpn];
+    myprint("asidswap ");
 
     off_interrupts();
 

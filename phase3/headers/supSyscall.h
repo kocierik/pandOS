@@ -11,11 +11,8 @@
 #include "TLBhandler.h"
 #include "../../phase2/headers/globals.h"
 
-
 #define PRINTCHR 2
 #define TERMSTATMASK 0xFF
-
-
 
 void get_tod(support_t *s);
 void terminate(support_t *s);

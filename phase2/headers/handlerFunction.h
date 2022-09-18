@@ -8,6 +8,8 @@
 #include "exceptionHandler.h"
 #include "globals.h"
 
+/* Usefull external function */
+extern void insert_ready_queue(int prio, pcb_PTR p);
 
 /* Interrupt handler functions */
 void plt_time_handler(state_t *excState);

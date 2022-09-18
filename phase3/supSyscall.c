@@ -78,12 +78,12 @@ int *get_dev_sem(int i, int IL_X)
  */
 void write(support_t *s, int mode)
 {
-    unsigned int status;
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
     int arg1, arg2,
         len = s->sup_exceptState[GENERALEXCEPT].reg_a2,
-        terminal = mode == IL_TERMINAL, // bool: if is terminal TRUE
+        terminal = mode == IL_TERMINAL,     // bool: if is terminal TRUE
         index = s->sup_asid - 1;
+    unsigned int status, cond = (terminal ? TERMSTATMASK : -1);
 
     int *sem = get_dev_sem(index, mode);
     void *device = (void *)DEV_REG_ADDR(mode, index);
@@ -115,9 +115,14 @@ void write(support_t *s, int mode)
 
         status = SYSCALL(DOIO, arg1, (int)arg2, 0);
 
-        if ((status & (terminal ? TERMSTATMASK : -1)) != (terminal ? RECVD : READY))
+        klog_print(" fatta doio ");
+        klog_print_dec(s->sup_asid);
+        g1 = sem;
+        myprint(" ");
+
+        if ((status & cond) != (terminal ? RECVD : READY))
         {
-            len = -(status & (terminal ? TERMSTATMASK : -1));
+            len = -(status & cond);
             break;
         }
     }

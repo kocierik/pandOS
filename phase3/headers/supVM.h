@@ -9,8 +9,7 @@
 #include <umps/cp0.h>
 #include "../../phase2/headers/globals.h"
 
-
-#define SWAP_POOL_ADDR (memaddr)0x20020000
+#define SWAP_POOL_ADDR (*(memaddr *)(KERNELSTACK + 0x0018) + *(memaddr *)(KERNELSTACK + 0x0024))
 
 void bp();
 

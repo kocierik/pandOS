@@ -16,13 +16,8 @@ void uTLB_RefillHandler()
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
 
-    //klog_print_dec(index);
-    //myprint("tlbindex ");
-
-    if (index == 0x3FFFF)
+    if (index > 31)
         index = 31;
-    else if (index < 0 || index > 31)
-        klog_print(" utlb refill out of index ");
 
     pteEntry_t p = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(p.pte_entryHI);

@@ -99,6 +99,11 @@ void block_curr_proc(state_t *excState, int *semaddr)
     update_curr_proc_time();
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
+    klog_print(" blocco ");
+    klog_print_dec(currentActiveProc->p_pid);
+    klog_print(" ");
+    g = semaddr;
+    bp();
     ++blockedProc;
     scheduler();
 }

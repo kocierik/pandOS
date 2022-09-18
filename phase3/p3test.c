@@ -72,7 +72,7 @@ void create_uproc(int asid)
 
     init_page_table(s->sup_privatePgTbl, asid);
 
-    klog_print("asid ");
+    klog_print("newasid ");
     klog_print_dec(asid);
     myprint(" ");
 

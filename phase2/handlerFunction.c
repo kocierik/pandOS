@@ -1,8 +1,5 @@
 #include "headers/handlerFunction.h"
 
-/* Usefull external function */
-extern void insert_ready_queue(int prio, pcb_PTR p);
-
 /* INTERRUPT HANDLER FUNCTION */
 
 // handler IL_CPUTIMER
@@ -62,12 +59,12 @@ void device_handler(int interLine, state_t *excState)
     int devNumber = 0;
 
     devregarea_t *devRegs = (devregarea_t *)RAMBASEADDR;
-    unsigned int bitmap_word = devRegs->interrupt_dev[interLine - 3];
+    unsigned int bitmap = devRegs->interrupt_dev[interLine - 3];
     unsigned int mask = 1;
 
     for (int i = 0; i < N_DEV_PER_IL; i++)
     {
-        if (bitmap_word & mask)
+        if (bitmap & mask)
         {
             devNumber = i;
 
@@ -99,12 +96,17 @@ void device_handler(int interLine, state_t *excState)
         mask *= 2;
     }
 
-
-    //bp();
+    klog_print(" g2 ");
+    g2 = devSemaphore;
+    bp();
 
     /* V-Operation */
     pcb_PTR proc = V(devSemaphore, NULL);
 
+
+    klog_print(" g3 ");
+    g3 = proc;
+    bp();
     if (proc == NULL || proc == currentActiveProc)
     {
         if (currentActiveProc == NULL)
