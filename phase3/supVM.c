@@ -74,14 +74,12 @@ void on_interrupts()
  */
 int flash(int asid, int block, memaddr addr, char mode)
 {
-    // SYSCALL(PASSEREN, &semFlashDevice[asid - 1], 0, 0);  // se le scommentiamo bloccano tutti i processi, quindi le lasciamo commentate
     off_interrupts();
     dtpreg_t *dev = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, asid - 1);
     dev->data0 = addr;
     int cmd = (mode == 'w') ? FLASHWRITE : FLASHREAD | block << 8;
     int res = SYSCALL(DOIO, (int)&dev->command, cmd, 0);
     on_interrupts();
-    // SYSCALL(VERHOGEN, &semFlashDevice[asid - 1], 0, 0);
     return res;
 }
 
@@ -148,13 +146,15 @@ void pager()
 
     off_interrupts();
 
-    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr | VALIDON | DIRTYON; // Update page table
+    // Update page table
+    supp->sup_privatePgTbl[vpn].pte_entryLO = victim_page_addr | VALIDON | DIRTYON;
 
-    update_tlb(supp->sup_privatePgTbl[vpn]); // Update TLB
+    // Update TLB
+    update_tlb(supp->sup_privatePgTbl[vpn]); 
 
     on_interrupts();
 
     SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
 
-    load_state(supp_state);
+    LDST(supp_state);
 }

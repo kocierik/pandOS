@@ -11,7 +11,6 @@ void test()
 // init support data structures
 void init_sds()
 {
-    master_sem = 0;
     init_swap_pool_table();
     init_sd_free();
     init_sem();
@@ -25,9 +24,10 @@ void init_sd_free()
         free_sd(&sd_table[i]);
 }
 
-// init phase 3 device semaphores
+// init phase 3 semaphores
 void init_sem()
 {
+    master_sem = 0;
     for (int i = 0; i < 8; i++)
         semPrinter_phase3[i] = semTermRead_phase3[i] = semTermWrite_phase3[i] = 1;
 }

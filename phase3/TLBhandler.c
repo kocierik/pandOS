@@ -1,6 +1,6 @@
 #include "headers/TLBhandler.h"
 
-// just a terminate wrapper
+// A terminate wrapper
 void trap()
 {
     SYSCALL(TERMINATE, 0, 0, 0);
@@ -14,16 +14,12 @@ void uTLB_RefillHandler()
 {
     state_t *s = (state_t *)BIOSDATAPAGE;
     int index = ENTRYHI_GET_VPN(s->entry_hi);
-
-    if (index > 31)
-        index = 31;
-
+    if (index > 31) index = 31;
     pteEntry_t p = currentActiveProc->p_supportStruct->sup_privatePgTbl[index];
     setENTRYHI(p.pte_entryHI);
     setENTRYLO(p.pte_entryLO);
     TLBWR();
-
-    load_state(s);
+    LDST(s);
 }
 
 /**
@@ -34,11 +30,9 @@ void general_execption_handler()
     support_t *exc_sd = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *save = &exc_sd->sup_exceptState[GENERALEXCEPT];
 
-    int code = CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause);
-
     save->pc_epc += WORD_SIZE;
 
-    switch (code)
+    switch (CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause))
     {
     case SYSEXCEPTION:
         sup_syscall_handler(exc_sd);
@@ -47,7 +41,7 @@ void general_execption_handler()
         trap();
     }
 
-    load_state(save);
+    LDST(save);
 }
 
 /**

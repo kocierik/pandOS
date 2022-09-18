@@ -19,6 +19,6 @@ void terminate(support_t *s);
 void write_to_printer(support_t *s);
 void write_to_terminal(support_t *s);
 void write(support_t *s, int IL_X);
-void read_from_terminal(support_t *sup, char *virtualAddr);
+void read_from_terminal(support_t *sup, char *addr);
 
 #endif

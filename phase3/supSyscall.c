@@ -80,7 +80,7 @@ void write(support_t *s, int mode)
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
     int arg1, arg2,
         len = s->sup_exceptState[GENERALEXCEPT].reg_a2,
-        terminal = mode == IL_TERMINAL, // bool: if is terminal TRUE
+        terminal = mode == IL_TERMINAL,
         index = s->sup_asid - 1;
     unsigned int status, cond = (terminal ? TERMSTATMASK : -1);
 
@@ -105,7 +105,7 @@ void write(support_t *s, int mode)
         else
             ((dtpreg_t *)device)->data0 = msg[i];
 
-        status = SYSCALL(DOIO, arg1, (int)arg2, 0);
+        status = SYSCALL(DOIO, arg1, arg2, 0);
 
         if ((status & cond) != (terminal ? RECVD : READY))
         {
@@ -125,32 +125,32 @@ void write(support_t *s, int mode)
  * @param sup the support structure
  * @param virtualAddr the address of the first byte of the buffer where the input will be stored
  */
-void read_from_terminal(support_t *sup, char *virtualAddr)
+void read_from_terminal(support_t *sup, char *addr)
 {
-    if ((memaddr)virtualAddr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
+    if ((memaddr)addr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
         trap();
 
-    int ret = 0, recv = 0, termASID = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
-    int *sem = &semTermRead_phase3[termASID];
-    termreg_t *termDev = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, termASID));
+    int len = 0, tmp = 0, index = sup->sup_asid - 1; // legge da 1 a 8 (ASID), ma i devices vanno da 0 a 7
+    int *sem = &semTermRead_phase3[index];
+    termreg_t *termDev = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, index));
 
     SYSCALL(PASSEREN, (int)sem, 0, 0);
 
-    while (recv != '\n')
+    while (tmp != '\n')
     {
-        int status = SYSCALL(DOIO, (unsigned int)&(termDev->recv_command), RECEIVECHAR, 0);
+        int status = SYSCALL(DOIO, (int)&(termDev->recv_command), RECEIVECHAR, 0);
         if ((status & 0xFF) != CHARRECV)
         {
-            ret = -1 * status;
+            len = -1 * status;
             break;
         }
-        *virtualAddr = status >> BYTELENGTH;
-        recv = status >> BYTELENGTH;
-        virtualAddr++;
-        ret++;
+        *addr = status >> BYTELENGTH;
+        tmp = status >> BYTELENGTH;
+        addr++;
+        len++;
     }
 
     SYSCALL(VERHOGEN, (int)sem, 0, 0);
 
-    sup->sup_exceptState[GENERALEXCEPT].reg_v0 = ret;
+    sup->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
