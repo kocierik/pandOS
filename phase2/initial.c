@@ -38,14 +38,9 @@ swap_t swap_pool_table[POOLSIZE]; // swap pool table di grandezza 2*UPROMAX
 int swap_pool_sem;                // semaforo che gestisce l'accesso alla swap pool table
 
 // semafori per la gestione dei device in fase 3
-int semTermRead_phase3[8];
-int semTermWrite_phase3[8];
 int semPrinter_phase3[8];
-
-int g;
-int g1;
-int g2;
-int g3;
+int semTermWrite_phase3[8];
+int semTermRead_phase3[8];
 
 /* Extern functions */
 extern void test();

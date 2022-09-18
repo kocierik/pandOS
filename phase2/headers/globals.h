@@ -42,9 +42,4 @@ extern int semTermRead_phase3[8];
 extern int semTermWrite_phase3[8];
 extern int semPrinter_phase3[8];
 
-extern int g;
-extern int g1;
-extern int g2;
-extern int g3;
-
 #endif

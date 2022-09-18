@@ -8,10 +8,9 @@
 #include "TLBhandler.h"
 #include <umps/cp0.h>
 #include "../../phase2/headers/globals.h"
+#include "../../phase2/headers/scheduler.h"
 
-#define SWAP_POOL_ADDR (*(memaddr *)(KERNELSTACK + 0x0018) + *(memaddr *)(KERNELSTACK + 0x0024))
-
-void bp();
+#define SWAP_POOL_ADDR (memaddr)0x20020000
 
 void init_swap_pool_table();
 void init_page_table(pteEntry_t pt[MAXPAGES], int asid);

@@ -96,21 +96,11 @@ void device_handler(int interLine, state_t *excState)
         mask *= 2;
     }
 
-    klog_print(" g2 ");
-    g2 = devSemaphore;
-    bp();
-
     /* V-Operation */
     pcb_PTR proc = V(devSemaphore, NULL);
 
-
-    klog_print(" g3 ");
-    g3 = proc;
-    bp();
     if (proc == NULL || proc == currentActiveProc)
     {
-        if (currentActiveProc == NULL)
-            klog_print("sospetto ");
         currentActiveProc->p_s.reg_v0 = statusCode;
         insert_ready_queue(currentActiveProc->p_prio, currentActiveProc);
         scheduler();
@@ -129,7 +119,6 @@ void pass_up_or_die(int pageFault, state_t *excState)
     {
         if (currentActiveProc->p_supportStruct == NULL)
         {
-            klog_print("die \n");
             term_proc(0);
             scheduler();
         }

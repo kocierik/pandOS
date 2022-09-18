@@ -99,11 +99,6 @@ void block_curr_proc(state_t *excState, int *semaddr)
     update_curr_proc_time();
     copy_state(excState, &currentActiveProc->p_s);
     insertBlocked(semaddr, currentActiveProc);
-    klog_print(" blocco ");
-    klog_print_dec(currentActiveProc->p_pid);
-    klog_print(" ");
-    g = semaddr;
-    bp();
     ++blockedProc;
     scheduler();
 }
@@ -295,7 +290,7 @@ void do_IO_device(state_t *excState)
             }
         }
     }
-    g1 = devSemaphore;
+    
     *cmdAddr = cmdValue;         // Execute request command
     P(devSemaphore, excState);   // Call a P on the semaphore found, should be blocking
     load_or_scheduler(excState); // Just in case

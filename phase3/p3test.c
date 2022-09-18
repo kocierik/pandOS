@@ -72,25 +72,16 @@ void create_uproc(int asid)
 
     init_page_table(s->sup_privatePgTbl, asid);
 
-    klog_print("newasid ");
-    klog_print_dec(asid);
-    myprint(" ");
-
     SYSCALL(CREATEPROCESS, (int)&proc_state, PROCESS_PRIO_LOW, (int)s); // process starts
 }
 
 // run every proc
 void run_proc()
 {
-    for (int i = 1; i <= 2; i++)
+    for (int i = 1; i <= UPROCMAX; i++)
         create_uproc(i); // asid from 1 to 8
     
     // wait for others process to end
-    for (int i = 1; i <= 2; i++) // DA MODIFICARE TODO
-    {
+    for (int i = 1; i <= UPROCMAX; i++)
         SYSCALL(PASSEREN, (int)&master_sem, 0, 0);
-        klog_print("ALTOLA' ");
-        bp();
-    }
-    myprint("Passeren eseguite\n");
 }

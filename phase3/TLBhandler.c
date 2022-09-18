@@ -3,7 +3,7 @@
 // just a terminate wrapper
 void trap()
 {
-    myprint(" usertrap ");
+    klog_print(" user trap ");
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -23,8 +23,8 @@ void uTLB_RefillHandler()
     setENTRYHI(p.pte_entryHI);
     setENTRYLO(p.pte_entryLO);
     TLBWR();
-    
-    LDST(s);
+
+    load_state(s);
 }
 
 /**
@@ -37,19 +37,18 @@ void general_execption_handler()
 
     int code = CAUSE_GET_EXCCODE(exc_sd->sup_exceptState[GENERALEXCEPT].cause);
 
+    save->pc_epc += WORD_SIZE;
+
     switch (code)
     {
     case SYSEXCEPTION:
         sup_syscall_handler(exc_sd);
         break;
     default:
-        klog_print("trapGenEx   ");
-        klog_print_dec(code);
         trap();
     }
 
-    save->pc_epc += WORD_SIZE;
-    LDST(save);
+    load_state(save);
 }
 
 /**
@@ -80,8 +79,6 @@ void sup_syscall_handler(support_t *exc_sd)
         read_from_terminal(exc_sd, (char *)exc_sd->sup_exceptState[GENERALEXCEPT].reg_a1);
         break;
     default:
-        klog_print("trapSupHan  ");
-        klog_print_dec(code);
         trap();
     }
 }

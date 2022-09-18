@@ -11,10 +11,6 @@
 #include "TLBhandler.h"
 #include "../../phase2/headers/globals.h"
 
-#define myprint(s) \
-    klog_print(s); \
-    bp()
-
 void test();
 void init_sds();
 void init_sd_free();

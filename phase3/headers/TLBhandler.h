@@ -11,10 +11,7 @@
 #include "supVM.h"
 #include "TLBhandler.h"
 #include "../../phase2/headers/globals.h"
-
-#define myprint(s) \
-    klog_print(s); \
-    bp()
+#include "../../phase2/headers/scheduler.h"
 
 void trap();
 void uTLB_RefillHandler();

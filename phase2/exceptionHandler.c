@@ -45,7 +45,6 @@ void interrupt_handler(state_t *excState)
     else if CAUSE_IP_GET (cause, IL_TERMINAL)
         device_handler(IL_TERMINAL, excState);
 
-    klog_print(" no interupt found ");
     PANIC();
 }
 

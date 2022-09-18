@@ -25,7 +25,6 @@ void terminate(support_t *s)
             swap_pool_table[i].sw_asid = NOPROC; // unmark swap pool table
     SYSCALL(VERHOGEN, (int)&master_sem, 0, 0);   // realise master sem
     free_sd(s);                                  // free support descriptor
-    klog_print("terminate ");
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -55,11 +54,11 @@ int *get_dev_sem(int i, int IL_X)
     switch (IL_X)
     {
     case IL_PRINTER:
-        sems = semPrinter_phase3;
+        sems = &semPrinter_phase3[i];
         break;
 
     case IL_TERMINAL:
-        sems = semTermWrite_phase3;
+        sems = &semTermWrite_phase3[i];
         break;
 
     default:
@@ -67,7 +66,7 @@ int *get_dev_sem(int i, int IL_X)
         break;
     }
 
-    return &sems[i];
+    return sems;
 }
 
 /**
@@ -81,22 +80,20 @@ void write(support_t *s, int mode)
     char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
     int arg1, arg2,
         len = s->sup_exceptState[GENERALEXCEPT].reg_a2,
-        terminal = mode == IL_TERMINAL,     // bool: if is terminal TRUE
+        terminal = mode == IL_TERMINAL, // bool: if is terminal TRUE
         index = s->sup_asid - 1;
     unsigned int status, cond = (terminal ? TERMSTATMASK : -1);
 
     int *sem = get_dev_sem(index, mode);
     void *device = (void *)DEV_REG_ADDR(mode, index);
 
-    if (len < 0 || len > 100 || (memaddr)msg < KUSEG)
+    if (len < 0 || len > MAXSTRLENG || (memaddr)msg < KUSEG)
         trap();
 
-    SYSCALL(PASSEREN, (int)&sem, 0, 0);
+    SYSCALL(PASSEREN, (int)sem, 0, 0);
 
     for (int i = 0; i < len; i++)
     {
-        off_interrupts();
-
         arg1 = (int)&((dtpreg_t *)device)->command;
         arg2 = PRINTCHR;
 
@@ -106,19 +103,9 @@ void write(support_t *s, int mode)
             arg2 |= ((unsigned int)msg[i] << 8);
         }
         else
-        {
             ((dtpreg_t *)device)->data0 = msg[i];
-            arg2 |= 0; // serve?
-        }
-
-        on_interrupts();
 
         status = SYSCALL(DOIO, arg1, (int)arg2, 0);
-
-        klog_print(" fatta doio ");
-        klog_print_dec(s->sup_asid);
-        g1 = sem;
-        myprint(" ");
 
         if ((status & cond) != (terminal ? RECVD : READY))
         {
@@ -127,7 +114,7 @@ void write(support_t *s, int mode)
         }
     }
 
-    SYSCALL(VERHOGEN, (int)&sem, 0, 0);
+    SYSCALL(VERHOGEN, (int)sem, 0, 0);
 
     s->sup_exceptState[GENERALEXCEPT].reg_v0 = len;
 }
