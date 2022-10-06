@@ -1,5 +1,9 @@
-# Progetto Sistemi Operativi UniBo 2021/2022
+## Operating systems project UniBo 2021/2022
+
+A simple operating system for the MIPS architecture
+
 ---
+
 
 ## Makefile:
 
