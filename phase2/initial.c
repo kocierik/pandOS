@@ -32,6 +32,8 @@ int semTerminalDeviceWriting[8];
 /* Global Variables PHASE3 */
 
 int master_sem;                   // master semaphore to controll the end of the uproc
+                                  // Per garantire accesso esclusivo alle strutture dati condivise
+                         
 support_t sd_table[UPROCMAX];     // table of usable support descriptor
 struct list_head sd_free;         // list of free support descriptor
 swap_t swap_pool_table[POOLSIZE]; // swap pool table di grandezza 2*UPROMAX

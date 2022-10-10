@@ -190,6 +190,7 @@ void terminate_process(state_t *excState)
 }
 
 // SYSCALL PASSEREN
+// PRENDO LA MUTUA ESCLUSIONE
 void passeren(state_t *excState)
 {
     int *semaddr = (int *)(*excState).reg_a1;
@@ -221,6 +222,7 @@ pcb_PTR P(int *semaddr, state_t *excState)
 }
 
 // SYSCALL VERHOGEN
+// RILASCIO LA MUTUA ESCLUSIONE
 void verhogen(state_t *excState)
 {
     int *semaddr = (int *)(*excState).reg_a1;
