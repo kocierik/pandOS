@@ -77,22 +77,24 @@ int *get_dev_sem(int i, int IL_X)
  */
 void write(support_t *s, int mode)
 {
-    char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1;
+    char *msg = (char *)s->sup_exceptState[GENERALEXCEPT].reg_a1; // prendo dal registro messaggio da stampare
     int arg1, arg2,
-        len = s->sup_exceptState[GENERALEXCEPT].reg_a2,
+        len = s->sup_exceptState[GENERALEXCEPT].reg_a2, // prendo da registro lunghezza del messaggio
         terminal = mode == IL_TERMINAL,
         index = s->sup_asid - 1;
     unsigned int status, cond = (terminal ? TERMSTATMASK : -1);
 
-    int *sem = get_dev_sem(index, mode);
-    void *device = (void *)DEV_REG_ADDR(mode, index);
+    int *sem = get_dev_sem(index, mode); // prendo il semaforo opportuno da bloccare 
+    void *device = (void *)DEV_REG_ADDR(mode, index); // Struttura dati che rappresenta il device che utilizzo quindi per scriverci
 
-    if (len < 0 || len > MAXSTRLENG || (memaddr)msg < KUSEG)
+    if (len < 0 || len > MAXSTRLENG || (memaddr)msg < KUSEG) // controllo di sicurezza su la lunghezza della stringa 
+                                                             // KUSEG Area di memoria a partire dalla quale posso iniziare a lavorare,
+                                                             // la parte precedente è dedicata ad altro che in questo momento non dobbiamo toccare
         trap();
 
     SYSCALL(PASSEREN, (int)sem, 0, 0);
 
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)   //Stampo carattere per carattere chiamando la DOIO per ognuno
     {
         arg1 = (int)&((dtpreg_t *)device)->command;
         arg2 = PRINTCHR;
@@ -125,7 +127,7 @@ void write(support_t *s, int mode)
  * @param sup the support structure
  * @param virtualAddr the address of the first byte of the buffer where the input will be stored
  */
-void read_from_terminal(support_t *sup, char *addr)
+void read_from_terminal(support_t *sup, char *addr) // Leggo input da terminale
 {
     if ((memaddr)addr < KUSEG) /* indirizzo out memoria virtuale / o lunghezza richiesta 0 */
         trap();
@@ -136,7 +138,7 @@ void read_from_terminal(support_t *sup, char *addr)
 
     SYSCALL(PASSEREN, (int)sem, 0, 0);
 
-    while (tmp != '\n')
+    while (tmp != '\n') // While finchè non vediamo il simbolo di "andare a capo"
     {
         int status = SYSCALL(DOIO, (int)&(termDev->recv_command), RECEIVECHAR, 0);
         if ((status & 0xFF) != CHARRECV)
